@@ -137,13 +137,15 @@ def insert_node(
     tags: str = "",
     confidence: float = 1.0,
     source: str = "claude",
+    layer: int | None = None,
+    tier: int = 2,
 ) -> int:
     now = datetime.now(timezone.utc).isoformat()
     conn = _connect()
     cur = conn.execute(
-        """INSERT INTO nodes (type, content, metadata, project, tags, confidence, source, created_at, updated_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-        (type, content, json.dumps(metadata or {}), project, tags, confidence, source, now, now),
+        """INSERT INTO nodes (type, content, metadata, project, tags, confidence, source, layer, tier, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        (type, content, json.dumps(metadata or {}), project, tags, confidence, source, layer, tier, now, now),
     )
     node_id = cur.lastrowid
     conn.commit()

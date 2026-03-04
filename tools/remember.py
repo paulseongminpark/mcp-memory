@@ -1,6 +1,6 @@
 """remember() — 기억을 저장하고 자동으로 관계를 생성한다."""
 
-from config import SIMILARITY_THRESHOLD, infer_relation
+from config import SIMILARITY_THRESHOLD, PROMOTE_LAYER, infer_relation
 from ontology.validators import validate_node_type, suggest_closest_type
 from storage import sqlite_store, vector_store
 
@@ -26,6 +26,15 @@ def remember(
     metadata = dict(metadata) if metadata else {}
     metadata["embedding_provisional"] = "true"
 
+    # 0.6 자동 tier/layer 배정
+    layer = PROMOTE_LAYER.get(type)
+    if layer is not None and layer >= 3:
+        tier = 0  # core
+    elif layer == 2:
+        tier = 2  # auto (quality_score 없으니 enrichment 후 승격)
+    else:
+        tier = 2  # auto
+
     # 1. SQLite에 노드 저장
     node_id = sqlite_store.insert_node(
         type=type,
@@ -35,6 +44,8 @@ def remember(
         tags=tags,
         confidence=confidence,
         source=source,
+        layer=layer,
+        tier=tier,
     )
 
     # 2. ChromaDB에 임베딩 저장 (provisional)
@@ -69,7 +80,7 @@ def remember(
         # 규칙 기반 relation 추론 (α)
         relation = infer_relation(
             src_type=type,
-            src_layer=None,  # 새 노드라 layer 미정
+            src_layer=layer,
             tgt_type=sim_node.get("type", ""),
             tgt_layer=sim_node.get("layer"),
             src_project=project,
