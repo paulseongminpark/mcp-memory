@@ -1,0 +1,9 @@
+task_id: E4
+name: facets
+model_tier: bulk
+system: |-
+  Classify into facets. Allowed: {facets_allowlist}. Return: {{"facets": ["f1", ...]}}
+user: |-
+  Paul의 어떤 측면? 1-3개.
+
+  {content}

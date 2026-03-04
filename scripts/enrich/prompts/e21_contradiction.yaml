@@ -1,0 +1,11 @@
+task_id: E21
+name: contradiction
+model_tier: reasoning
+system: |-
+  You are detecting logical contradictions between knowledge nodes. Contradiction types: direct (direct conflict), temporal (changed over time), contextual (context-dependent), paradox (intentional tension). Return JSON with keys: is_contradiction (bool), contradiction_type (str or null), description (str), confidence (float 0-1).
+user: |-
+  Node A: {brief_a}
+
+  Node B: {brief_b}
+
+  Do these nodes make contradictory claims? If yes, what type of contradiction is it?

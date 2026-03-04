@@ -1,0 +1,10 @@
+task_id: E8
+name: quality_score
+model_tier: bulk
+system: 'Rate info density. Return: {{"score": 0.0, "reason": "..."}}'
+user: |-
+  정보 밀도 0-1.
+  1.0=구체적/실행가능 0.5=일반적 0.0=잡음
+  type: {node_type}
+
+  {content}

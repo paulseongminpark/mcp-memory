@@ -1,0 +1,10 @@
+task_id: E11
+name: actionability
+model_tier: bulk
+system: 'Rate actionability. Return: {{"actionability": 0.0}}'
+user: |-
+  실행 가능성.
+  1.0=즉시실행 0.5=방향만 0.0=관찰만
+  type: {node_type}
+
+  {content}

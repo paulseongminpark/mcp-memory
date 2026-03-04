@@ -1,0 +1,15 @@
+task_id: E25
+name: knowledge_gap
+model_tier: deep
+system: |-
+  You are analyzing knowledge distribution in a personal knowledge graph. Identify missing or underrepresented node types in a domain. Return JSON with keys: missing_types (array of str, type names that are absent or very few), gap_reasons (array of {{type: str, reason: str, cause: str one of: truly-absent|not-recorded|misclassified}}), importance (float 0-1, how critical are these gaps), suggestions (array of str, actionable recommendations).
+user: |-
+  Domain: {domain}
+  Current type distribution:
+  {distribution}
+
+  Common node types in the system: {all_types}
+
+  Which types are abnormally rare or missing?
+  Why might they be missing?
+  What action is recommended?

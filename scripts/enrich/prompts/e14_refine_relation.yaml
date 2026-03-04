@@ -1,0 +1,11 @@
+task_id: E14
+name: refine_relation
+model_tier: bulk
+system: |-
+  You are a knowledge graph specialist. Upgrade vague relation types to more precise ones. All allowed types: {all_relations}. Return JSON: {{"relation": "...", "direction": "upward|downward|horizontal|cross-layer", "reason": "...", "changed": true|false}}
+user: |-
+  Current relation: '{current_relation}'
+  Source [#{source_id} type={source_type} layer={source_layer}]: {source_summary}
+  Target [#{target_id} type={target_type} layer={target_layer}]: {target_summary}
+
+  Is there a more precise relation type from the allowed list? If the current relation is already accurate, set changed=false.

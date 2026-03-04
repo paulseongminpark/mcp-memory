@@ -1,0 +1,13 @@
+task_id: E15
+name: direction
+model_tier: reasoning
+system: |-
+  You are a knowledge graph reasoning engine. Determine the semantic direction of a relationship between two nodes. upward: source is more concrete, target is more abstract (abstraction). downward: source is more abstract, target is more concrete (instantiation). horizontal: same abstraction level, peer relationship. cross-layer: spans multiple layers in the knowledge hierarchy. Return JSON: {{"direction": "upward|downward|horizontal|cross-layer", "reason": "one sentence"}}
+user: |-
+  Relation: '{relation}'
+  Source: Layer={source_layer} type={source_type}
+    Content: {source_summary}
+  Target: Layer={target_layer} type={target_type}
+    Content: {target_summary}
+
+  What is the direction of this relation?

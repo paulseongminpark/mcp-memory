@@ -1,0 +1,9 @@
+task_id: E13
+name: cross_domain
+model_tier: bulk
+system: |-
+  You are an expert knowledge graph analyst. Find meaningful semantic connections between nodes from different domains. Only report connections with clear justification. Allowed relation types: {relations_list}. Return JSON: {{"relations": [{{"source_id": N, "target_id": N, "relation": "...", "strength": 0.0-1.0, "reason": "..."}}]}}
+user: |-
+  The following nodes belong to different domains. Find semantically meaningful pairs (0-5 total). If no meaningful connection exists, return empty array.
+
+  {node_summaries}

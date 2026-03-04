@@ -1,0 +1,11 @@
+task_id: E12
+name: layer_verify
+model_tier: verify
+system: |-
+  Verify layer. Return: {{"layer": N, "confidence": 0.0, "changed": bool, "reason": "..."}}
+user: |-
+  현재 layer={layer}. 맞는가?
+  L0=원시경험 L1=행위/사건 L2=개념/패턴 L3=원칙/정체성 L4=세계관 L5=가치/존재론
+  type: {node_type}
+
+  {content}

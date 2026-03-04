@@ -1,0 +1,12 @@
+task_id: E7
+name: embedding_text
+model_tier: bulk
+system: 'Create embedding text. Return: {{"text": "..."}}'
+user: |-
+  요약, 개념, 태그를 결합해 의미 검색 최적화 텍스트. 150-200자.
+
+  요약: {summary}
+  개념: {key_concepts}
+  태그: {tags}
+  측면: {facets}
+  도메인: {domains}

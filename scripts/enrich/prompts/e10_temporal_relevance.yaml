@@ -1,0 +1,10 @@
+task_id: E10
+name: temporal_relevance
+model_tier: bulk
+system: 'Rate temporal relevance. Return: {{"relevance": 0.0}}'
+user: |-
+  {today} 기준 유효성.
+  1.0=시간초월 0.5=부분유효 0.0=폐기
+  created: {created_at}
+
+  {content}

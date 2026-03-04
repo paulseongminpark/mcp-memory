@@ -1,0 +1,9 @@
+task_id: E9
+name: abstraction_level
+model_tier: bulk
+system: 'Rate abstraction. Return: {{"level": 0.0}}'
+user: |-
+  Layer {layer} 내 추상 수준.
+  0.0=매우 구체적 1.0=매우 추상적
+
+  {content}

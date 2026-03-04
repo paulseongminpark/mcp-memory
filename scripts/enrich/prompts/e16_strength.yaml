@@ -1,0 +1,11 @@
+task_id: E16
+name: strength
+model_tier: bulk
+system: |-
+  Rate the semantic connection strength between two knowledge nodes. 1.0 = inseparable (A cannot exist without B). 0.5 = related but independent. 0.0 = accidental or superficial connection. Return JSON: {{"strength": 0.0-1.0, "reason": "..."}}
+user: |-
+  Relation: '{relation}' (current strength: {current_strength})
+  Source [type={source_type}]: {source_summary}
+  Target [type={target_type}]: {target_summary}
+
+  What is the true semantic connection strength?

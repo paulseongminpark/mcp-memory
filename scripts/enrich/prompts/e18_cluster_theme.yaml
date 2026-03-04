@@ -1,0 +1,13 @@
+task_id: E18
+name: cluster_theme
+model_tier: deep
+system: |-
+  You are analyzing a cluster of closely connected knowledge nodes. Return JSON with keys: theme (str, common topic in 1-2 sentences), abstraction_suggestion (str, how to unify as a single higher-level node), can_be_framework (bool), framework_type (str: Framework|MentalModel|Principle|empty if false).
+user: |-
+  This cluster of {cluster_size} nodes is densely connected:
+
+  {briefs}
+
+  1. What is the common theme?
+  2. If abstracted into one higher-level node, what would it be?
+  3. Can this become a Framework or Mental Model node?

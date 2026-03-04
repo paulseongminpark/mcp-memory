@@ -1,0 +1,11 @@
+task_id: E5
+name: domains
+model_tier: bulk
+system: |-
+  Detect domains. Allowed: {domains_allowlist}. Return: {{"domains": ["d1", ...]}}
+user: |-
+  어떤 도메인? 1-3개.
+  project: {project}
+  source: {source}
+
+  {content}

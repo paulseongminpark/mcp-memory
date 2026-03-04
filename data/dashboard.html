@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>Memory System Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, 'Pretendard', sans-serif; background: #0f0f1a; color: #e0e0e0; }
+.header { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 24px 32px; border-bottom: 1px solid #333; }
+.header h1 { font-size: 20px; font-weight: 600; }
+.header .stats { display: flex; gap: 24px; margin-top: 12px; }
+.stat { background: rgba(255,255,255,0.05); padding: 12px 20px; border-radius: 8px; }
+.stat .num { font-size: 28px; font-weight: 700; color: #64B5F6; }
+.stat .label { font-size: 12px; color: #888; margin-top: 2px; }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 16px 32px; }
+.card { background: #1a1a2e; border: 1px solid #2a2a3e; border-radius: 10px; padding: 20px; }
+.card h2 { font-size: 14px; color: #888; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 1px; }
+.full { grid-column: 1 / -1; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th, td { padding: 8px 10px; text-align: left; border-bottom: 1px solid #222; }
+th { color: #888; font-weight: 500; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; color: #fff; font-weight: 600; }
+#graph { width: 100%; height: 500px; }
+canvas { max-height: 300px; }
+</style>
+</head>
+<body>
+<div class="header">
+    <h1>External Memory System</h1>
+    <div class="stats">
+        <div class="stat"><div class="num">56</div><div class="label">Nodes</div></div>
+        <div class="stat"><div class="num">2</div><div class="label">Edges</div></div>
+        <div class="stat"><div class="num">52</div><div class="label">Orphan Nodes</div></div>
+        <div class="stat"><div class="num">6</div><div class="label">Active Types</div></div>
+    </div>
+</div>
+
+<div class="grid">
+    <div class="card">
+        <h2>Node Type Distribution</h2>
+        <canvas id="typeChart"></canvas>
+    </div>
+    <div class="card">
+        <h2>Project Distribution</h2>
+        <canvas id="projChart"></canvas>
+    </div>
+    <div class="card full">
+        <h2>Knowledge Graph</h2>
+        <svg id="graph"></svg>
+    </div>
+    <div class="card full">
+        <h2>Recent Memories (non-Conversation)</h2>
+        <table>
+            <thead><tr><th>ID</th><th>Type</th><th>Content</th><th>Project</th><th>Tags</th><th>Created</th></tr></thead>
+            <tbody><tr>
+            <td>#49</td>
+            <td><span class="badge" style="background:#9E9E9E">Unclassified</span></td>
+            <td>This is something completely new</td>
+            <td>-</td>
+            <td>unclassified,needs-review</td>
+            <td>2026-03-03T10:20</td>
+        </tr><tr>
+            <td>#48</td>
+            <td><span class="badge" style="background:#FF5722">Question</span></td>
+            <td>How to auto-detect session topic for get_context?</td>
+            <td>mcp-memory</td>
+            <td>session,context</td>
+            <td>2026-03-03T10:20</td>
+        </tr><tr>
+            <td>#47</td>
+            <td><span class="badge" style="background:#3F51B5">Principle</span></td>
+            <td>Claude is sole design authority, external CLIs extract only</td>
+            <td>orchestration</td>
+            <td>governance</td>
+            <td>2026-03-03T10:20</td>
+        </tr><tr>
+            <td>#46</td>
+            <td><span class="badge" style="background:#F44336">Failure</span></td>
+            <td>FTS5 default tokenizer fails on Korean — switched to trigram</td>
+            <td>mcp-memory</td>
+            <td>fts5,korean,trigram</td>
+            <td>2026-03-03T10:20</td>
+        </tr><tr>
+            <td>#45</td>
+            <td><span class="badge" style="background:#4CAF50">Decision</span></td>
+            <td>Orchestration v4.0: Context as Currency paradigm adopted</td>
+            <td>orchestration</td>
+            <td>orchestration,v4.0</td>
+            <td>2026-03-03T10:20</td>
+        </tr><tr>
+            <td>#9</td>
+            <td><span class="badge" style="background:#FF5722">Question</span></td>
+            <td>How to reduce 7000-9000 token waste per session startup?</td>
+            <td>orchestration</td>
+            <td>token,optimization</td>
+            <td>2026-03-03T09:39</td>
+        </tr><tr>
+            <td>#8</td>
+            <td><span class="badge" style="background:#3F51B5">Principle</span></td>
+            <td>Claude is the sole design authority, external CLIs extract only</td>
+            <td>orchestration</td>
+            <td>governance,claude</td>
+            <td>2026-03-03T09:39</td>
+        </tr><tr>
+            <td>#7</td>
+            <td><span class="badge" style="background:#4CAF50">Decision</span></td>
+            <td>Orchestration v4.0 released with Context as Currency paradigm</td>
+            <td>orchestration</td>
+            <td>orchestration,v4.0</td>
+            <td>2026-03-03T09:39</td>
+        </tr><tr>
+            <td>#4</td>
+            <td><span class="badge" style="background:#FF5722">Question</span></td>
+            <td>session token waste problem to solve</td>
+            <td>orchestration</td>
+            <td>token</td>
+            <td>2026-03-03T09:36</td>
+        </tr><tr>
+            <td>#3</td>
+            <td><span class="badge" style="background:#4CAF50">Decision</span></td>
+            <td>hybrid search with vector and keyword</td>
+            <td>orchestration</td>
+            <td>search,architecture</td>
+            <td>2026-03-03T09:36</td>
+        </tr><tr>
+            <td>#1</td>
+            <td><span class="badge" style="background:#4CAF50">Decision</span></td>
+            <td>외부 메모리를 MCP 서버로 구현하기로 결정</td>
+            <td>orchestration</td>
+            <td>mcp,memory</td>
+            <td>2026-03-03T09:34</td>
+        </tr></tbody>
+        </table>
+    </div>
+    <div class="card">
+        <h2>Relationship Types</h2>
+        <table>
+            <thead><tr><th>Relation</th><th>Count</th></tr></thead>
+            <tbody><tr><td>supports</td><td>2</td></tr></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+// Charts
+new Chart(document.getElementById('typeChart'), {
+    type: 'doughnut',
+    data: {
+        labels: ["Conversation", "Decision", "Question", "Principle", "Failure", "Unclassified"],
+        datasets: [{ data: [45, 4, 3, 2, 1, 1], backgroundColor: ["#795548", "#4CAF50", "#FF5722", "#3F51B5", "#F44336", "#9E9E9E"], borderWidth: 0 }]
+    },
+    options: { plugins: { legend: { position: 'right', labels: { color: '#ccc', font: { size: 11 } } } } }
+});
+
+new Chart(document.getElementById('projChart'), {
+    type: 'bar',
+    data: {
+        labels: ["none", "orchestration", "mcp-memory"],
+        datasets: [{ data: [46, 8, 2], backgroundColor: '#64B5F6', borderRadius: 4 }]
+    },
+    options: {
+        indexAxis: 'y',
+        plugins: { legend: { display: false } },
+        scales: { x: { ticks: { color: '#888' } }, y: { ticks: { color: '#ccc' } } }
+    }
+});
+
+// D3 Force Graph
+const gNodes = [{"id": 8, "type": "Principle", "label": "Claude is the sole design authority, external CLIs", "project": "orchestration"}, {"id": 47, "type": "Principle", "label": "Claude is sole design authority, external CLIs ext", "project": "orchestration"}, {"id": 45, "type": "Decision", "label": "Orchestration v4.0: Context as Currency paradigm a", "project": "orchestration"}, {"id": 7, "type": "Decision", "label": "Orchestration v4.0 released with Context as Curren", "project": "orchestration"}, {"id": 49, "type": "Unclassified", "label": "This is something completely new", "project": ""}, {"id": 48, "type": "Question", "label": "How to auto-detect session topic for get_context?", "project": "mcp-memory"}, {"id": 46, "type": "Failure", "label": "FTS5 default tokenizer fails on Korean — switched ", "project": "mcp-memory"}, {"id": 9, "type": "Question", "label": "How to reduce 7000-9000 token waste per session st", "project": "orchestration"}, {"id": 4, "type": "Question", "label": "session token waste problem to solve", "project": "orchestration"}, {"id": 3, "type": "Decision", "label": "hybrid search with vector and keyword", "project": "orchestration"}, {"id": 1, "type": "Decision", "label": "외부 메모리를 MCP 서버로 구현하기로 결정", "project": "orchestration"}];
+const gEdges = [{"source": 45, "target": 7, "relation": "supports", "strength": 0.9115214943885803}, {"source": 47, "target": 8, "relation": "supports", "strength": 0.9900280833244324}];
+const typeColors = {"Decision": "#4CAF50", "Failure": "#F44336", "Pattern": "#2196F3", "Identity": "#9C27B0", "Preference": "#FF9800", "Goal": "#00BCD4", "Insight": "#FFEB3B", "Question": "#FF5722", "Principle": "#3F51B5", "AntiPattern": "#E91E63", "Project": "#009688", "Tool": "#607D8B", "Conversation": "#795548", "Unclassified": "#9E9E9E", "Metaphor": "#AB47BC", "Connection": "#26A69A", "Evolution": "#5C6BC0", "Breakthrough": "#FFA726", "SystemVersion": "#78909C", "Experiment": "#EC407A", "Framework": "#42A5F5", "Workflow": "#66BB6A", "Tension": "#EF5350", "Narrative": "#7E57C2", "Skill": "#29B6F6", "Agent": "#26C6DA"};
+
+if (gNodes.length > 0) {
+    const svg = d3.select("#graph");
+    const width = svg.node().parentElement.clientWidth;
+    const height = 500;
+    svg.attr("width", width).attr("height", height);
+
+    const sim = d3.forceSimulation(gNodes)
+        .force("link", d3.forceLink(gEdges).id(d => d.id).distance(120))
+        .force("charge", d3.forceManyBody().strength(-300))
+        .force("center", d3.forceCenter(width/2, height/2));
+
+    const link = svg.append("g").selectAll("line").data(gEdges).enter().append("line")
+        .attr("stroke", "#444").attr("stroke-width", d => Math.max(1, d.strength * 2));
+
+    const linkLabel = svg.append("g").selectAll("text").data(gEdges).enter().append("text")
+        .text(d => d.relation).attr("fill", "#666").attr("font-size", "9px").attr("text-anchor", "middle");
+
+    const node = svg.append("g").selectAll("circle").data(gNodes).enter().append("circle")
+        .attr("r", 10).attr("fill", d => typeColors[d.type] || "#78909C").attr("stroke", "#fff").attr("stroke-width", 1.5)
+        .call(d3.drag().on("start", (e,d) => { if(!e.active) sim.alphaTarget(0.3).restart(); d.fx=d.x; d.fy=d.y; })
+            .on("drag", (e,d) => { d.fx=e.x; d.fy=e.y; })
+            .on("end", (e,d) => { if(!e.active) sim.alphaTarget(0); d.fx=null; d.fy=null; }));
+
+    node.append("title").text(d => `#${d.id} [${d.type}] ${d.label}`);
+
+    const label = svg.append("g").selectAll("text").data(gNodes).enter().append("text")
+        .text(d => `#${d.id} ${d.label.substring(0,20)}`).attr("fill","#bbb").attr("font-size","10px").attr("dx",14).attr("dy",4);
+
+    sim.on("tick", () => {
+        link.attr("x1",d=>d.source.x).attr("y1",d=>d.source.y).attr("x2",d=>d.target.x).attr("y2",d=>d.target.y);
+        linkLabel.attr("x",d=>(d.source.x+d.target.x)/2).attr("y",d=>(d.source.y+d.target.y)/2);
+        node.attr("cx",d=>d.x).attr("cy",d=>d.y);
+        label.attr("x",d=>d.x).attr("y",d=>d.y);
+    });
+} else {
+    d3.select("#graph").append("text").attr("x",20).attr("y",40).attr("fill","#666").text("No graph edges yet — use remember() to build connections");
+}
+</script>
+</body>
+</html>

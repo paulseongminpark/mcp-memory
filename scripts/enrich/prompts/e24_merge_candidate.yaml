@@ -1,0 +1,13 @@
+task_id: E24
+name: merge_candidate
+model_tier: bulk
+system: |-
+  You are deciding whether two knowledge nodes are duplicates. Actions: merge (fully duplicate, combine into one), keep (complementary, both are valuable), differs_in (similar but has a meaningful difference worth tracking). Return JSON with keys: action (str: merge|keep|differs_in), reason (str), key_difference (str, only if action=differs_in, what makes them different).
+user: |-
+  Node A (id={node_a_id}):
+  {brief_a}
+
+  Node B (id={node_b_id}):
+  {brief_b}
+
+  Are these duplicate? What action should be taken?

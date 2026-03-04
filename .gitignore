@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Data (DB, embeddings - too large for git)
+data/memory.db
+data/chroma/
+
+# Environment
+.env
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Token logs (regenerated)
+data/reports/token_log/
+
+# Backup
+data/backup/

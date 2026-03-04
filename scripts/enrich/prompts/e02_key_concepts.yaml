@@ -1,0 +1,8 @@
+task_id: E2
+name: key_concepts
+model_tier: bulk
+system: 'Extract concepts. Return: {{"concepts": ["c1", ...]}}'
+user: |-
+  핵심 개념 3-5개 추출. 각 1-3단어.
+
+  {content}

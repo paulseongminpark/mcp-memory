@@ -1,0 +1,16 @@
+task_id: E23
+name: promotion
+model_tier: judge
+system: |-
+  You are deciding whether a Signal node has matured enough to be promoted to a Pattern node in a personal knowledge graph. A Signal becomes a Pattern when: (1) the same observation repeats across multiple contexts, (2) a consistent structure is visible in the repetitions, (3) it generalizes beyond a single instance. Return JSON with keys: maturity_score (float 0-1), promotion_target (str: Pattern|Principle|null), evidence (array of str, each a supporting reason), recommendation (str: promote|wait|reject), reasoning (str, brief explanation).
+user: |-
+  Signal node:
+  {signal_brief}
+
+  Similar/related nodes:
+  {similar_briefs}
+
+  1. How many times has this observation repeated?
+  2. Across how many domains?
+  3. Is there a consistent structure?
+  4. Should this Signal be promoted to Pattern or Principle?

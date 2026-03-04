@@ -1,0 +1,13 @@
+task_id: E22
+name: assemblage
+model_tier: reasoning
+system: |-
+  You are analyzing knowledge graph structure using the concept of 'Assemblage' (from Deleuze): a combination of heterogeneous elements that produce emergent effects as a whole. Return JSON with keys: is_assemblage (bool), components (array of {{node_id: int, role: str}}), description (str), assemblage_type (str: Tool+Failure+Insight, Context+Decision, other).
+user: |-
+  Central Decision/Breakthrough node:
+  {pivot_brief}
+
+  Connected nodes:
+  {connected_briefs}
+
+  Does this Decision emerge from a heterogeneous combination of the connected nodes? Which connected nodes are components of this assemblage, and what role does each play?

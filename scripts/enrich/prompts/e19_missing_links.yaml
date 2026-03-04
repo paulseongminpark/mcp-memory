@@ -1,0 +1,13 @@
+task_id: E19
+name: missing_links
+model_tier: deep
+system: |-
+  You are detecting missing connections in a knowledge graph. Allowed relation types: {relation_list}. Return JSON with key: suggestions (array of {{target_id: int, relation: str, reason: str, strength: float 0-1}}).
+user: |-
+  Orphan node (no connections):
+  {orphan_brief}
+
+  Nodes in the same domain/facet:
+  {neighbor_briefs}
+
+  Which of the neighbor nodes should be connected to the orphan? Return 0-5 suggestions with the most appropriate relation type.

@@ -1,0 +1,11 @@
+task_id: E20
+name: temporal_chain
+model_tier: reasoning
+system: |-
+  You are analyzing causal chains in a time-ordered sequence of knowledge nodes. Chain types: evolution (gradual change), failure-recovery (fail then fix), spiral (repeated deepening), divergence (split into different directions). Return JSON with key: chains (array of {{sequence: [list of node ids in order], chain_type: str, description: str}}).
+user: |-
+  Time-ordered nodes (project: {project}):
+
+  {briefs}
+
+  Find causal chains. A chain must have at least 3 nodes. Multiple non-overlapping chains are allowed.

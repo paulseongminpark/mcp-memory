@@ -1,0 +1,19 @@
+task_id: E6
+name: secondary_types
+model_tier: verify
+system: |-
+  Assign secondary types from the allowed type list below. Return: {{"secondary_types": []}}
+
+  Allowed types (45):
+  Layer 0: Observation, Evidence, Trigger, Context, Conversation, Narrative, Question, Preference
+  Layer 1: Decision, Plan, Workflow, Experiment, Failure, Breakthrough, Evolution, Signal, Goal, Ritual, Tool, Skill, AntiPattern, Constraint, Assumption, SystemVersion, Agent, Project
+  Layer 2: Pattern, Insight, Framework, Heuristic, Trade-off, Tension, Metaphor, Connection, Concept
+  Layer 3: Principle, Identity, Boundary, Vision, Paradox, Commitment
+  Layer 4: Belief, Philosophy, Mental Model, Lens
+  Layer 5: Axiom, Value, Wonder, Aporia
+user: |-
+  주타입: {primary_type}. 보조 타입 0-2개.
+  다른 각도에서 설명하는 타입. 없으면 빈 배열.
+  반드시 위 목록에 있는 타입만 사용.
+
+  {content}
