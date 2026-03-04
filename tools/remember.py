@@ -1,6 +1,6 @@
 """remember() — 기억을 저장하고 자동으로 관계를 생성한다."""
 
-from config import SIMILARITY_THRESHOLD
+from config import SIMILARITY_THRESHOLD, infer_relation
 from ontology.validators import validate_node_type, suggest_closest_type
 from storage import sqlite_store, vector_store
 
@@ -66,8 +66,15 @@ def remember(
         sim_node = sqlite_store.get_node(sim_id)
         if not sim_node:
             continue
-        # 같은 type → supports, 다른 type → connects_with
-        relation = "supports" if sim_node["type"] == type else "connects_with"
+        # 규칙 기반 relation 추론 (α)
+        relation = infer_relation(
+            src_type=type,
+            src_layer=None,  # 새 노드라 layer 미정
+            tgt_type=sim_node.get("type", ""),
+            tgt_layer=sim_node.get("layer"),
+            src_project=project,
+            tgt_project=sim_node.get("project", ""),
+        )
         strength = max(0.0, 1.0 - distance)
         edge_id = sqlite_store.insert_edge(
             source_id=node_id,

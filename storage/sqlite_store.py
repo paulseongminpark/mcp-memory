@@ -5,7 +5,7 @@ import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
 
-from config import DB_PATH
+from config import ALL_RELATIONS, DB_PATH
 
 
 def _connect() -> sqlite3.Connection:
@@ -80,35 +80,51 @@ def init_db() -> None:
             ended_at TEXT
         );
 
+        CREATE TABLE IF NOT EXISTS correction_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            node_id INTEGER REFERENCES nodes(id),
+            edge_id INTEGER REFERENCES edges(id),
+            field TEXT NOT NULL,
+            old_value TEXT,
+            new_value TEXT,
+            reason TEXT DEFAULT '',
+            corrected_by TEXT DEFAULT 'system',
+            created_at TEXT NOT NULL
+        );
+
         CREATE VIRTUAL TABLE IF NOT EXISTS nodes_fts USING fts5(
-            content, tags, project,
+            content, tags, project, summary, key_concepts,
             content='nodes',
             content_rowid='id',
             tokenize='trigram'
         );
 
         CREATE TRIGGER IF NOT EXISTS nodes_ai AFTER INSERT ON nodes BEGIN
-            INSERT INTO nodes_fts(rowid, content, tags, project)
-            VALUES (new.id, new.content, new.tags, new.project);
+            INSERT INTO nodes_fts(rowid, content, tags, project, summary, key_concepts)
+            VALUES (new.id, new.content, new.tags, new.project, new.summary, new.key_concepts);
         END;
 
         CREATE TRIGGER IF NOT EXISTS nodes_ad AFTER DELETE ON nodes BEGIN
-            INSERT INTO nodes_fts(nodes_fts, rowid, content, tags, project)
-            VALUES ('delete', old.id, old.content, old.tags, old.project);
+            INSERT INTO nodes_fts(nodes_fts, rowid, content, tags, project, summary, key_concepts)
+            VALUES ('delete', old.id, old.content, old.tags, old.project, old.summary, old.key_concepts);
         END;
 
         CREATE TRIGGER IF NOT EXISTS nodes_au AFTER UPDATE ON nodes BEGIN
-            INSERT INTO nodes_fts(nodes_fts, rowid, content, tags, project)
-            VALUES ('delete', old.id, old.content, old.tags, old.project);
-            INSERT INTO nodes_fts(rowid, content, tags, project)
-            VALUES (new.id, new.content, new.tags, new.project);
+            INSERT INTO nodes_fts(nodes_fts, rowid, content, tags, project, summary, key_concepts)
+            VALUES ('delete', old.id, old.content, old.tags, old.project, old.summary, old.key_concepts);
+            INSERT INTO nodes_fts(rowid, content, tags, project, summary, key_concepts)
+            VALUES (new.id, new.content, new.tags, new.project, new.summary, new.key_concepts);
         END;
 
         CREATE INDEX IF NOT EXISTS idx_nodes_type ON nodes(type);
         CREATE INDEX IF NOT EXISTS idx_nodes_project ON nodes(project);
         CREATE INDEX IF NOT EXISTS idx_nodes_status ON nodes(status);
+        CREATE INDEX IF NOT EXISTS idx_nodes_layer ON nodes(layer);
+        CREATE INDEX IF NOT EXISTS idx_nodes_enriched_at ON nodes(enriched_at);
         CREATE INDEX IF NOT EXISTS idx_edges_source ON edges(source_id);
         CREATE INDEX IF NOT EXISTS idx_edges_target ON edges(target_id);
+        CREATE INDEX IF NOT EXISTS idx_edges_direction ON edges(direction);
+        CREATE INDEX IF NOT EXISTS idx_edges_relation ON edges(relation);
     """)
     conn.close()
 
@@ -143,6 +159,10 @@ def insert_edge(
     strength: float = 1.0,
 ) -> int:
     now = datetime.now(timezone.utc).isoformat()
+    original_relation = relation
+    if relation not in ALL_RELATIONS:
+        # 미정의 relation → connects_with fallback + correction_log 기록
+        relation = "connects_with"
     conn = _connect()
     cur = conn.execute(
         """INSERT INTO edges (source_id, target_id, relation, description, strength, created_at)
@@ -150,6 +170,12 @@ def insert_edge(
         (source_id, target_id, relation, description, strength, now),
     )
     edge_id = cur.lastrowid
+    if original_relation != relation:
+        conn.execute(
+            """INSERT INTO correction_log (node_id, field, old_value, new_value, reason, corrected_by, created_at)
+               VALUES (?, 'relation', ?, ?, 'relation not in ALL_RELATIONS', 'system', ?)""",
+            (source_id, original_relation, relation, now),
+        )
     conn.commit()
     conn.close()
     return edge_id
@@ -224,3 +250,23 @@ def get_all_edges() -> list[dict]:
     rows = conn.execute("SELECT * FROM edges").fetchall()
     conn.close()
     return [dict(r) for r in rows]
+
+
+def update_tiers() -> dict:
+    """Tier 자동 배정: tier=0(L3+), tier=1(L2+qs>=0.8), tier=2(나머지)"""
+    conn = _connect()
+    # tier=0: layer >= 3
+    r0 = conn.execute(
+        "UPDATE nodes SET tier = 0 WHERE status = 'active' AND layer >= 3"
+    ).rowcount
+    # tier=1: layer == 2 AND quality_score >= 0.8
+    r1 = conn.execute(
+        "UPDATE nodes SET tier = 1 WHERE status = 'active' AND layer = 2 AND quality_score >= 0.8"
+    ).rowcount
+    # tier=2: 나머지 (이미 default 2이지만 명시)
+    r2 = conn.execute(
+        "UPDATE nodes SET tier = 2 WHERE status = 'active' AND tier NOT IN (0, 1)"
+    ).rowcount
+    conn.commit()
+    conn.close()
+    return {"tier_0": r0, "tier_1": r1, "tier_2": r2}

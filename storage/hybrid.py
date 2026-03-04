@@ -102,7 +102,10 @@ def hybrid_search(
         qs = node.get("quality_score") or 0.0
         tr = node.get("temporal_relevance") or 0.0
         enrichment_bonus = qs * ENRICHMENT_QUALITY_WEIGHT + tr * ENRICHMENT_TEMPORAL_WEIGHT
-        node["score"] = scores[node_id] + enrichment_bonus
+        # tier 보너스: 상위 tier 노드 우선 (tier=0: L3+, tier=1: L2+고품질)
+        tier = node.get("tier", 2)
+        tier_bonus = {0: 0.15, 1: 0.05, 2: 0.0}.get(tier, 0.0)
+        node["score"] = scores[node_id] + enrichment_bonus + tier_bonus
         candidates.append(node)
 
     # enrichment 반영 후 재정렬

@@ -17,6 +17,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+import anthropic
 import openai
 
 import sys
@@ -53,6 +54,7 @@ class RelationExtractor:
         self.budget = budget
         self.dry_run = dry_run
         self._client: openai.OpenAI | None = None
+        self._anthropic: anthropic.Anthropic | None = None
         self.prompts = PromptLoader()
         self.stats = {
             "e13_new_edges": 0,
@@ -71,30 +73,64 @@ class RelationExtractor:
             self._client = openai.OpenAI(api_key=config.OPENAI_API_KEY)
         return self._client
 
+    @property
+    def anthropic_client(self) -> anthropic.Anthropic:
+        if self._anthropic is None:
+            self._anthropic = anthropic.Anthropic()
+        return self._anthropic
+
+    def _is_anthropic_model(self, model: str) -> bool:
+        return model.startswith("claude-")
+
     # ── API Call ──────────────────────────────────────────
 
     def _call_json(self, model: str, system: str, user: str) -> dict:
-        """OpenAI API -> JSON dict. Budget tracking + retry."""
+        """API -> JSON dict. Anthropic/OpenAI 자동 분기."""
         estimated = (len(system) + len(user)) // 3 + 500
         if not self.budget.can_spend(model, estimated):
             pool = self.budget.pool(model)
             raise BudgetExhausted(model, self.budget.remaining(pool))
 
+        if "json" not in system.lower():
+            system = system + "\nRespond in JSON."
+
+        use_anthropic = self._is_anthropic_model(model)
+
         for attempt in range(config.MAX_RETRIES):
             self.budget.rate_limiter.wait_if_needed(model)
             try:
-                if "json" not in system.lower():
-                    system = system + "\nRespond in JSON."
-                resp = self.client.chat.completions.create(
-                    model=model,
-                    messages=[
-                        {"role": "system", "content": system},
-                        {"role": "user", "content": user},
-                    ],
-                    response_format={"type": "json_object"},
-                )
-                self.budget.record(model, resp.usage.model_dump())
-                return json.loads(resp.choices[0].message.content)
+                if use_anthropic:
+                    resp = self.anthropic_client.messages.create(
+                        model=model, max_tokens=2048, system=system,
+                        messages=[{"role": "user", "content": user}],
+                    )
+                    text = resp.content[0].text
+                    usage = {
+                        "prompt_tokens": resp.usage.input_tokens,
+                        "completion_tokens": resp.usage.output_tokens,
+                        "total_tokens": resp.usage.input_tokens + resp.usage.output_tokens,
+                    }
+                    self.budget.record(model, usage)
+                    m = re.search(r'```json\s*(.*?)\s*```', text, re.DOTALL)
+                    raw = m.group(1) if m else text
+                    return json.loads(raw)
+                else:
+                    resp = self.client.chat.completions.create(
+                        model=model,
+                        messages=[
+                            {"role": "system", "content": system},
+                            {"role": "user", "content": user},
+                        ],
+                        response_format={"type": "json_object"},
+                    )
+                    self.budget.record(model, resp.usage.model_dump())
+                    return json.loads(resp.choices[0].message.content)
+
+            except anthropic.RateLimitError as e:
+                retry_after = float(e.response.headers.get("retry-after", 5)) if e.response else 5
+                self.budget.rate_limiter.record_429(model, retry_after)
+                if attempt == config.MAX_RETRIES - 1:
+                    raise
 
             except openai.RateLimitError as e:
                 headers = dict(e.response.headers) if e.response else {}
@@ -103,7 +139,7 @@ class RelationExtractor:
                 if attempt == config.MAX_RETRIES - 1:
                     raise
 
-            except (openai.APIError, json.JSONDecodeError):
+            except (openai.APIError, anthropic.APIError, json.JSONDecodeError):
                 if attempt == config.MAX_RETRIES - 1:
                     raise
                 time.sleep(config.BATCH_SLEEP * config.RETRY_BACKOFF ** attempt)
@@ -713,38 +749,36 @@ class RelationExtractor:
         t0 = time.time()
 
         for i, edge in enumerate(edges):
-            source = self._get_node(edge["source_id"])
-            target = self._get_node(edge["target_id"])
-            if not source or not target:
-                continue
-
             try:
+                source = self._get_node(edge["source_id"])
+                target = self._get_node(edge["target_id"])
+                if not source or not target:
+                    continue
+
                 result = self.e15_direction(edge, source, target)
+
+                self._update_edge(edge["id"], {
+                    "direction": result["direction"],
+                    "reason": result["reason"],
+                })
+                updated += 1
+                self.stats["e15_directed"] += 1
             except BudgetExhausted:
                 break
-
-            self._update_edge(edge["id"], {
-                "direction": result["direction"],
-                "reason": result["reason"],
-            })
-            updated += 1
-            self.stats["e15_directed"] += 1
-
-            # progress bar
-            done = i + 1
-            elapsed = time.time() - t0
-            rate = done / elapsed if elapsed > 0 else 0
-            eta = (total - done) / rate if rate > 0 else 0
-            bar_w = 30
-            filled = int(bar_w * done / total)
-            bar = "\u2588" * filled + "\u2591" * (bar_w - filled)
-            m, s = divmod(int(eta), 60)
-            h, m = divmod(m, 60)
-            print(f"\r  E15 [{bar}] {done}/{total} ({done/total*100:.1f}%) "
-                  f"directed={updated} ETA {h}h{m:02d}m{s:02d}s",
-                  end="", flush=True)
-
-            time.sleep(config.BATCH_SLEEP)
+            finally:
+                done = i + 1
+                elapsed = time.time() - t0
+                rate = done / elapsed if elapsed > 0 else 0
+                eta = (total - done) / rate if rate > 0 else 0
+                bar_w = 30
+                filled = int(bar_w * done / total)
+                bar = "\u2588" * filled + "\u2591" * (bar_w - filled)
+                m, s = divmod(int(eta), 60)
+                h, m = divmod(m, 60)
+                print(f"\r  E15 [{bar}] {done}/{total} ({done/total*100:.1f}%) "
+                      f"directed={updated} ETA {h}h{m:02d}m{s:02d}s",
+                      end="", flush=True)
+                time.sleep(config.BATCH_SLEEP)
 
         if total > 0:
             print()

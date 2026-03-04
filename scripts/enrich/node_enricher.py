@@ -15,6 +15,7 @@ import sqlite3
 import time
 from datetime import datetime, timezone
 
+import anthropic
 import openai
 
 import sys
@@ -69,6 +70,7 @@ class NodeEnricher:
         self.budget = budget
         self.dry_run = dry_run
         self._client: openai.OpenAI | None = None
+        self._anthropic: anthropic.Anthropic | None = None
         self.prompts = PromptLoader()
         self.stats = {"processed": 0, "skipped": 0, "errors": 0}
 
@@ -78,10 +80,19 @@ class NodeEnricher:
             self._client = openai.OpenAI(api_key=config.OPENAI_API_KEY)
         return self._client
 
+    @property
+    def anthropic_client(self) -> anthropic.Anthropic:
+        if self._anthropic is None:
+            self._anthropic = anthropic.Anthropic()
+        return self._anthropic
+
+    def _is_anthropic_model(self, model: str) -> bool:
+        return model.startswith("claude-")
+
     # ── API 호출 ──────────────────────────────────────────
 
     def _call_json(self, model: str, system: str, user: str) -> dict:
-        """OpenAI API -> JSON dict. 예산 추적 + 재시도."""
+        """API -> JSON dict. Anthropic/OpenAI 자동 분기. 예산 추적 + 재시도."""
         estimated = (len(system) + len(user)) // 3 + 500
         if not self.budget.can_spend(model, estimated):
             pool = self.budget.pool(model)
@@ -90,19 +101,46 @@ class NodeEnricher:
         if "json" not in system.lower():
             system = system + "\nRespond in JSON."
 
+        use_anthropic = self._is_anthropic_model(model)
+
         for attempt in range(config.MAX_RETRIES):
             self.budget.rate_limiter.wait_if_needed(model)
             try:
-                resp = self.client.chat.completions.create(
-                    model=model,
-                    messages=[
-                        {"role": "system", "content": system},
-                        {"role": "user", "content": user},
-                    ],
-                    response_format={"type": "json_object"},
-                )
-                self.budget.record(model, resp.usage.model_dump())
-                return json.loads(resp.choices[0].message.content)
+                if use_anthropic:
+                    resp = self.anthropic_client.messages.create(
+                        model=model,
+                        max_tokens=2048,
+                        system=system,
+                        messages=[{"role": "user", "content": user}],
+                    )
+                    text = resp.content[0].text
+                    usage = {
+                        "prompt_tokens": resp.usage.input_tokens,
+                        "completion_tokens": resp.usage.output_tokens,
+                        "total_tokens": resp.usage.input_tokens + resp.usage.output_tokens,
+                    }
+                    self.budget.record(model, usage)
+                    # JSON 블록 추출 (```json ... ``` 또는 bare JSON)
+                    m = re.search(r'```json\s*(.*?)\s*```', text, re.DOTALL)
+                    raw = m.group(1) if m else text
+                    return json.loads(raw)
+                else:
+                    resp = self.client.chat.completions.create(
+                        model=model,
+                        messages=[
+                            {"role": "system", "content": system},
+                            {"role": "user", "content": user},
+                        ],
+                        response_format={"type": "json_object"},
+                    )
+                    self.budget.record(model, resp.usage.model_dump())
+                    return json.loads(resp.choices[0].message.content)
+
+            except anthropic.RateLimitError as e:
+                retry_after = float(e.response.headers.get("retry-after", 5)) if e.response else 5
+                self.budget.rate_limiter.record_429(model, retry_after)
+                if attempt == config.MAX_RETRIES - 1:
+                    raise
 
             except openai.RateLimitError as e:
                 headers = dict(e.response.headers) if e.response else {}
@@ -111,7 +149,7 @@ class NodeEnricher:
                 if attempt == config.MAX_RETRIES - 1:
                     raise
 
-            except (openai.APIError, json.JSONDecodeError) as e:
+            except (openai.APIError, anthropic.APIError, json.JSONDecodeError) as e:
                 if attempt == config.MAX_RETRIES - 1:
                     raise
                 time.sleep(config.BATCH_SLEEP * config.RETRY_BACKOFF ** attempt)

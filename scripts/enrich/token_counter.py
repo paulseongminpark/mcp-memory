@@ -28,12 +28,14 @@ from pathlib import Path
 LARGE_MODELS = {
     "o3", "gpt-5.2", "gpt-5.1", "gpt-5.1-codex", "gpt-5",
     "gpt-5-codex", "gpt-5-chat-latest", "gpt-4.1", "gpt-4o", "o1",
+    "claude-sonnet-4-6-20250514", "claude-opus-4-6-20250514",
 }
 
 SMALL_MODELS = {
     "o3-mini", "gpt-5.1-codex-mini", "gpt-5-mini", "gpt-5-nano",
     "gpt-4.1-mini", "gpt-4.1-nano", "gpt-4o-mini",
     "o1-mini", "o4-mini", "codex-mini-latest",
+    "claude-haiku-4-5-20251001",
 }
 
 REASONING_MODELS = {"o3", "o3-mini", "o1", "o1-mini", "o4-mini"}
