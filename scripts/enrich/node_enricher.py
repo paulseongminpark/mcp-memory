@@ -497,7 +497,7 @@ class NodeEnricher:
                 ("temporal_relevance", "E10", 0.5),
                 ("actionability", "E11", 0.5),
             ]:
-                val = max(0.0, min(1.0, float(r.get(key, default))))
+                val = max(0.0, min(1.0, float(default if r.get(key) is None else r.get(key))))
                 updates[key] = val
                 status[tid] = now
 
