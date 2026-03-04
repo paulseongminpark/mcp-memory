@@ -87,6 +87,9 @@ class NodeEnricher:
             pool = self.budget.pool(model)
             raise BudgetExhausted(model, self.budget.remaining(pool))
 
+        if "json" not in system.lower():
+            system = system + "\nRespond in JSON."
+
         for attempt in range(config.MAX_RETRIES):
             self.budget.rate_limiter.wait_if_needed(model)
             try:
@@ -97,7 +100,6 @@ class NodeEnricher:
                         {"role": "user", "content": user},
                     ],
                     response_format={"type": "json_object"},
-                    temperature=0.3,
                 )
                 self.budget.record(model, resp.usage.model_dump())
                 return json.loads(resp.choices[0].message.content)
@@ -254,6 +256,139 @@ class NodeEnricher:
             "reason": r.get("reason", ""),
         }
 
+    # ── 통합 bulk enrichment (1 API call = 9 tasks) ──────
+
+    BULK_TASKS = ["E1", "E2", "E3", "E4", "E5", "E8", "E9", "E10", "E11"]
+
+    def enrich_node_combined(self, node_id: int) -> dict:
+        """E1-E5 + E8-E11을 1회 API 호출로 처리. 7x 속도 향상."""
+        node = self._get_node(node_id)
+        if not node:
+            self.stats["skipped"] += 1
+            return {}
+
+        status = json.loads(node.get("enrichment_status") or "{}")
+        # 이미 전부 완료된 노드 스킵
+        remaining = [t for t in self.BULK_TASKS if t not in status]
+        if not remaining:
+            self.stats["skipped"] += 1
+            return {}
+
+        content = self._trunc(node["content"])
+        existing_tags = node.get("tags") or ""
+        today = datetime.now().strftime("%Y-%m-%d")
+
+        system = (
+            "You are an enrichment engine for a personal knowledge graph. "
+            "Analyze the node and return a JSON object with ALL of these keys:\n"
+            "- summary: 1-line Korean summary, max 100 chars\n"
+            "- concepts: list of 3-5 key concepts (strings)\n"
+            "- tags: list of 3-5 tags (strings)\n"
+            "- facets: list from ONLY these: " + str(config.FACETS_ALLOWLIST) + "\n"
+            "- domains: list from ONLY these: " + str(config.DOMAINS_ALLOWLIST) + "\n"
+            "- quality_score: 0.0-1.0 (how valuable is this knowledge)\n"
+            "- abstraction_level: 0.0-1.0 (0=concrete, 1=abstract)\n"
+            "- temporal_relevance: 0.0-1.0 (relevance as of " + today + ")\n"
+            "- actionability: 0.0-1.0 (how actionable)\n"
+            "Respond in JSON."
+        )
+        user = (
+            f"Node type: {node.get('type', '?')}\n"
+            f"Project: {node.get('project', '')}\n"
+            f"Existing tags: {existing_tags}\n"
+            f"Created: {node.get('created_at', '?')}\n\n"
+            f"{content}"
+        )
+
+        try:
+            r = self._call_json(config.ENRICHMENT_MODELS["bulk"], system, user)
+        except BudgetExhausted:
+            raise
+        except Exception as e:
+            self.stats["errors"] += 1
+            return {"error": str(e)}
+
+        # 결과 분해 + updates 구성
+        results = {}
+        updates = {}
+        now = datetime.now(timezone.utc).isoformat()
+
+        summary = (r.get("summary") or "")[:100]
+        if summary:
+            results["E1"] = summary
+            updates["summary"] = summary
+            status["E1"] = now
+
+        concepts = [c for c in r.get("concepts", []) if isinstance(c, str)][:5]
+        if concepts:
+            results["E2"] = concepts
+            updates["key_concepts"] = json.dumps(concepts, ensure_ascii=False)
+            status["E2"] = now
+
+        tags = [t for t in r.get("tags", []) if isinstance(t, str)][:5]
+        if tags:
+            existing = [t.strip() for t in existing_tags.split(",") if t.strip()]
+            combined = list(dict.fromkeys(existing + tags))
+            results["E3"] = tags
+            updates["tags"] = ", ".join(combined)
+            status["E3"] = now
+
+        facets = [f for f in r.get("facets", []) if f in config.FACETS_ALLOWLIST]
+        results["E4"] = facets
+        updates["facets"] = json.dumps(facets, ensure_ascii=False)
+        status["E4"] = now
+
+        domains = [d for d in r.get("domains", []) if d in config.DOMAINS_ALLOWLIST]
+        results["E5"] = domains
+        updates["domains"] = json.dumps(domains, ensure_ascii=False)
+        status["E5"] = now
+
+        for key, tid, default in [
+            ("quality_score", "E8", 0.5),
+            ("abstraction_level", "E9", 0.5),
+            ("temporal_relevance", "E10", 0.5),
+            ("actionability", "E11", 0.5),
+        ]:
+            val = max(0.0, min(1.0, float(r.get(key, default))))
+            results[tid] = val
+            updates[key] = val
+            status[tid] = now
+
+        if not self.dry_run and updates:
+            updates["enrichment_status"] = json.dumps(status, ensure_ascii=False)
+            updates["enriched_at"] = now
+            self._update_node(node_id, updates)
+
+        self.stats["processed"] += 1
+        return results
+
+    def enrich_batch_combined(self, node_ids: list[int]) -> dict[int, dict]:
+        """통합 배치 enrichment (프로그레스 바 포함)."""
+        import time as _time
+        total = len(node_ids)
+        out = {}
+        t0 = _time.time()
+        for i, nid in enumerate(node_ids, 1):
+            try:
+                out[nid] = self.enrich_node_combined(nid)
+            except BudgetExhausted:
+                break
+            elapsed = _time.time() - t0
+            per_node = elapsed / i
+            eta = per_node * (total - i)
+            eta_m, eta_s = divmod(int(eta), 60)
+            eta_h, eta_m = divmod(eta_m, 60)
+            bar_w = 30
+            filled = int(bar_w * i / total)
+            bar = "█" * filled + "░" * (bar_w - filled)
+            pct = i / total * 100
+            print(f"\r  [{bar}] {i}/{total} ({pct:.1f}%) "
+                  f"ETA {eta_h}h{eta_m:02d}m{eta_s:02d}s "
+                  f"err={self.stats['errors']}", end="", flush=True)
+            _time.sleep(config.BATCH_SLEEP)
+        print(flush=True)
+        return out
+
     # ── 단일 노드 enrichment ─────────────────────────────
 
     def enrich_node(self, node_id: int,
@@ -296,7 +431,7 @@ class NodeEnricher:
                 self.stats["errors"] += 1
                 results[tid] = {"error": str(e)}
 
-        if updates and not self.dry_run:
+        if not self.dry_run and (updates or results):
             updates["enrichment_status"] = json.dumps(status, ensure_ascii=False)
             if any(k not in ("enrichment_status",) for k in updates):
                 updates["enriched_at"] = datetime.now(timezone.utc).isoformat()

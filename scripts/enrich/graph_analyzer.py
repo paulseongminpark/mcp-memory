@@ -74,6 +74,9 @@ class GraphAnalyzer:
             pool = self.budget.pool(model)
             raise BudgetExhausted(model, self.budget.remaining(pool))
 
+        if "json" not in system.lower():
+            system = system + "\nRespond in JSON."
+
         for attempt in range(config.MAX_RETRIES):
             self.budget.rate_limiter.wait_if_needed(model)
             try:
@@ -84,7 +87,6 @@ class GraphAnalyzer:
                         {"role": "user", "content": user},
                     ],
                     response_format={"type": "json_object"},
-                    temperature=0.3,
                 )
                 self.budget.record(model, resp.usage.model_dump())
                 return json.loads(resp.choices[0].message.content)
@@ -427,12 +429,16 @@ class GraphAnalyzer:
         )
         r = self._call_json(config.ENRICHMENT_MODELS["deep"], system, user)
         raw = r.get("suggestions", [])
+        valid_ids = {n["id"] for n in neighbors}
+        valid_ids.add(orphan["id"])
         results = []
         for s in raw:
             if not isinstance(s, dict):
                 continue
             try:
                 target_id = int(s["target_id"])
+                if target_id not in valid_ids:
+                    continue
                 relation = str(s.get("relation", "connects_with"))
                 if relation not in config.ALL_RELATIONS:
                     relation = "connects_with"
@@ -637,6 +643,12 @@ class GraphAnalyzer:
         """Insert a new edge into DB (skip if duplicate or dry_run)."""
         if relation not in config.ALL_RELATIONS:
             relation = "connects_with"
+
+        # safety guard: verify both nodes exist
+        src = self.conn.execute("SELECT id FROM nodes WHERE id = ?", (source_id,)).fetchone()
+        tgt = self.conn.execute("SELECT id FROM nodes WHERE id = ?", (target_id,)).fetchone()
+        if not src or not tgt:
+            return None
 
         # skip duplicate edges
         existing = self.conn.execute(

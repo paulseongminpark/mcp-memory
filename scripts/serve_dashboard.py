@@ -110,11 +110,6 @@ class DashboardHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == "/" or self.path == "/dashboard":
             html = _get_fresh_html()
-            # auto-refresh 5초마다 주입
-            html = html.replace(
-                "<head>",
-                '<head>\n<meta http-equiv="refresh" content="5">'
-            )
             body = html.encode("utf-8")
             self.send_response(200)
             self.send_header("Content-Type", "text/html; charset=utf-8")
@@ -137,7 +132,7 @@ if __name__ == "__main__":
     server = HTTPServer(("localhost", args.port), DashboardHandler)
     print(f"Dashboard: http://localhost:{args.port}")
     print(f"DB: {DB_PATH}")
-    print(f"5초마다 자동 갱신 | Ctrl+C로 종료")
+    print(f"브라우저 새로고침으로 갱신 | Ctrl+C로 종료")
     try:
         server.serve_forever()
     except KeyboardInterrupt:

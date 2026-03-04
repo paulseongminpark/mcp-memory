@@ -1,232 +1,432 @@
-# External Memory System — Ontology Schema v1.0
-# 2026-03-03 | Paul + Claude 설계
+# External Memory System — Ontology Schema v2.0
+# 2026-03-04 | Paul + Claude 설계
 # 이 파일을 편집하면 코드 변경 없이 타입 확장 가능
+# 49 node types (L0-L5 + Unclassified), 48 relation types
 
-version: "1.0"
+version: "2.0"
 
 node_types:
-  # === 핵심 기억 ===
-  Decision:
-    description: "결정 + 이유 + 대안 + 확신도"
+  # === Layer 0 — 원시 경험 (8) ===
+  Observation:
+    description: "직접 관찰 + 맥락 + 신뢰도"
+    layer: 0
     required_fields: []
-    optional_fields: [reason, alternatives, status]
-  Failure:
-    description: "실패 + 원인 + 교훈 + 해결 여부"
+    optional_fields: [context, confidence]
+  Evidence:
+    description: "구체적 증거/데이터 + 출처 + 검증 상태"
+    layer: 0
     required_fields: []
-    optional_fields: [cause, lesson, resolved]
-  Pattern:
-    description: "반복 확인된 규칙 + 사례들 + 빈도"
+    optional_fields: [source, verified]
+  Trigger:
+    description: "행동/사건의 트리거 + 조건 + 빈도"
+    layer: 0
     required_fields: []
-    optional_fields: [examples, frequency]
-  Identity:
-    description: "가치관/스타일/철학/습관/강점/약점"
+    optional_fields: [condition, frequency]
+  Context:
+    description: "상황/환경 + 관련 요소들 + 기간"
+    layer: 0
     required_fields: []
-    optional_fields: [aspect, strength]
-  Preference:
-    description: "도구/워크플로/스타일 선호 + 이유 + 강도"
+    optional_fields: [elements, period]
+  Conversation:
+    description: "세션 기록 + 요약 + 추출된 노드들"
+    layer: 0
     required_fields: []
-    optional_fields: [reason, intensity]
-  Goal:
-    description: "방향/비전 + 동기 + 상태 + 마일스톤"
+    optional_fields: [session_id, extracted_nodes]
+  Narrative:
+    description: "큰 이야기 + 기간 + 포함 노드들"
+    layer: 0
     required_fields: []
-    optional_fields: [motivation, status, milestones]
-  Insight:
-    description: "깨달음 + 출처 + 깊이 (surface/deep/fundamental)"
-    required_fields: []
-    optional_fields: [source, depth]
+    optional_fields: [period, included_nodes]
   Question:
     description: "열린 탐구 + 맥락 + 상태 + 이끈 탐구들"
+    layer: 0
     required_fields: []
     optional_fields: [context, status, explorations]
+  Preference:
+    description: "도구/워크플로/스타일 선호 + 이유 + 강도"
+    layer: 0
+    required_fields: []
+    optional_fields: [reason, intensity]
+
+  # === Layer 1 — 행위/사건 (18) ===
+  Decision:
+    description: "결정 + 이유 + 대안 + 확신도"
+    layer: 1
+    required_fields: []
+    optional_fields: [reason, alternatives, status]
+  Plan:
+    description: "계획 + 단계들 + 상태 + 결과"
+    layer: 1
+    required_fields: []
+    optional_fields: [steps, status, outcome]
+  Workflow:
+    description: "워크플로 이름 + 단계들 + 트리거 + 체인 타입"
+    layer: 1
+    required_fields: []
+    optional_fields: [steps, trigger, chain_type]
+  Experiment:
+    description: "가설 + 결과(성공/실패/포기) + 교훈 + 산출물"
+    layer: 1
+    required_fields: []
+    optional_fields: [hypothesis, result, outputs]
+  Failure:
+    description: "실패 + 원인 + 교훈 + 해결 여부"
+    layer: 1
+    required_fields: []
+    optional_fields: [cause, lesson, resolved]
+  Breakthrough:
+    description: "돌파 순간 + 맥락 + 영향 + 감정적 무게"
+    layer: 1
+    required_fields: []
+    optional_fields: [impact, emotional_weight]
+  Evolution:
+    description: "이전→현재 변화 + 계기 + 기간"
+    layer: 1
+    required_fields: []
+    optional_fields: [trigger, period]
+  Signal:
+    description: "약한 신호 + 관찰 횟수 + 패턴 후보 여부"
+    layer: 1
+    required_fields: []
+    optional_fields: [observation_count, pattern_candidate]
+  Goal:
+    description: "방향/비전 + 동기 + 상태 + 마일스톤"
+    layer: 1
+    required_fields: []
+    optional_fields: [motivation, status, milestones]
+  Ritual:
+    description: "반복 행위/의식 + 빈도 + 가치 + 트리거"
+    layer: 1
+    required_fields: []
+    optional_fields: [frequency, value, trigger]
+  Tool:
+    description: "도구 + 역할 + 상태(활성/폐기/제거) + 대체물"
+    layer: 1
+    required_fields: []
+    optional_fields: [role, tool_status, replacement]
+  Skill:
+    description: "스킬/커맨드 + 목적 + 상태"
+    layer: 1
+    required_fields: []
+    optional_fields: [purpose, skill_status]
+  AntiPattern:
+    description: "반복 실수 + 발생 횟수 + 심각도 + 방지책"
+    layer: 1
+    required_fields: []
+    optional_fields: [occurrences, severity, prevention]
+  Constraint:
+    description: "제약 조건 + 원인 + 영향 범위 + 해결 방법"
+    layer: 1
+    required_fields: []
+    optional_fields: [cause, scope, workaround]
+  Assumption:
+    description: "가정 + 근거 + 검증 상태 + 위험도"
+    layer: 1
+    required_fields: []
+    optional_fields: [basis, verified, risk]
+  SystemVersion:
+    description: "버전 + 이름 + 변경사항 + 토큰 영향"
+    layer: 1
+    required_fields: []
+    optional_fields: [version, changes, token_impact]
+  Agent:
+    description: "에이전트 + 목적 + 모델 + 상태 + 병합 대상"
+    layer: 1
+    required_fields: []
+    optional_fields: [model, agent_status, merge_target]
+  Project:
+    description: "프로젝트 + 목적 + 상태 + 브랜치 + 관계"
+    layer: 1
+    required_fields: []
+    optional_fields: [purpose, project_status, branch]
+
+  # === Layer 2 — 개념/패턴 (9) ===
+  Pattern:
+    description: "반복 확인된 규칙 + 사례들 + 빈도"
+    layer: 2
+    required_fields: []
+    optional_fields: [examples, frequency]
+  Insight:
+    description: "깨달음 + 출처 + 깊이 (surface/deep/fundamental)"
+    layer: 2
+    required_fields: []
+    optional_fields: [source, depth]
+  Framework:
+    description: "외부 프레임워크 + 출처 + Paul 변형 방식"
+    layer: 2
+    required_fields: []
+    optional_fields: [origin, adaptation]
+  Heuristic:
+    description: "경험적 규칙 + 적용 조건 + 예외"
+    layer: 2
+    required_fields: []
+    optional_fields: [condition, exceptions]
+  Trade-off:
+    description: "트레이드오프 + 양쪽 + 선택 기준 + 현재 선택"
+    layer: 2
+    required_fields: []
+    optional_fields: [options, criteria, current_choice]
+  Tension:
+    description: "해결 안 된 긴장 + 양극 + 상태"
+    layer: 2
+    required_fields: []
+    optional_fields: [poles, tension_status]
   Metaphor:
     description: "비유 표현 + 실제 의미 + 연결 도메인들"
+    layer: 2
     required_fields: []
     optional_fields: [meaning, domains]
   Connection:
     description: "A↔B 연결 자체 + 관계 타입 + 강도 + 발견자"
+    layer: 2
     required_fields: []
     optional_fields: [relation_type, discoverer]
-  Evolution:
-    description: "이전→현재 변화 + 계기 + 기간"
+  Concept:
+    description: "추상 개념 + 정의 + 관련 개념들 + 레이어"
+    layer: 2
     required_fields: []
-    optional_fields: [trigger, period]
-  Breakthrough:
-    description: "돌파 순간 + 맥락 + 영향 + 감정적 무게"
-    required_fields: []
-    optional_fields: [impact, emotional_weight]
+    optional_fields: [definition, related_concepts]
 
-  # === 시스템/프로젝트 ===
-  SystemVersion:
-    description: "버전 + 이름 + 변경사항 + 토큰 영향"
-    required_fields: []
-    optional_fields: [version, changes, token_impact]
-  Experiment:
-    description: "가설 + 결과(성공/실패/포기) + 교훈 + 산출물"
-    required_fields: []
-    optional_fields: [hypothesis, result, outputs]
-  Tool:
-    description: "도구 + 역할 + 상태(활성/폐기/제거) + 대체물"
-    required_fields: []
-    optional_fields: [role, tool_status, replacement]
-  Framework:
-    description: "외부 프레임워크 + 출처 + Paul 변형 방식"
-    required_fields: []
-    optional_fields: [origin, adaptation]
+  # === Layer 3 — 원칙/정체성 (6) ===
   Principle:
     description: "원칙 + 근거 + 위반 사건들 + 탄생 배경"
+    layer: 3
     required_fields: []
     optional_fields: [basis, violations, origin]
-  Workflow:
-    description: "워크플로 이름 + 단계들 + 트리거 + 체인 타입"
+  Identity:
+    description: "가치관/스타일/철학/습관/강점/약점"
+    layer: 3
     required_fields: []
-    optional_fields: [steps, trigger, chain_type]
-  AntiPattern:
-    description: "반복 실수 + 발생 횟수 + 심각도 + 방지책"
+    optional_fields: [aspect, strength]
+  Boundary:
+    description: "경계선 + 이유 + 위반 시 결과"
+    layer: 3
     required_fields: []
-    optional_fields: [occurrences, severity, prevention]
-  Project:
-    description: "프로젝트 + 목적 + 상태 + 브랜치 + 관계"
+    optional_fields: [reason, consequence]
+  Vision:
+    description: "장기 비전 + 동기 + 연관 목표들"
+    layer: 3
     required_fields: []
-    optional_fields: [purpose, project_status, branch]
-  Tension:
-    description: "해결 안 된 긴장 + 양극 + 상태"
+    optional_fields: [motivation, related_goals]
+  Paradox:
+    description: "역설 + 양면 + 해소 시도 + 현재 이해"
+    layer: 3
     required_fields: []
-    optional_fields: [poles, tension_status]
-  Narrative:
-    description: "큰 이야기 + 기간 + 포함 노드들"
+    optional_fields: [sides, resolution_attempts]
+  Commitment:
+    description: "헌신/약속 + 대상 + 기간 + 동기"
+    layer: 3
     required_fields: []
-    optional_fields: [period, included_nodes]
-  Skill:
-    description: "스킬/커맨드 + 목적 + 상태"
+    optional_fields: [target, period, motivation]
+
+  # === Layer 4 — 세계관 (4) ===
+  Belief:
+    description: "믿음 + 근거 + 확신도 + 변화 이력"
+    layer: 4
     required_fields: []
-    optional_fields: [purpose, skill_status]
-  Agent:
-    description: "에이전트 + 목적 + 모델 + 상태 + 병합 대상"
+    optional_fields: [basis, confidence, history]
+  Philosophy:
+    description: "철학적 입장 + 영향받은 사상 + 실천 방식"
+    layer: 4
     required_fields: []
-    optional_fields: [model, agent_status, merge_target]
+    optional_fields: [influences, practice]
+  Mental Model:
+    description: "정신 모델 + 적용 영역 + 한계 + 출처"
+    layer: 4
+    required_fields: []
+    optional_fields: [domain, limitations, source]
+  Lens:
+    description: "해석 렌즈 + 적용 대상 + 강점/약점"
+    layer: 4
+    required_fields: []
+    optional_fields: [applies_to, strengths, weaknesses]
+
+  # === Layer 5 — 가치/존재론 (4) ===
+  Axiom:
+    description: "자명한 진리 + 근거 없음(자명) + 의존하는 원칙들"
+    layer: 5
+    required_fields: []
+    optional_fields: [dependent_principles]
+  Value:
+    description: "핵심 가치 + 우선순위 + 충돌 시 행동"
+    layer: 5
+    required_fields: []
+    optional_fields: [priority, conflict_behavior]
+  Wonder:
+    description: "경이/경탄 + 대상 + 깊이 + 재발견 여부"
+    layer: 5
+    required_fields: []
+    optional_fields: [subject, depth, rediscovered]
+  Aporia:
+    description: "해결 불가능한 난제 + 시도들 + 수용 방식"
+    layer: 5
+    required_fields: []
+    optional_fields: [attempts, acceptance]
 
   # === 메타 ===
-  Conversation:
-    description: "세션 기록 + 요약 + 추출된 노드들"
-    required_fields: []
-    optional_fields: [session_id, extracted_nodes]
   Unclassified:
     description: "분류 안 된 것 + 시도한 타입 + 실패 이유"
     required_fields: []
     optional_fields: [attempted_type, reason_failed]
 
+# 48 relation types (config.py ALL_RELATIONS와 동기화)
 relation_types:
-  # 인과
-  led_to:
-    description: "A가 B를 이끌었다"
-    inverse: caused_by
+  # 인과 (8)
   caused_by:
     description: "A는 B에 의해 발생했다"
     inverse: led_to
+  led_to:
+    description: "A가 B를 이끌었다"
+    inverse: caused_by
+  triggered_by:
+    description: "A가 B에 의해 트리거되었다"
+    inverse: null
+  resulted_in:
+    description: "A가 B를 초래했다"
+    inverse: null
   resolved_by:
     description: "A는 B에 의해 해결되었다"
     inverse: null
-
-  # 생명주기
-  evolves_from:
-    description: "A는 B에서 진화했다"
+  prevented_by:
+    description: "A가 B에 의해 방지되었다"
     inverse: null
-  replaces:
-    description: "A가 B를 대체했다"
+  enabled_by:
+    description: "A가 B에 의해 가능해졌다"
     inverse: null
-  strengthens:
-    description: "A가 B를 강화한다"
-    inverse: null
-  absorbed_into:
-    description: "A가 B에 흡수되었다"
-    inverse: null
-  deprecated_by:
-    description: "A가 B에 의해 폐기되었다"
-    inverse: null
-  born_from:
-    description: "A가 B에서 태어났다"
-    inverse: null
-  survived:
-    description: "A가 B 변화를 살아남았다"
+  blocked_by:
+    description: "A가 B에 의해 차단되었다"
     inverse: null
 
-  # 구조
+  # 구조 (8)
   part_of:
     description: "A는 B의 일부이다"
-    inverse: null
-  instance_of:
-    description: "A는 B의 인스턴스이다"
-    inverse: null
-  belongs_to:
-    description: "A는 B에 속한다"
-    inverse: null
-  extends:
-    description: "A가 B를 확장한다"
-    inverse: null
-  showcases:
-    description: "A가 B를 보여준다"
-    inverse: null
-  governed_by:
-    description: "A는 B에 의해 통제된다"
     inverse: null
   composed_of:
     description: "A는 B로 구성된다"
     inverse: null
-
-  # 의미
-  contradicts:
-    description: "A가 B와 모순된다"
-    inverse: contradicts
-  supports:
-    description: "A가 B를 지지한다"
+  extends:
+    description: "A가 B를 확장한다"
     inverse: null
-  connects_with:
-    description: "A가 B와 연결된다"
-    inverse: connects_with
-  analogous_to:
-    description: "A가 B와 유사하다"
-    inverse: analogous_to
-
-  # 검증
-  validated_by:
-    description: "A가 B에 의해 검증되었다"
+  governed_by:
+    description: "A는 B에 의해 통제된다"
     inverse: null
-  violated_by:
-    description: "A가 B에 의해 위반되었다"
+  instantiated_as:
+    description: "A가 B로 구체화되었다"
     inverse: null
-  corrected_by:
-    description: "A가 B에 의해 수정되었다"
+  expressed_as:
+    description: "A가 B로 표현되었다"
     inverse: null
-  disproved_by:
-    description: "A가 B에 의해 반증되었다"
+  contains:
+    description: "A가 B를 포함한다"
+    inverse: null
+  derived_from:
+    description: "A가 B에서 파생되었다"
     inverse: null
 
-  # 출처
-  extracted_from:
-    description: "A가 B에서 추출되었다"
+  # 레이어 이동 (6)
+  realized_as:
+    description: "A가 B로 실현되었다 (상→하)"
     inverse: null
-  inspired_by:
-    description: "A가 B에서 영감받았다"
+  crystallized_into:
+    description: "A가 B로 결정화되었다 (하→상)"
     inverse: null
-
-  # Paul 고유
-  reinforces_mutually:
-    description: "A와 B가 상호 강화한다"
-    inverse: reinforces_mutually
-  parallel_with:
-    description: "A와 B가 병행한다"
-    inverse: parallel_with
-  converges_at:
-    description: "A와 B가 C에서 수렴한다"
+  abstracted_from:
+    description: "A가 B에서 추상화되었다"
     inverse: null
-  diverges_from:
-    description: "A가 B에서 분기한다"
+  generalizes_to:
+    description: "A가 B로 일반화된다"
+    inverse: null
+  constrains:
+    description: "A가 B를 제약한다"
+    inverse: null
+  generates:
+    description: "A가 B를 생성한다"
     inverse: null
 
-  # 시간
-  preceded_by:
-    description: "A가 B 이전에 있었다"
-    inverse: succeeded_by
+  # 변화 추적 (4)
+  differs_in:
+    description: "A가 B와 다른 점이 있다"
+    inverse: null
+  variation_of:
+    description: "A가 B의 변형이다"
+    inverse: null
+  evolved_from:
+    description: "A가 B에서 진화했다"
+    inverse: null
   succeeded_by:
     description: "A가 B 이후에 온다"
     inverse: preceded_by
+
+  # 의미 (8)
+  supports:
+    description: "A가 B를 지지한다"
+    inverse: null
+  contradicts:
+    description: "A가 B와 모순된다"
+    inverse: contradicts
+  analogous_to:
+    description: "A가 B와 유사하다"
+    inverse: analogous_to
+  parallel_with:
+    description: "A와 B가 병행한다"
+    inverse: parallel_with
+  reinforces_mutually:
+    description: "A와 B가 상호 강화한다"
+    inverse: reinforces_mutually
+  connects_with:
+    description: "A가 B와 연결된다"
+    inverse: connects_with
+  inspired_by:
+    description: "A가 B에서 영감받았다"
+    inverse: null
+  exemplifies:
+    description: "A가 B의 예시이다"
+    inverse: null
+
+  # 관점 (4)
+  viewed_through:
+    description: "A가 B의 렌즈로 보인다"
+    inverse: null
+  interpreted_as:
+    description: "A가 B로 해석된다"
+    inverse: null
+  questions:
+    description: "A가 B에 의문을 제기한다"
+    inverse: null
+  validates:
+    description: "A가 B를 검증한다"
+    inverse: null
+
+  # 시간 (4)
+  preceded_by:
+    description: "A가 B 이전에 있었다"
+    inverse: succeeded_by
+  simultaneous_with:
+    description: "A와 B가 동시에 발생했다"
+    inverse: simultaneous_with
+  born_from:
+    description: "A가 B에서 태어났다"
+    inverse: null
+  assembles:
+    description: "A가 B를 조합한다"
+    inverse: null
+
+  # 교차 도메인 (6)
+  transfers_to:
+    description: "A가 B 영역으로 전이된다"
+    inverse: null
+  mirrors:
+    description: "A가 B를 반영한다"
+    inverse: mirrors
+  influenced_by:
+    description: "A가 B에 영향받았다"
+    inverse: null
+  showcases:
+    description: "A가 B를 보여준다"
+    inverse: null
+  correlated_with:
+    description: "A와 B가 상관관계가 있다"
+    inverse: correlated_with
+  refuted_by:
+    description: "A가 B에 의해 반박되었다"
+    inverse: null

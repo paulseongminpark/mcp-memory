@@ -76,10 +76,42 @@ scripts/
     _session_state.md            (this file)
 ```
 
-## 첫 실행 순서
-1. `python scripts/daily_enrich.py --dry-run` (API 없이 구조 확인)
-2. Step 9 완료 후: `python scripts/daily_enrich.py --phase 1 --budget-small 100000` (소규모 테스트)
-3. Paul 검토 후 전체 실행
+## 수리+활성화 (2026-03-04)
+
+### 버그 수정 8건
+- temperature=0.3 제거 (3파일) — 최신 모델 전부 미지원
+- "json" 키워드 자동 추가 (3파일) — response_format=json_object 필수
+- hebbian conn.close() (hybrid.py)
+- recall.py 중복 코드 제거
+- E7 상태 저장 조건 수정 (node_enricher.py)
+- target_id 존재 검증 + _insert_edge safety guard (graph_analyzer.py)
+- session_context.py SQL f-string → parameterized query
+- init_db() v2 컬럼 포함 (sqlite_store.py)
+
+### 스키마 확장
+- schema.yaml v2.0: 50 node types, 48 relation types (config.py 완전 동기화)
+- migrate_v2.py 실행: nodes 15/15, edges 9/9, layer 98.8% — READY
+
+### 속도 최적화
+- enrich_node_combined(): 9 API → 1 API (7x 속도향상)
+- enrich_batch_combined(): 프로그레스 바 포함
+- daily_enrich.py phase1 → enrich_batch_combined 사용
+
+### 인프라
+- orchestration Stop hook에 save_session() 자동 호출 추가
+- checkpoint 8건 저장 (#4093-#4100)
+
+### 실행 상태
+- `python -u scripts/daily_enrich.py` 전체(Phase 1-5) 실행 중
+- 완료 후: E14 엣지 재분류 (5,162개 generic → 48타입)
+
+## 실행 명령
+```powershell
+cd C:\dev\01_projects\06_mcp-memory
+$env:PYTHONIOENCODING="utf-8"
+python -u scripts/daily_enrich.py          # 전체 Phase 1-5
+python -u scripts/daily_enrich.py --phase 1 # Phase 1만
+```
 
 ## 코딩 패턴
 - ROOT = Path(__file__).resolve().parent.parent.parent (enrich 내) 또는 .parent.parent (scripts 직접)

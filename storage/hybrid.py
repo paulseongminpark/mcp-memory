@@ -27,6 +27,7 @@ def _hebbian_update(result_ids: list[int], all_edges: list[dict]):
         if src in id_set and tgt in id_set:
             activated.append(edge.get("id"))
     if activated:
+        conn = None
         try:
             conn = sqlite_store._connect()
             for eid in activated:
@@ -38,6 +39,9 @@ def _hebbian_update(result_ids: list[int], all_edges: list[dict]):
             conn.commit()
         except Exception:
             pass  # 헤비안 실패가 검색을 중단시키지 않음
+        finally:
+            if conn:
+                conn.close()
 
 
 def hybrid_search(

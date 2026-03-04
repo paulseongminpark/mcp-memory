@@ -282,6 +282,7 @@ window.zoomOut = () => svg.transition().duration(300).call(zoomBehavior.scaleBy,
 
 if (gNodes.length > 0) {{
     const sim = d3.forceSimulation(gNodes)
+        .alphaDecay(0.05)
         .force("link", d3.forceLink(gEdges).id(d => d.id).distance(100))
         .force("charge", d3.forceManyBody().strength(-250))
         .force("center", d3.forceCenter(width/2, height/2))
@@ -330,8 +331,11 @@ if (gNodes.length > 0) {{
         nodeGroup.attr("transform", d => `translate(${{d.x}},${{d.y}})`);
     }});
 
-    // 초기 줌 fit
-    setTimeout(() => svg.call(zoomBehavior.transform, d3.zoomIdentity.translate(width*0.1, height*0.1).scale(0.85)), 600);
+    // 초기 줌 fit + 시뮬레이션 정지
+    setTimeout(() => {{
+        sim.stop();
+        svg.call(zoomBehavior.transform, d3.zoomIdentity.translate(width*0.1, height*0.1).scale(0.85));
+    }}, 600);
 }} else {{
     zoomG.append("text").attr("x",20).attr("y",40).attr("fill","#666")
         .text("No graph edges yet — build_graph.py 실행 후 갱신");

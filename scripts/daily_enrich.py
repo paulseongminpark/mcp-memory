@@ -56,7 +56,7 @@ def phase1(conn: sqlite3.Connection, ne: NodeEnricher,
     small_budget = config.TOKEN_BUDGETS["small"]
     phase_limit = int(small_budget * 0.8)  # 80% of small pool
 
-    # 1a. new nodes (enriched_at IS NULL)
+    # 1a. new nodes (enriched_at IS NULL) — 통합 1-call enrichment
     rows = conn.execute(
         "SELECT id FROM nodes WHERE enriched_at IS NULL AND status='active' "
         "ORDER BY created_at DESC"
@@ -64,10 +64,8 @@ def phase1(conn: sqlite3.Connection, ne: NodeEnricher,
     new_ids = [r[0] for r in rows]
 
     if new_ids:
-        bulk_tasks = ["E1", "E2", "E3", "E4", "E5",
-                      "E8", "E9", "E10", "E11"]
         try:
-            results = ne.enrich_batch(new_ids, tasks=bulk_tasks)
+            results = ne.enrich_batch_combined(new_ids)
             stats["nodes"] += len(results)
         except BudgetExhausted:
             return stats

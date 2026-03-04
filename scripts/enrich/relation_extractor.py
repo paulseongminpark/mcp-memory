@@ -83,6 +83,8 @@ class RelationExtractor:
         for attempt in range(config.MAX_RETRIES):
             self.budget.rate_limiter.wait_if_needed(model)
             try:
+                if "json" not in system.lower():
+                    system = system + "\nRespond in JSON."
                 resp = self.client.chat.completions.create(
                     model=model,
                     messages=[
@@ -90,7 +92,6 @@ class RelationExtractor:
                         {"role": "user", "content": user},
                     ],
                     response_format={"type": "json_object"},
-                    temperature=0.3,
                 )
                 self.budget.record(model, resp.usage.model_dump())
                 return json.loads(resp.choices[0].message.content)

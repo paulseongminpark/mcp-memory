@@ -31,7 +31,22 @@ def init_db() -> None:
             source TEXT DEFAULT 'claude',
             status TEXT DEFAULT 'active',
             created_at TEXT NOT NULL,
-            updated_at TEXT NOT NULL
+            updated_at TEXT NOT NULL,
+            layer INTEGER,
+            summary TEXT,
+            key_concepts TEXT,
+            facets TEXT,
+            domains TEXT,
+            secondary_types TEXT,
+            quality_score REAL,
+            abstraction_level REAL,
+            temporal_relevance REAL,
+            actionability REAL,
+            enrichment_status TEXT DEFAULT '{}',
+            enriched_at TEXT,
+            tier INTEGER DEFAULT 2,
+            maturity REAL DEFAULT 0.0,
+            observation_count INTEGER DEFAULT 0
         );
 
         CREATE TABLE IF NOT EXISTS edges (
@@ -41,7 +56,16 @@ def init_db() -> None:
             relation TEXT NOT NULL,
             description TEXT DEFAULT '',
             strength REAL DEFAULT 1.0,
-            created_at TEXT NOT NULL
+            created_at TEXT NOT NULL,
+            direction TEXT,
+            reason TEXT,
+            updated_at TEXT,
+            base_strength REAL,
+            frequency INTEGER DEFAULT 0,
+            last_activated TEXT,
+            decay_rate REAL DEFAULT 0.005,
+            layer_distance INTEGER,
+            layer_penalty REAL
         );
 
         CREATE TABLE IF NOT EXISTS sessions (
