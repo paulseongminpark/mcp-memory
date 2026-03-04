@@ -172,9 +172,9 @@ def insert_edge(
     edge_id = cur.lastrowid
     if original_relation != relation:
         conn.execute(
-            """INSERT INTO correction_log (node_id, field, old_value, new_value, reason, corrected_by, created_at)
-               VALUES (?, 'relation', ?, ?, 'relation not in ALL_RELATIONS', 'system', ?)""",
-            (source_id, original_relation, relation, now),
+            """INSERT INTO correction_log (node_id, edge_id, field, old_value, new_value, reason, corrected_by, created_at)
+               VALUES (?, ?, 'relation', ?, ?, 'relation not in ALL_RELATIONS', 'system', ?)""",
+            (source_id, edge_id, original_relation, relation, now),
         )
     conn.commit()
     conn.close()

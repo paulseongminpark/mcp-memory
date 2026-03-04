@@ -199,9 +199,9 @@ def infer_relation(src_type: str, src_layer: int | None,
     # 2. 레이어 기반 fallback
     if src_layer is not None and tgt_layer is not None:
         if src_layer < tgt_layer:
-            return "abstracted_from"
+            return "generalizes_to"    # 낮은→높은: 구체가 추상으로 일반화
         if src_layer > tgt_layer:
-            return "expressed_as"
+            return "expressed_as"      # 높은→낮은: 추상이 구체로 표현
 
     # 3. 같은 레이어
     if src_layer is not None and src_layer == tgt_layer:
