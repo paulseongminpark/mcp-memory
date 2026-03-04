@@ -406,8 +406,10 @@ class RelationExtractor:
         """Run E13 on cross-domain clusters. Returns number of new edges inserted."""
         clusters = self.find_cross_domain_clusters(limit=limit)
         total_new = 0
+        total = len(clusters)
+        t0 = time.time()
 
-        for cluster in clusters:
+        for i, cluster in enumerate(clusters):
             try:
                 relations = self.e13_cross_domain(cluster)
             except BudgetExhausted:
@@ -426,8 +428,22 @@ class RelationExtractor:
                     total_new += 1
                     self.stats["e13_new_edges"] += 1
 
+            done = i + 1
+            elapsed = time.time() - t0
+            rate = done / elapsed if elapsed > 0 else 0
+            eta = (total - done) / rate if rate > 0 else 0
+            bar_w = 30
+            filled = int(bar_w * done / total) if total else bar_w
+            bar = "\u2588" * filled + "\u2591" * (bar_w - filled)
+            m, s = divmod(int(eta), 60)
+            h, m = divmod(m, 60)
+            print(f"\r  E13 [{bar}] {done}/{total} new={total_new} ETA {h}h{m:02d}m{s:02d}s",
+                  end="", flush=True)
+
             time.sleep(config.BATCH_SLEEP)
 
+        if total > 0:
+            print()
         return total_new
 
     # ─────────────────────────────────────────────────────
@@ -499,33 +515,137 @@ class RelationExtractor:
         ).fetchall()
         return [dict(r) for r in rows]
 
-    def run_e14(self, limit: int = 100) -> int:
-        """Run E14 on generic edges. Returns count of refined edges."""
+    def _e14_batch_classify(self, batch: list[dict]) -> list[dict]:
+        """Classify a batch of edges in one API call. Returns list of results."""
+        all_relations = ", ".join(config.ALL_RELATIONS)
+        lines = []
+        for idx, item in enumerate(batch):
+            src = item["source"]
+            tgt = item["target"]
+            edge = item["edge"]
+            src_summary = src.get("summary") or self._trunc(src.get("content", ""), 200)
+            tgt_summary = tgt.get("summary") or self._trunc(tgt.get("content", ""), 200)
+            lines.append(
+                f"[{idx}] relation='{edge.get('relation')}' | "
+                f"Source [#{src['id']} type={src.get('type')} L{src.get('layer')}]: {src_summary} | "
+                f"Target [#{tgt['id']} type={tgt.get('type')} L{tgt.get('layer')}]: {tgt_summary}"
+            )
+        edges_block = "\n".join(lines)
+
+        system, user = self.prompts.render("E14_BATCH",
+            all_relations=all_relations,
+            count=len(batch),
+            edges_block=edges_block,
+        )
+
+        r = self._call_json(config.ENRICHMENT_MODELS["bulk"], system, user)
+
+        # Handle both array and dict responses
+        if r is None:
+            return [{} for _ in batch]
+        if isinstance(r, dict):
+            r = r.get("edges", r.get("results", [r]))
+        if not isinstance(r, list):
+            r = [r]
+        # Ensure each element is a dict
+        r = [x if isinstance(x, dict) else {} for x in r]
+
+        return r
+
+    def run_e14(self, limit: int = 6000, batch_size: int = 30) -> int:
+        """Run E14 on generic edges — parallel batch API + sequential DB write."""
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+        import threading
+
         edges = self.find_generic_edges(limit=limit)
         refined = 0
+        errors = 0
+        t0 = time.time()
 
+        # Prepare edge+node data
+        items = []
         for edge in edges:
             source = self._get_node(edge["source_id"])
             target = self._get_node(edge["target_id"])
-            if not source or not target:
-                continue
+            if source and target:
+                items.append({"edge": edge, "source": source, "target": target})
 
+        total = len(items)
+        processed = 0
+        lock = threading.Lock()
+        max_workers = getattr(config, "CONCURRENT_WORKERS", 10)
+
+        # Chunk into batches
+        batches = [items[i:i + batch_size] for i in range(0, total, batch_size)]
+        batch_results = {}
+
+        def classify_batch(batch_idx, batch):
             try:
-                result = self.e14_refine_relation(edge, source, target)
+                results = self._e14_batch_classify(batch)
+                return batch_idx, results, None
             except BudgetExhausted:
-                break
+                return batch_idx, None, "budget"
+            except Exception as e:
+                return batch_idx, None, str(e)
 
-            if result["changed"]:
-                self._update_edge(edge["id"], {
-                    "relation": result["relation"],
-                    "direction": result["direction"],
-                    "reason": result["reason"],
-                })
-                refined += 1
-                self.stats["e14_refined"] += 1
+        # Phase A: 병렬 API 호출
+        budget_hit = False
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            futures = {
+                executor.submit(classify_batch, i, b): i
+                for i, b in enumerate(batches)
+            }
+            for future in as_completed(futures):
+                batch_idx, results, error = future.result()
+                if error == "budget":
+                    budget_hit = True
+                elif error:
+                    errors += 1
+                else:
+                    batch_results[batch_idx] = results
 
-            time.sleep(config.BATCH_SLEEP)
+                with lock:
+                    processed += len(batches[batch_idx])
+                    elapsed = time.time() - t0
+                    rate = processed / elapsed if elapsed > 0 else 0
+                    eta = (total - processed) / rate if rate > 0 else 0
+                    bar_w = 30
+                    filled = int(bar_w * processed / total) if total else bar_w
+                    bar = "\u2588" * filled + "\u2591" * (bar_w - filled)
+                    m, s = divmod(int(eta), 60)
+                    h, m = divmod(m, 60)
+                    print(f"\r  E14 [{bar}] {processed}/{total} ({processed/total*100:.1f}%) "
+                          f"refined={refined} err={errors} ETA {h}h{m:02d}m{s:02d}s",
+                          end="", flush=True)
 
+        # Phase B: 순차 DB 쓰기
+        for batch_idx in sorted(batch_results.keys()):
+            results = batch_results[batch_idx]
+            batch = batches[batch_idx]
+            for idx, item in enumerate(batch):
+                edge = item["edge"]
+                res = results[idx] if idx < len(results) else {}
+
+                relation = res.get("relation", edge.get("relation"))
+                if relation not in config.ALL_RELATIONS:
+                    relation = edge.get("relation")
+
+                direction = res.get("direction", "horizontal")
+                if direction not in DIRECTION_VALUES:
+                    direction = "horizontal"
+
+                changed = bool(res.get("changed", False))
+                if changed and relation != edge.get("relation"):
+                    self._update_edge(edge["id"], {
+                        "relation": relation,
+                        "direction": direction,
+                        "reason": res.get("reason", ""),
+                    })
+                    refined += 1
+                    self.stats["e14_refined"] += 1
+
+        if total > 0:
+            print()
         return refined
 
     # ─────────────────────────────────────────────────────
@@ -589,8 +709,10 @@ class RelationExtractor:
         ).fetchall()
         edges = [dict(r) for r in rows]
         updated = 0
+        total = len(edges)
+        t0 = time.time()
 
-        for edge in edges:
+        for i, edge in enumerate(edges):
             source = self._get_node(edge["source_id"])
             target = self._get_node(edge["target_id"])
             if not source or not target:
@@ -607,8 +729,25 @@ class RelationExtractor:
             })
             updated += 1
             self.stats["e15_directed"] += 1
+
+            # progress bar
+            done = i + 1
+            elapsed = time.time() - t0
+            rate = done / elapsed if elapsed > 0 else 0
+            eta = (total - done) / rate if rate > 0 else 0
+            bar_w = 30
+            filled = int(bar_w * done / total)
+            bar = "\u2588" * filled + "\u2591" * (bar_w - filled)
+            m, s = divmod(int(eta), 60)
+            h, m = divmod(m, 60)
+            print(f"\r  E15 [{bar}] {done}/{total} ({done/total*100:.1f}%) "
+                  f"directed={updated} ETA {h}h{m:02d}m{s:02d}s",
+                  end="", flush=True)
+
             time.sleep(config.BATCH_SLEEP)
 
+        if total > 0:
+            print()
         return updated
 
     # ─────────────────────────────────────────────────────
@@ -650,7 +789,6 @@ class RelationExtractor:
     def run_e16(self, limit: int = 271) -> int:
         """Run E16 on auto-generated edges (low strength or NULL base_strength).
         Returns count updated."""
-        # Target: edges that were auto-generated (strength based on distance)
         rows = self.conn.execute(
             """SELECT id, source_id, target_id, relation, strength, base_strength
                FROM edges
@@ -661,8 +799,10 @@ class RelationExtractor:
         ).fetchall()
         edges = [dict(r) for r in rows]
         updated = 0
+        total = len(edges)
+        t0 = time.time()
 
-        for edge in edges:
+        for i, edge in enumerate(edges):
             source = self._get_node(edge["source_id"])
             target = self._get_node(edge["target_id"])
             if not source or not target:
@@ -679,8 +819,23 @@ class RelationExtractor:
             })
             updated += 1
             self.stats["e16_strength_updated"] += 1
+
+            done = i + 1
+            elapsed = time.time() - t0
+            rate = done / elapsed if elapsed > 0 else 0
+            eta = (total - done) / rate if rate > 0 else 0
+            bar_w = 30
+            filled = int(bar_w * done / total) if total else bar_w
+            bar = "\u2588" * filled + "\u2591" * (bar_w - filled)
+            m, s = divmod(int(eta), 60)
+            h, m = divmod(m, 60)
+            print(f"\r  E16 [{bar}] {done}/{total} updated={updated} ETA {h}h{m:02d}m{s:02d}s",
+                  end="", flush=True)
+
             time.sleep(config.BATCH_SLEEP)
 
+        if total > 0:
+            print()
         return updated
 
     # ─────────────────────────────────────────────────────
@@ -787,8 +942,10 @@ class RelationExtractor:
         """Run E17: merge duplicate edges. Returns count of edges deleted."""
         groups = self.find_duplicate_edges()
         deleted = 0
+        total = len(groups)
+        t0 = time.time()
 
-        for edge_group in groups:
+        for i, edge_group in enumerate(groups):
             try:
                 result = self.e17_merge_duplicates(edge_group)
             except BudgetExhausted:
@@ -800,8 +957,22 @@ class RelationExtractor:
                     deleted += 1
                     self.stats["e17_merged"] += 1
 
+            done = i + 1
+            elapsed = time.time() - t0
+            rate = done / elapsed if elapsed > 0 else 0
+            eta = (total - done) / rate if rate > 0 else 0
+            bar_w = 30
+            filled = int(bar_w * done / total) if total else bar_w
+            bar = "\u2588" * filled + "\u2591" * (bar_w - filled)
+            m, s = divmod(int(eta), 60)
+            h, m = divmod(m, 60)
+            print(f"\r  E17 [{bar}] {done}/{total} deleted={deleted} ETA {h}h{m:02d}m{s:02d}s",
+                  end="", flush=True)
+
             time.sleep(config.BATCH_SLEEP)
 
+        if total > 0:
+            print()
         return deleted
 
     # ─────────────────────────────────────────────────────

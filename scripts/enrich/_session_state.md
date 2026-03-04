@@ -94,23 +94,38 @@ scripts/
 
 ### 속도 최적화
 - enrich_node_combined(): 9 API → 1 API (7x 속도향상)
-- enrich_batch_combined(): 프로그레스 바 포함
+- enrich_batch_combined(): ThreadPoolExecutor(10 workers) 병렬 API + 순차 DB 쓰기 (10x 추가)
+- E14 batch: 30개 엣지/API 호출 (e14_batch.yaml), 병렬 처리
+- run_e14(): 병렬 batch API + 순차 DB 쓰기
+- BATCH_SLEEP 0.3→0.05, CONCURRENT_WORKERS=10
 - daily_enrich.py phase1 → enrich_batch_combined 사용
+- 전체 E13-E25 프로그레스 바 추가
+
+### 버그 수정 (세션 2)
+- daily_enrich.py E13/E14/E16/E17: except Exception 추가 (NoneType 에러 방지)
+- _e14_batch_classify: None 반환 방어 코드
 
 ### 인프라
 - orchestration Stop hook에 save_session() 자동 호출 추가
-- checkpoint 8건 저장 (#4093-#4100)
+- checkpoint 18건 저장 (#4093-#4100, #4127-#4136)
+
+### 실행 결과 (1차)
+- Phase 1: 노드 1,973/3,171 enriched (62%), small pool 100% 소진
+- Phase 2: E21(9/9) + E22(35/40) + E20(5/5) + E15(진행중)
+- Phase 3-5: 진행중 또는 대기
+- 엣지: 5,643개, generic 93.5% → E14 미실행
+- 비용: 1차 무료 풀, 2차 유료 $2-4 예상
 
 ### 실행 상태
-- `python -u scripts/daily_enrich.py` 전체(Phase 1-5) 실행 중
-- 완료 후: E14 엣지 재분류 (5,162개 generic → 48타입)
+- Phase 2-7 실행 중 (E15→Phase 3→4→5→7)
+- 완료 후: Phase 1 병렬 재실행 (노드 1,185 + E14 5,194개)
 
 ## 실행 명령
 ```powershell
 cd C:\dev\01_projects\06_mcp-memory
 $env:PYTHONIOENCODING="utf-8"
-python -u scripts/daily_enrich.py          # 전체 Phase 1-5
-python -u scripts/daily_enrich.py --phase 1 # Phase 1만
+python -u scripts/daily_enrich.py --budget-small 10000000 --budget-large 2000000  # 유료 전체
+python -u scripts/daily_enrich.py --phase 1 --budget-small 10000000 --budget-large 2000000  # Phase 1만
 ```
 
 ## 코딩 패턴

@@ -2,7 +2,6 @@
 
 from storage.hybrid import hybrid_search
 from storage import sqlite_store
-from graph.traversal import build_graph, get_relation_path
 from config import DEFAULT_TOP_K
 
 
@@ -16,11 +15,6 @@ def recall(
 
     if not results:
         return {"results": [], "message": "No memories found."}
-
-    # 관계 경로 추가
-    all_edges = sqlite_store.get_all_edges()
-    graph = build_graph(all_edges)
-    result_ids = [r["id"] for r in results]
 
     formatted = []
     for r in results:

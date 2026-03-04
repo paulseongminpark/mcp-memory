@@ -363,30 +363,152 @@ class NodeEnricher:
         return results
 
     def enrich_batch_combined(self, node_ids: list[int]) -> dict[int, dict]:
-        """통합 배치 enrichment (프로그레스 바 포함)."""
-        import time as _time
+        """통합 배치 enrichment — 병렬 API + 순차 DB 쓰기."""
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+        import threading
+
         total = len(node_ids)
         out = {}
-        t0 = _time.time()
-        for i, nid in enumerate(node_ids, 1):
+        t0 = time.time()
+        done_count = 0
+        lock = threading.Lock()
+        max_workers = getattr(config, "CONCURRENT_WORKERS", 10)
+
+        # Phase A: 노드 데이터 미리 로드 (순차, 빠름)
+        node_data = {}
+        for nid in node_ids:
+            node = self._get_node(nid)
+            if node:
+                status = json.loads(node.get("enrichment_status") or "{}")
+                remaining = [t for t in self.BULK_TASKS if t not in status]
+                if remaining:
+                    node_data[nid] = node
+
+        total = len(node_data)
+        if total == 0:
+            print("  No nodes to enrich.")
+            return out
+
+        # Phase B: 병렬 API 호출 (DB 쓰기 X)
+        def call_api(nid, node):
+            content = self._trunc(node["content"])
+            existing_tags = node.get("tags") or ""
+            today = datetime.now().strftime("%Y-%m-%d")
+
+            system = (
+                "You are an enrichment engine for a personal knowledge graph. "
+                "Analyze the node and return a JSON object with ALL of these keys:\n"
+                "- summary: 1-line Korean summary, max 100 chars\n"
+                "- concepts: list of 3-5 key concepts (strings)\n"
+                "- tags: list of 3-5 tags (strings)\n"
+                "- facets: list from ONLY these: " + str(config.FACETS_ALLOWLIST) + "\n"
+                "- domains: list from ONLY these: " + str(config.DOMAINS_ALLOWLIST) + "\n"
+                "- quality_score: 0.0-1.0 (how valuable is this knowledge)\n"
+                "- abstraction_level: 0.0-1.0 (0=concrete, 1=abstract)\n"
+                "- temporal_relevance: 0.0-1.0 (relevance as of " + today + ")\n"
+                "- actionability: 0.0-1.0 (how actionable)\n"
+                "Respond in JSON."
+            )
+            user = (
+                f"Node type: {node.get('type', '?')}\n"
+                f"Project: {node.get('project', '')}\n"
+                f"Existing tags: {existing_tags}\n"
+                f"Created: {node.get('created_at', '?')}\n\n"
+                f"{content}"
+            )
             try:
-                out[nid] = self.enrich_node_combined(nid)
+                r = self._call_json(config.ENRICHMENT_MODELS["bulk"], system, user)
+                return nid, r, None
             except BudgetExhausted:
-                break
-            elapsed = _time.time() - t0
-            per_node = elapsed / i
-            eta = per_node * (total - i)
-            eta_m, eta_s = divmod(int(eta), 60)
-            eta_h, eta_m = divmod(eta_m, 60)
-            bar_w = 30
-            filled = int(bar_w * i / total)
-            bar = "█" * filled + "░" * (bar_w - filled)
-            pct = i / total * 100
-            print(f"\r  [{bar}] {i}/{total} ({pct:.1f}%) "
-                  f"ETA {eta_h}h{eta_m:02d}m{eta_s:02d}s "
-                  f"err={self.stats['errors']}", end="", flush=True)
-            _time.sleep(config.BATCH_SLEEP)
+                return nid, None, "budget"
+            except Exception as e:
+                return nid, None, str(e)
+
+        api_results = {}
+        budget_hit = False
+
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            futures = {
+                executor.submit(call_api, nid, node): nid
+                for nid, node in node_data.items()
+            }
+            for future in as_completed(futures):
+                nid, result, error = future.result()
+                if error == "budget":
+                    budget_hit = True
+                elif error:
+                    self.stats["errors"] += 1
+                else:
+                    api_results[nid] = result
+
+                with lock:
+                    done_count += 1
+                    elapsed = time.time() - t0
+                    rate = done_count / elapsed if elapsed > 0 else 0
+                    eta = (total - done_count) / rate if rate > 0 else 0
+                    bar_w = 30
+                    filled = int(bar_w * done_count / total)
+                    bar = "\u2588" * filled + "\u2591" * (bar_w - filled)
+                    m, s = divmod(int(eta), 60)
+                    h, m = divmod(m, 60)
+                    print(f"\r  [{bar}] {done_count}/{total} ({done_count/total*100:.1f}%) "
+                          f"ETA {h}h{m:02d}m{s:02d}s "
+                          f"err={self.stats['errors']}", end="", flush=True)
+
         print(flush=True)
+
+        # Phase C: 순차 DB 쓰기 (빠름)
+        for nid, r in api_results.items():
+            if r is None:
+                continue
+            node = node_data[nid]
+            status = json.loads(node.get("enrichment_status") or "{}")
+            updates = {}
+            now = datetime.now(timezone.utc).isoformat()
+
+            summary = (r.get("summary") or "")[:100]
+            if summary:
+                updates["summary"] = summary
+                status["E1"] = now
+
+            concepts = [c for c in (r.get("concepts") or []) if isinstance(c, str)][:5]
+            if concepts:
+                updates["key_concepts"] = json.dumps(concepts, ensure_ascii=False)
+                status["E2"] = now
+
+            tags = [t for t in (r.get("tags") or []) if isinstance(t, str)][:5]
+            if tags:
+                existing = [t.strip() for t in (node.get("tags") or "").split(",") if t.strip()]
+                combined = list(dict.fromkeys(existing + tags))
+                updates["tags"] = ", ".join(combined)
+                status["E3"] = now
+
+            facets = [f for f in (r.get("facets") or []) if f in config.FACETS_ALLOWLIST]
+            updates["facets"] = json.dumps(facets, ensure_ascii=False)
+            status["E4"] = now
+
+            domains = [d for d in (r.get("domains") or []) if d in config.DOMAINS_ALLOWLIST]
+            updates["domains"] = json.dumps(domains, ensure_ascii=False)
+            status["E5"] = now
+
+            for key, tid, default in [
+                ("quality_score", "E8", 0.5),
+                ("abstraction_level", "E9", 0.5),
+                ("temporal_relevance", "E10", 0.5),
+                ("actionability", "E11", 0.5),
+            ]:
+                val = max(0.0, min(1.0, float(r.get(key, default))))
+                updates[key] = val
+                status[tid] = now
+
+            if not self.dry_run and updates:
+                updates["enrichment_status"] = json.dumps(status, ensure_ascii=False)
+                updates["enriched_at"] = now
+                self._update_node(nid, updates)
+
+            out[nid] = r
+            self.stats["processed"] += 1
+
         return out
 
     # ── 단일 노드 enrichment ─────────────────────────────

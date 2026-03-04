@@ -679,7 +679,9 @@ class GraphAnalyzer:
         """Run E18 on all dense clusters."""
         clusters = self.find_dense_clusters()[:limit]
         results = []
-        for cluster in clusters:
+        total = len(clusters)
+        t0 = time.time()
+        for i, cluster in enumerate(clusters):
             try:
                 result = self.e18_cluster_theme(cluster)
                 results.append(result)
@@ -688,16 +690,30 @@ class GraphAnalyzer:
                 break
             except Exception:
                 self.stats["errors"] += 1
+            done = i + 1
+            elapsed = time.time() - t0
+            rate = done / elapsed if elapsed > 0 else 0
+            eta = (total - done) / rate if rate > 0 else 0
+            m, s = divmod(int(eta), 60)
+            h, m = divmod(m, 60)
+            bar_w = 30
+            filled = int(bar_w * done / total) if total else bar_w
+            bar = "\u2588" * filled + "\u2591" * (bar_w - filled)
+            print(f"\r  E18 [{bar}] {done}/{total} ETA {h}h{m:02d}m{s:02d}s",
+                  end="", flush=True)
             time.sleep(config.BATCH_SLEEP)
+        if total > 0:
+            print()
         return results
 
     def run_e19_all(self, limit: int = 30) -> list[dict]:
         """Run E19 on orphan nodes, insert suggested edges."""
         orphans = self.find_orphan_nodes()[:limit]
         results = []
-        for orphan in orphans:
+        total = len(orphans)
+        t0 = time.time()
+        for i, orphan in enumerate(orphans):
             try:
-                # find neighbors: nodes in same project/domain
                 project = orphan.get("project", "")
                 if project:
                     rows = self.conn.execute(
@@ -728,14 +744,29 @@ class GraphAnalyzer:
                 break
             except Exception:
                 self.stats["errors"] += 1
+            done = i + 1
+            elapsed = time.time() - t0
+            rate = done / elapsed if elapsed > 0 else 0
+            eta = (total - done) / rate if rate > 0 else 0
+            m, s = divmod(int(eta), 60)
+            h, m = divmod(m, 60)
+            bar_w = 30
+            filled = int(bar_w * done / total) if total else bar_w
+            bar = "\u2588" * filled + "\u2591" * (bar_w - filled)
+            print(f"\r  E19 [{bar}] {done}/{total} resolved={len(results)} ETA {h}h{m:02d}m{s:02d}s",
+                  end="", flush=True)
             time.sleep(config.BATCH_SLEEP)
+        if total > 0:
+            print()
         return results
 
     def run_e20_all(self) -> list[dict]:
         """Run E20 on all projects."""
         sequences = self.find_temporal_sequences(project="")
         results = []
-        for seq in sequences:
+        total = len(sequences)
+        t0 = time.time()
+        for i, seq in enumerate(sequences):
             try:
                 chains = self.e20_temporal_chain(seq)
                 results.extend(chains)
@@ -744,14 +775,29 @@ class GraphAnalyzer:
                 break
             except Exception:
                 self.stats["errors"] += 1
+            done = i + 1
+            elapsed = time.time() - t0
+            rate = done / elapsed if elapsed > 0 else 0
+            eta = (total - done) / rate if rate > 0 else 0
+            m, s = divmod(int(eta), 60)
+            h, m = divmod(m, 60)
+            bar_w = 30
+            filled = int(bar_w * done / total) if total else bar_w
+            bar = "\u2588" * filled + "\u2591" * (bar_w - filled)
+            print(f"\r  E20 [{bar}] {done}/{total} chains={len(results)} ETA {h}h{m:02d}m{s:02d}s",
+                  end="", flush=True)
             time.sleep(config.BATCH_SLEEP)
+        if total > 0:
+            print()
         return results
 
     def run_e21_all(self, limit: int = 30) -> list[dict]:
         """Run E21: find contradictions among similar-domain node pairs."""
         pairs = self.find_similar_pairs(threshold=0.15)[:limit]
         results = []
-        for a, b in pairs:
+        total = len(pairs)
+        t0 = time.time()
+        for i, (a, b) in enumerate(pairs):
             try:
                 result = self.e21_contradiction(a, b)
                 if result["is_contradiction"] and result["confidence"] >= 0.6:
@@ -768,7 +814,20 @@ class GraphAnalyzer:
                 break
             except Exception:
                 self.stats["errors"] += 1
+            done = i + 1
+            elapsed = time.time() - t0
+            rate = done / elapsed if elapsed > 0 else 0
+            eta = (total - done) / rate if rate > 0 else 0
+            m, s = divmod(int(eta), 60)
+            h, m = divmod(m, 60)
+            bar_w = 30
+            filled = int(bar_w * done / total) if total else bar_w
+            bar = "\u2588" * filled + "\u2591" * (bar_w - filled)
+            print(f"\r  E21 [{bar}] {done}/{total} contradictions={self.stats['contradictions_found']} ETA {h}h{m:02d}m{s:02d}s",
+                  end="", flush=True)
             time.sleep(config.BATCH_SLEEP)
+        if total > 0:
+            print()
         return results
 
     def run_e22_all(self, limit: int = 40) -> list[dict]:
@@ -780,7 +839,9 @@ class GraphAnalyzer:
         ).fetchall()
         pivots = [dict(r) for r in rows]
         results = []
-        for pivot in pivots:
+        total = len(pivots)
+        t0 = time.time()
+        for i, pivot in enumerate(pivots):
             try:
                 connected = self._get_connected_nodes(pivot["id"])
                 if not connected:
@@ -801,14 +862,29 @@ class GraphAnalyzer:
                 break
             except Exception:
                 self.stats["errors"] += 1
+            done = i + 1
+            elapsed = time.time() - t0
+            rate = done / elapsed if elapsed > 0 else 0
+            eta = (total - done) / rate if rate > 0 else 0
+            m, s = divmod(int(eta), 60)
+            h, m = divmod(m, 60)
+            bar_w = 30
+            filled = int(bar_w * done / total) if total else bar_w
+            bar = "\u2588" * filled + "\u2591" * (bar_w - filled)
+            print(f"\r  E22 [{bar}] {done}/{total} assemblages={self.stats['assemblages_found']} ETA {h}h{m:02d}m{s:02d}s",
+                  end="", flush=True)
             time.sleep(config.BATCH_SLEEP)
+        if total > 0:
+            print()
         return results
 
     def run_e23_all(self) -> list[dict]:
         """Run E23 on all Signal nodes."""
         signals = self.find_signal_nodes()
         results = []
-        for signal in signals:
+        total = len(signals)
+        t0 = time.time()
+        for i, signal in enumerate(signals):
             try:
                 similar = self._get_similar_nodes(signal, limit=5)
                 result = self.e23_promotion(signal, similar)
@@ -818,14 +894,29 @@ class GraphAnalyzer:
                 break
             except Exception:
                 self.stats["errors"] += 1
+            done = i + 1
+            elapsed = time.time() - t0
+            rate = done / elapsed if elapsed > 0 else 0
+            eta = (total - done) / rate if rate > 0 else 0
+            m, s = divmod(int(eta), 60)
+            h, m = divmod(m, 60)
+            bar_w = 30
+            filled = int(bar_w * done / total) if total else bar_w
+            bar = "\u2588" * filled + "\u2591" * (bar_w - filled)
+            print(f"\r  E23 [{bar}] {done}/{total} promotions={self.stats['promotions_analyzed']} ETA {h}h{m:02d}m{s:02d}s",
+                  end="", flush=True)
             time.sleep(config.BATCH_SLEEP)
+        if total > 0:
+            print()
         return results
 
     def run_e24_all(self) -> list[dict]:
         """Run E24 on similar node pairs."""
         pairs = self.find_similar_pairs(threshold=0.15)
         results = []
-        for a, b in pairs:
+        total = len(pairs)
+        t0 = time.time()
+        for i, (a, b) in enumerate(pairs):
             try:
                 result = self.e24_merge_candidate(a, b)
                 if result["action"] == "differs_in":
@@ -842,16 +933,30 @@ class GraphAnalyzer:
                 break
             except Exception:
                 self.stats["errors"] += 1
+            done = i + 1
+            elapsed = time.time() - t0
+            rate = done / elapsed if elapsed > 0 else 0
+            eta = (total - done) / rate if rate > 0 else 0
+            m, s = divmod(int(eta), 60)
+            h, m = divmod(m, 60)
+            bar_w = 30
+            filled = int(bar_w * done / total) if total else bar_w
+            bar = "\u2588" * filled + "\u2591" * (bar_w - filled)
+            print(f"\r  E24 [{bar}] {done}/{total} merges={self.stats['merges_detected']} ETA {h}h{m:02d}m{s:02d}s",
+                  end="", flush=True)
             time.sleep(config.BATCH_SLEEP)
+        if total > 0:
+            print()
         return results
 
     def run_e25_all(self) -> list[dict]:
         """Run E25 on all domains."""
         dist = self.get_domain_type_distribution()
         results = []
-        for domain, type_counts in dist.items():
-            if sum(type_counts.values()) < 3:
-                continue  # skip tiny domains
+        domains = [(d, tc) for d, tc in dist.items() if sum(tc.values()) >= 3]
+        total = len(domains)
+        t0 = time.time()
+        for i, (domain, type_counts) in enumerate(domains):
             try:
                 result = self.e25_knowledge_gap(domain, type_counts)
                 results.append(result)
@@ -860,5 +965,18 @@ class GraphAnalyzer:
                 break
             except Exception:
                 self.stats["errors"] += 1
+            done = i + 1
+            elapsed = time.time() - t0
+            rate = done / elapsed if elapsed > 0 else 0
+            eta = (total - done) / rate if rate > 0 else 0
+            m, s = divmod(int(eta), 60)
+            h, m = divmod(m, 60)
+            bar_w = 30
+            filled = int(bar_w * done / total) if total else bar_w
+            bar = "\u2588" * filled + "\u2591" * (bar_w - filled)
+            print(f"\r  E25 [{bar}] {done}/{total} gaps={self.stats['gaps_analyzed']} ETA {h}h{m:02d}m{s:02d}s",
+                  end="", flush=True)
             time.sleep(config.BATCH_SLEEP)
+        if total > 0:
+            print()
         return results

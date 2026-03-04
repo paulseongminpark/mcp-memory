@@ -43,6 +43,7 @@ def connect_db() -> sqlite3.Connection:
     conn = sqlite3.connect(str(config.DB_PATH))
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA busy_timeout=5000")
     conn.execute("PRAGMA foreign_keys=ON")
     return conn
 
@@ -92,13 +93,17 @@ def phase1(conn: sqlite3.Connection, ne: NodeEnricher,
             stats["edges"] += re.stats.get("e13_new_edges", 0)
         except BudgetExhausted:
             pass
+        except Exception as e:
+            print(f"  E13 error: {e}")
 
     # 1d. E14 refine generic edges
     if not budget.budget_exhausted("small"):
         try:
-            re.run_e14(limit=100)
+            re.run_e14(limit=6000)
         except BudgetExhausted:
             pass
+        except Exception as e:
+            print(f"  E14 error: {e}")
 
     # 1e. E17 merge duplicates
     if not budget.budget_exhausted("small"):
@@ -106,6 +111,8 @@ def phase1(conn: sqlite3.Connection, ne: NodeEnricher,
             re.run_e17()
         except BudgetExhausted:
             pass
+        except Exception as e:
+            print(f"  E17 error: {e}")
 
     # 1f. E16 strength recalibration
     if not budget.budget_exhausted("small"):
@@ -113,6 +120,8 @@ def phase1(conn: sqlite3.Connection, ne: NodeEnricher,
             re.run_e16(limit=50)
         except BudgetExhausted:
             pass
+        except Exception as e:
+            print(f"  E16 error: {e}")
 
     conn.commit()
     return stats

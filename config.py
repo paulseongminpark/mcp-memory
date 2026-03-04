@@ -43,7 +43,8 @@ TOKEN_BUDGETS = {
 
 # 배치 처리
 BATCH_SIZE = 10
-BATCH_SLEEP = 0.3       # 배치 간 대기 (초)
+BATCH_SLEEP = 0.05      # 배치 간 대기 (초) — 유료 API용
+CONCURRENT_WORKERS = 10  # 병렬 API 호출 수
 MAX_RETRIES = 3         # API 실패 시 재시도
 RETRY_BACKOFF = 2.0     # 재시도 백오프 배수
 

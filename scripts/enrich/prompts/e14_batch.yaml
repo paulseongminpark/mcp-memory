@@ -1,0 +1,14 @@
+task_id: E14_BATCH
+name: refine_relation_batch
+model_tier: bulk
+system: |-
+  You are a knowledge graph specialist. Upgrade vague relation types to more precise ones.
+  Allowed relation types: {all_relations}
+  You will receive multiple edges. Return a JSON array with one object per edge, in the same order.
+  Each object: {{"idx": <0-based index>, "relation": "...", "direction": "upward|downward|horizontal|cross-layer", "reason": "brief reason", "changed": true|false}}
+  If the current relation is already accurate, set changed=false.
+  Respond in JSON.
+user: |-
+  Classify these {count} edges:
+
+  {edges_block}

@@ -3,6 +3,7 @@
 
 import os
 import sys
+from datetime import datetime, timedelta
 
 os.environ.setdefault("PYTHONIOENCODING", "utf-8")
 sys.path.insert(0, str(__import__("pathlib").Path(__file__).parent.parent))
@@ -19,6 +20,87 @@ def get_context_cli(project: str = "") -> str:
     conn = sqlite3.connect(str(DB_PATH))
     conn.row_factory = sqlite3.Row
     lines = []
+
+    now = datetime.utcnow()
+    cutoff_7d = (now - timedelta(days=7)).strftime("%Y-%m-%d")
+    cutoff_30d = (now - timedelta(days=30)).strftime("%Y-%m-%d")
+
+    def _project_clause(alias=""):
+        prefix = f"{alias}." if alias else ""
+        if project:
+            return f"AND {prefix}project = ?", [project]
+        return "", []
+
+    # ── [신규] L2+ 핵심 패턴/원칙/정체성 (quality 상위 15개) ──────────────
+    proj_clause, proj_params = _project_clause()
+    l2_rows = conn.execute(
+        f"""
+        SELECT id, type, content, summary, tags, quality_score, layer
+        FROM nodes
+        WHERE layer >= 2
+          AND status = 'active'
+          AND type IN ('Pattern','Insight','Principle','Identity','Belief',
+                       'Value','Framework','Heuristic','Concept')
+          {proj_clause}
+        ORDER BY quality_score DESC NULLS LAST
+        LIMIT 15
+        """,
+        proj_params,
+    ).fetchall()
+
+    if l2_rows:
+        lines.append("핵심 패턴/원칙 (L2+, quality 상위):")
+        for r in l2_rows:
+            text = r["summary"] or r["content"]
+            lines.append(f"  - [{r['type']}] {text[:80]}")
+
+    # ── [신규] 최근 30일 Signal (미승격 관찰 중) ──────────────────────────
+    proj_clause, proj_params = _project_clause()
+    signal_rows = conn.execute(
+        f"""
+        SELECT id, type, content, summary, tags, created_at
+        FROM nodes
+        WHERE type = 'Signal'
+          AND status = 'active'
+          AND created_at >= ?
+          {proj_clause}
+        ORDER BY created_at DESC
+        LIMIT 10
+        """,
+        [cutoff_30d] + proj_params,
+    ).fetchall()
+
+    if signal_rows:
+        lines.append("관찰 중 (Signal, 최근 30일):")
+        for r in signal_rows:
+            text = r["summary"] or r["content"]
+            lines.append(f"  - [Signal] {text[:80]}")
+
+    # ── [신규] 최근 7일 Observation (직접 언급) ───────────────────────────
+    proj_clause, proj_params = _project_clause()
+    obs_rows = conn.execute(
+        f"""
+        SELECT id, type, content, summary, tags, created_at
+        FROM nodes
+        WHERE type = 'Observation'
+          AND status = 'active'
+          AND created_at >= ?
+          {proj_clause}
+        ORDER BY created_at DESC
+        LIMIT 5
+        """,
+        [cutoff_7d] + proj_params,
+    ).fetchall()
+
+    if obs_rows:
+        lines.append("최근 언급 (Observation, 최근 7일):")
+        for r in obs_rows:
+            text = r["summary"] or r["content"]
+            lines.append(f"  - [Obs] {text[:80]}")
+
+    # 구분선 (기존 섹션과 분리)
+    if lines:
+        lines.append("")
 
     def _query_type(type_name, limit):
         if project:
