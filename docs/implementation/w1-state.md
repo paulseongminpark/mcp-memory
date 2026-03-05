@@ -63,3 +63,4 @@ scripts/daily_enrich.py
 | 19:05 | P0-W1-01 | ✅ config.py 상수 16개 추가 (2bc0904) |
 | 19:15 | P0-W1-02 | ✅ migrate_v2_ontology.py 9단계 작성 + governs 추가 (0bdd2c9) |
 | 19:34 | P0-W1-03 | ✅ DB 백업 + 마이그레이션 9/9 성공 + 멱등성 확인 (a429e60) |
+| 20:45 | P0-CX-02-fix | ✅ relation_defs 50행 보정: contextualizes 추가 + schema.yaml governs 반영 (fef526f) |
