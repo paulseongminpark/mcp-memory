@@ -88,7 +88,9 @@ def setup_db():
     if _test_db.exists():
         _test_db.unlink()
     _create_test_db()
-    with patch("config.DB_PATH", _test_db):
+    with patch("config.DB_PATH", _test_db), \
+         patch("storage.sqlite_store.DB_PATH", _test_db), \
+         patch("storage.action_log.sqlite_store.DB_PATH", _test_db):
         yield
     if _test_db.exists():
         _test_db.unlink()
