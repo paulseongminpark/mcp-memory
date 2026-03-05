@@ -32,19 +32,7 @@
 | 12 | [b-neural-12-bcm-ucb-integration.md](b-neural-12-bcm-ucb-integration.md) | BCM+UCB 통합: UCB→탐색경로(L75-76), BCM→학습결과(L116). visit_count는 _bcm_update 내부. theta_m 초기화 UPDATE nodes SET 필요. |
 | 13 | [b-neural-13-recall-flow.md](b-neural-13-recall-flow.md) | recall() 전체 흐름: 1 트랜잭션 3N+K UPDATEs. B-6 Pruning은 daily_enrich만. Phase1 구현 순서: B-10→B-11→B-4→B-12. |
 
-## Phase 1 구현 완료 (2026-03-05, feature/neural-phase1)
-
-| # | 구현 | 상태 |
-|---|---|---|
-| B-10 | `_bcm_update()` — 맥락 재공고화 + BCM 학습 통합 | DONE |
-| B-11 | `_traverse_sql()` — SQL Recursive CTE | DONE |
-| B-4  | `recall()` 패치 전환 + `hybrid_search(excluded_project)` | DONE |
-| B-12 | `_ucb_traverse()` + DB 마이그레이션 (theta_m, activity_history, visit_count) | DONE |
-
-변경 파일: `storage/hybrid.py`, `tools/recall.py`, `config.py`, `scripts/migrate_neural_phase1.py`
-브랜치: `feature/neural-phase1`
-
-## 미완료 항목 (설계 문서)
+## 미완료 항목
 없음 — 13개 전체 완료.
 
 ## 오케스트레이터 확정 사항
@@ -52,11 +40,12 @@
 - B-5 재공고화: 전체 Phase 1 첫 번째 구현
 - B-7 SQL CTE: 성능 1순위 확정
 
-## Phase 1 완료 — 다음 단계
-Phase 2 후보 (설계 b-neural-11 Phase2):
-- `all_edges` 전체 로드 제거 → `_bcm_update()` 내 SQL 직접 조회로 교체
-- `_traverse_sql()` 제거 (UCB로 완전 대체됨)
-- Pruning (B-6): `daily_enrich.py`에 추가
+## 다음 세션: 구현 시작
+Phase 1 구현 순서 (b-neural-13 기준):
+1. **B-10**: `_hebbian_update()` 수정 + config `CONTEXT_HISTORY_LIMIT=5` + 마이그레이션 SQL
+2. **B-11 Phase1**: `hybrid.py` L75-76 `_traverse_sql()` 교체 + import 정리
+3. **B-4**: `recall.py` 패치 전환 + `hybrid_search` `excluded_project` 파라미터
+4. **B-12**: DB 마이그레이션 (theta_m, activity_history, visit_count) + `_bcm_update()` + `_ucb_traverse()`
 
 ## DB 스키마 변경 전체 요약
 - nodes: `theta_m REAL DEFAULT 0.5`, `activity_history TEXT DEFAULT '[]'`, `visit_count INTEGER DEFAULT 0`
