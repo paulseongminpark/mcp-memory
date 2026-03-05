@@ -636,6 +636,14 @@ class NodeEnricher:
 
     def _apply(self, tid: str, result, node: dict, updates: dict):
         """결과를 updates dict에 반영. conflict resolution 포함."""
+        # P1-W3-04: A-10 방화벽 — L4/L5 노드 접근 제어 (d-r3-13)
+        from utils.access_control import check_access
+        node_id = node.get("id")
+        operation = "modify_content" if tid in ("E1", "E2", "E3") else "modify_metadata"
+        actor = f"enrichment:{tid}"
+        if not check_access(node_id, operation, actor):
+            return  # L4/L5 콘텐츠 변경 차단 (F1/F2)
+
         if tid == "E1":
             updates["summary"] = result
         elif tid == "E2":
