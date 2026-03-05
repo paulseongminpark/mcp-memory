@@ -268,7 +268,7 @@ def phase6_pruning(conn: sqlite3.Connection, dry_run: bool = True) -> dict:
     """
     Phase 6: Pruning (edge → node 순서)
 
-    Step A: B-6 edge pruning (Bäuml ctx_log 기반 strength 평가)
+    Step A: B-6 edge pruning (ctx_log diversity 기반 strength 평가)
     Step B: D-6 node BSP Stage 2 (pruning_candidate 표시)
     Step C: D-6 node BSP Stage 3 (30일 경과 → archived)
     Step D: action_log 기록
@@ -288,7 +288,7 @@ def phase6_pruning(conn: sqlite3.Connection, dry_run: bool = True) -> dict:
     results: dict = {"dry_run": dry_run}
 
     # Step A: Edge Pruning
-    print("\n[Phase 6-A] Edge pruning (Bäuml ctx_log)...")
+    print("\n[Phase 6-A] Edge pruning (ctx_log diversity)...")
     edge_stats = _run_edge_pruning(conn, dry_run=dry_run)
     results["edges"] = edge_stats
     print(
@@ -331,7 +331,6 @@ def _run_edge_pruning(conn: sqlite3.Connection, dry_run: bool) -> dict:
     ctx_log: edges.description 컬럼에 JSON 배열로 저장된 쿼리 맥락 로그.
     """
     import math
-    from datetime import timedelta
 
     PRUNE_STRENGTH_THRESHOLD = 0.05
     PRUNE_MIN_CONTEXT_DIVERSITY = 2
@@ -340,9 +339,8 @@ def _run_edge_pruning(conn: sqlite3.Connection, dry_run: bool) -> dict:
 
     active_edges = conn.execute(
         "SELECT id, source_id, target_id, relation, strength, "
-        "       frequency, last_activated, description, archived_at "
-        "FROM edges "
-        "WHERE archived_at IS NULL"
+        "       frequency, last_activated, description "
+        "FROM edges"
     ).fetchall()
 
     now_utc = datetime.now(timezone.utc)
@@ -383,20 +381,14 @@ def _run_edge_pruning(conn: sqlite3.Connection, dry_run: bool) -> dict:
         src_tier = src_row["tier"] if src_row and src_row["tier"] is not None else 2
         src_layer = src_row["layer"] if src_row and src_row["layer"] is not None else 0
 
-        # L3+(tier=0) 또는 layer>=2: archive (복구 가능)
+        # tier=0 또는 layer>=2 source: 보존 (스키마에 archived_at 없음)
         if src_tier == 0 or src_layer >= 2:
-            decision = "archive"
+            decision = "archive"  # 보존 — 중요 소스의 약한 edge는 삭제하지 않음
         else:
             decision = "delete"
 
         if not dry_run:
-            if decision == "archive":
-                probation_dt = (now_utc + timedelta(days=30)).isoformat()
-                conn.execute(
-                    "UPDATE edges SET archived_at=?, probation_end=? WHERE id=?",
-                    (now_str, probation_dt, edge_id),
-                )
-            else:
+            if decision == "delete":
                 conn.execute("DELETE FROM edges WHERE id=?", (edge_id,))
 
         stats[decision] += 1
@@ -417,14 +409,14 @@ def _run_node_stage2(conn: sqlite3.Connection, dry_run: bool) -> dict:
     candidates = conn.execute("""
         SELECT
             n.id, n.content, n.type, n.layer, n.quality_score,
-            n.observation_count, n.last_activated, n.tier,
+            n.observation_count, n.updated_at, n.tier,
             COUNT(e.id) AS edge_count
         FROM nodes n
         LEFT JOIN edges e ON (e.source_id = n.id OR e.target_id = n.id)
         WHERE n.status = 'active'
           AND COALESCE(n.quality_score, 0) < 0.3
           AND COALESCE(n.observation_count, 0) < 2
-          AND (n.last_activated IS NULL OR n.last_activated < datetime('now', '-90 days'))
+          AND (n.updated_at IS NULL OR n.updated_at < datetime('now', '-90 days'))
           AND n.layer IN (0, 1)
         GROUP BY n.id
         HAVING edge_count < 3

@@ -58,6 +58,10 @@ def compute_ihs(conn: sqlite3.Connection, top_n: int = 20) -> list[dict]:
 
 def take_snapshot(conn: sqlite3.Connection) -> int:
     """hub_snapshots 테이블에 현재 Top-20 허브 저장."""
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS hub_snapshots "
+        "(node_id INTEGER, snapshot_date TEXT, ihs_score REAL)"
+    )
     hubs = compute_ihs(conn, top_n=20)
     today = datetime.now(timezone.utc).date().isoformat()
 

@@ -42,7 +42,7 @@ def stage1_identify_candidates(conn: sqlite3.Connection) -> list[int]:
         WHERE n.status = 'active'
           AND COALESCE(n.quality_score, 0) < 0.3
           AND COALESCE(n.observation_count, 0) < 2
-          AND (n.last_activated IS NULL OR n.last_activated < datetime('now', '-90 days'))
+          AND (n.updated_at IS NULL OR n.updated_at < datetime('now', '-90 days'))
           AND n.layer IN (0, 1)
         GROUP BY n.id
         HAVING edge_count < 3
