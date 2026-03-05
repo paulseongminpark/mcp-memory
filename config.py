@@ -26,7 +26,22 @@ ENRICHMENT_TEMPORAL_WEIGHT = 0.1  # recall() temporal_relevance 가중치
 EXPLORATION_RATE = 0.1  # 그래프 탐색 시 약한 edge 탐험 확률
 RWR_SURPRISE_WEIGHT = 0.05  # RWR 놀라움 지수 가중치 (k=30 시 0.1→0.05)
 
-# BCM 레이어별 학습률 (B-1 정본) — _hebbian_update() BCM 구현 시 사용
+# ─── 뉴럴 메커니즘 (Phase 1) ──────────────────────────────
+# B-10: 맥락 의존적 재공고화
+CONTEXT_HISTORY_LIMIT = 5    # edge당 최근 맥락 N개 유지
+
+# B-4: 패치 전환 (Marginal Value Theorem)
+PATCH_SATURATION_THRESHOLD = 0.75  # 75% 이상 동일 project → 패치 전환
+
+# B-12: UCB c값 (Upper Confidence Bound 탐색 계수)
+UCB_C_FOCUS = 0.3   # 집중 모드: 강한 연결 우선
+UCB_C_AUTO  = 1.0   # 기본 (자동)
+UCB_C_DMN   = 2.5   # DMN 모드: 약한 연결도 탐색
+
+# B-12: BCM 슬라이딩 윈도우
+BCM_HISTORY_WINDOW = 20  # θ_m 갱신 시 최근 N개 활성화 이력
+
+# BCM 레이어별 학습률 (B-1 정본) — _bcm_update()에서 사용
 LAYER_ETA: dict[int, float] = {
     0: 0.02,   # L0 (Observation): 빠른 학습
     1: 0.015,  # L1 (Signal)
