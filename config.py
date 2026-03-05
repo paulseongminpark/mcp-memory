@@ -117,7 +117,7 @@ RELATION_TYPES = {
         "resolved_by", "prevented_by", "enabled_by", "blocked_by",
     ],
     "structural": [
-        "part_of", "composed_of", "extends", "governed_by",
+        "part_of", "composed_of", "extends", "governed_by", "governs",
         "instantiated_as", "expressed_as", "contains", "derived_from",
     ],
     "layer_movement": [
