@@ -7,8 +7,8 @@
 
 ```
 phase: 2
-last_done: P1-W2-04
-next: P2-W2-01
+last_done: P2-W2-02
+next: (Phase 2 W2 완료 — CX/GM 대기)
 blocked_by: 없음
 ```
 
@@ -64,3 +64,5 @@ scripts/*
 | 22:10 | P1-W2-03 | ✅ test_remember_v2.py 18개 PASS (03ae414) |
 | 22:10 | P1-W2-04 | ✅ test_recall_v2.py 18개 PASS (03ae414) |
 | 09:00 | P1-W2-02-fix | ✅ recall.py stats→meta 수정 (충돌 #8) + 테스트 18/18 (4fb8489) |
+| 09:30 | P2-W2-01 | ✅ promote_node.py 3-gate 교체 (SWR+Bayesian+MDL+skip_gates) (bfc1aa4) |
+| 09:30 | P2-W2-02 | ✅ analyze_signals +_recommend_v2 +_bayesian_cluster_score (ab92ba0) |
