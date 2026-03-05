@@ -6,9 +6,9 @@
 ## 현재 상태
 
 ```
-phase: 1
-last_done: P0-W2-03
-next: P1-W2-01
+phase: 2
+last_done: P1-W2-04
+next: P2-W2-01
 blocked_by: 없음
 ```
 
@@ -59,3 +59,7 @@ scripts/*
 | 19:50 | P0-W2-01 | ✅ validators.py type_defs 기반 전체 교체 (fc18760) |
 | 19:50 | P0-W2-02 | ✅ server.py import + 검증 블록 삽입 (fc18760) |
 | 19:50 | P0-W2-03 | ✅ test_validators_integration.py TC1~TC10 13/13 (fc18760) |
+| 22:10 | P1-W2-01 | ✅ remember.py 전체교체 — classify/store/link + F3 + action_log (03ae414) |
+| 22:10 | P1-W2-02 | ✅ recall.py 전체교체 — mode + 패치전환 + stats graceful (03ae414) |
+| 22:10 | P1-W2-03 | ✅ test_remember_v2.py 18개 PASS (03ae414) |
+| 22:10 | P1-W2-04 | ✅ test_recall_v2.py 18개 PASS (03ae414) |
