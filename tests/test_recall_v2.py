@@ -221,10 +221,10 @@ class TestRecall:
 
 class TestIncrementRecallCount:
     def test_graceful_skip_on_exception(self):
-        """stats 테이블 없으면 예외 없이 통과."""
+        """meta 테이블 없으면 예외 없이 통과."""
         with patch("tools.recall.sqlite_store") as mock_sqls:
             mock_conn = MagicMock()
-            mock_conn.execute.side_effect = Exception("no such table: stats")
+            mock_conn.execute.side_effect = Exception("no such table: meta")
             mock_sqls._connect.return_value = mock_conn
 
             from tools.recall import _increment_recall_count

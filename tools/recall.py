@@ -110,7 +110,7 @@ def _increment_recall_count():
     try:
         conn = sqlite_store._connect()
         conn.execute("""
-            INSERT INTO stats(key, value, updated_at)
+            INSERT INTO meta(key, value, updated_at)
                 VALUES('total_recall_count', '1', datetime('now'))
             ON CONFLICT(key) DO UPDATE SET
                 value = CAST(CAST(value AS INTEGER) + 1 AS TEXT),
@@ -119,4 +119,4 @@ def _increment_recall_count():
         conn.commit()
         conn.close()
     except Exception:
-        pass  # stats 테이블 미생성 시 graceful skip
+        pass  # meta 테이블 미생성 시 graceful skip
