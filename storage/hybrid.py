@@ -7,6 +7,7 @@ from collections import defaultdict
 from datetime import datetime, timezone
 import json
 import math
+import time
 
 from config import (
     DEFAULT_TOP_K, RRF_K, GRAPH_BONUS,
@@ -17,6 +18,29 @@ from config import (
 )
 from storage import sqlite_store, vector_store
 from graph.traversal import build_graph  # traverse 제거 — UCB로 교체
+
+
+# ─── TTL 캐싱 (B-16) ─────────────────────────────────────────────
+
+_GRAPH_CACHE: tuple[list, object] | None = None  # (all_edges, nx.DiGraph)
+_GRAPH_CACHE_TS: float = 0.0
+_GRAPH_TTL: float = 300.0  # 5분
+
+
+def _get_graph() -> tuple[list, object]:
+    """all_edges + NetworkX graph 캐시 반환 (TTL=5분).
+
+    캐시 히트 시 빌드 비용 완전 생략.
+    단일 프로세스 MCP 서버 환경에서 안전.
+    """
+    global _GRAPH_CACHE, _GRAPH_CACHE_TS
+    now = time.monotonic()
+    if _GRAPH_CACHE is None or (now - _GRAPH_CACHE_TS) > _GRAPH_TTL:
+        all_edges = sqlite_store.get_all_edges()
+        graph = build_graph(all_edges)
+        _GRAPH_CACHE = (all_edges, graph)
+        _GRAPH_CACHE_TS = now
+    return _GRAPH_CACHE
 
 
 # ─── _traverse_sql() — B-11 (보조용, Phase 2 전환 준비) ──────────
@@ -346,9 +370,8 @@ def hybrid_search(
     for node_id, _, _ in fts_results[:3]:
         seed_ids.append(node_id)
 
-    # 4. UCB 그래프 탐색 (B-12)
-    all_edges = sqlite_store.get_all_edges()
-    graph = build_graph(all_edges)
+    # 4. UCB 그래프 탐색 (B-12, B-16 TTL 캐시)
+    all_edges, graph = _get_graph()
     c = _auto_ucb_c(query, mode=mode)
     graph_neighbors = (
         _ucb_traverse(graph, seed_ids, depth=GRAPH_MAX_HOPS, c=c)
