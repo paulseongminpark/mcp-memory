@@ -6,9 +6,9 @@
 ## 현재 상태
 
 ```
-phase: 0
-last_done: P0-W1-03
-next: (Phase 0 W1 완료 — W2/W3/CX/GM 대기)
+phase: 1
+last_done: P1-W1-07
+next: (Phase 1 W1 완료 — W2/W3/CX/GM 대기)
 blocked_by: 없음
 ```
 
@@ -64,3 +64,10 @@ scripts/daily_enrich.py
 | 19:15 | P0-W1-02 | ✅ migrate_v2_ontology.py 9단계 작성 + governs 추가 (0bdd2c9) |
 | 19:34 | P0-W1-03 | ✅ DB 백업 + 마이그레이션 9/9 성공 + 멱등성 확인 (a429e60) |
 | 20:45 | P0-CX-02-fix | ✅ relation_defs 50행 보정: contextualizes 추가 + schema.yaml governs 반영 (fef526f) |
+| 21:00 | P1-W1-01 | ✅ action_log.py 신규 — record() + ACTION_TAXONOMY 25개 (a88e036) |
+| 21:10 | P1-W1-02 | ✅ hybrid.py 전체 교체 — BCM+UCB, Hebbian 삭제 (4b093c4) |
+| 21:15 | P1-W1-03 | ✅ sqlite_store.py +log_correction() (bb0d273) |
+| 21:18 | P1-W1-04 | ✅ vector_store.py +get_node_embedding() (7b0003a) |
+| 21:20 | P1-W1-05 | ✅ hybrid.py TTL 캐싱 5분 (ae4203a) |
+| 21:25 | P1-W1-06 | ✅ action_log 테스트 7/7 PASS (01e6ca4) |
+| 21:30 | P1-W1-07 | ✅ hybrid BCM+UCB 테스트 16/16 PASS (7534835) |
