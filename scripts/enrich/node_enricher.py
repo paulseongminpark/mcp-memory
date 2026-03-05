@@ -353,9 +353,24 @@ class NodeEnricher:
 
         summary = (r.get("summary") or "")[:100]
         if summary:
-            results["E1"] = summary
-            updates["summary"] = summary
-            status["E1"] = now
+            ok, reason = self._validate_summary_length(
+                summary, node.get("type", "Unclassified")
+            )
+            if ok:
+                results["E1"] = summary
+                updates["summary"] = summary
+                status["E1"] = now
+            else:
+                from storage import sqlite_store
+                sqlite_store.log_correction(
+                    node_id=node_id,
+                    field="summary",
+                    old_value=(node.get("summary") or "")[:200],
+                    new_value=summary[:200],
+                    reason=reason,
+                    corrected_by="summary_length_validator",
+                )
+                # updates["summary"] 미설정 → 기존 summary 유지
 
         concepts = [c for c in r.get("concepts", []) if isinstance(c, str)][:5]
         if concepts:
@@ -645,7 +660,22 @@ class NodeEnricher:
             return  # L4/L5 콘텐츠 변경 차단 (F1/F2)
 
         if tid == "E1":
-            updates["summary"] = result
+            ok, reason = self._validate_summary_length(
+                result, node.get("type", "Unclassified")
+            )
+            if ok:
+                updates["summary"] = result
+            else:
+                from storage import sqlite_store
+                sqlite_store.log_correction(
+                    node_id=node.get("id"),
+                    field="summary",
+                    old_value=(node.get("summary") or "")[:200],
+                    new_value=result[:200],
+                    reason=reason,
+                    corrected_by="summary_length_validator",
+                )
+                # updates["summary"] 미설정 → 기존 summary 유지
         elif tid == "E2":
             updates["key_concepts"] = json.dumps(result, ensure_ascii=False)
         elif tid == "E3":
@@ -660,20 +690,51 @@ class NodeEnricher:
         elif tid == "E6":
             updates["secondary_types"] = json.dumps(result, ensure_ascii=False)
         elif tid == "E7":
-            # ChromaDB 재임베딩 (S5/C7 해결)
+            # ChromaDB 재임베딩 + Semantic Drift 탐지 (d-r3-12)
             if result and not self.dry_run:
                 try:
-                    from storage import vector_store
-                    node_id = node.get("id")
-                    vec_meta = {
-                        "type": node.get("type", ""),
-                        "project": node.get("project", ""),
-                        "tags": node.get("tags", ""),
-                        "embedding_provisional": "false",
-                    }
-                    vector_store.add(node_id, result, vec_meta)
+                    import storage.vector_store as vector_store
+                    import storage.sqlite_store as _sqlite_store
+                    from storage.vector_store import get_node_embedding
+                    from utils.similarity import cosine_similarity
+                    from config import DRIFT_THRESHOLD
+                    from embedding.openai_embed import embed_text
+
+                    _node_id = node.get("id")
+
+                    # ── Semantic Drift 탐지 ──────────────────────────────────
+                    old_embedding = get_node_embedding(_node_id)
+                    drift_detected = False
+
+                    if old_embedding:
+                        new_embedding = embed_text(result)
+                        similarity = cosine_similarity(old_embedding, new_embedding)
+                        if similarity < DRIFT_THRESHOLD:
+                            drift_detected = True
+                            _sqlite_store.log_correction(
+                                node_id=_node_id,
+                                field="embedding_text",
+                                old_value="<preserved>",
+                                new_value=result[:200],
+                                reason=(
+                                    f"semantic_drift: cosine_sim={similarity:.4f} "
+                                    f"< threshold={DRIFT_THRESHOLD}"
+                                ),
+                                corrected_by="auto_drift_detector",
+                            )
+
+                    # ── 드리프트 없을 때만 ChromaDB 업데이트 ────────────────
+                    if not drift_detected:
+                        vec_meta = {
+                            "type": node.get("type", ""),
+                            "project": node.get("project", ""),
+                            "tags": node.get("tags", ""),
+                            "embedding_provisional": "false",
+                        }
+                        vector_store.add(_node_id, result, vec_meta)
+
                 except Exception:
-                    pass  # ChromaDB 실패해도 enrichment 중단하지 않음
+                    pass  # ChromaDB/임베딩 실패해도 enrichment 중단하지 않음
         elif tid == "E8":
             updates["quality_score"] = result
         elif tid == "E9":
@@ -706,3 +767,39 @@ class NodeEnricher:
         vals = list(updates.values()) + [node_id]
         self.conn.execute(f"UPDATE nodes SET {cols} WHERE id = ?", vals)
         self.conn.commit()
+
+    # ── P1-W3-03: Summary 길이 검증 헬퍼 (d-r3-12) ───────────────────────────
+
+    def _get_summary_median_length(self, node_type: str) -> float | None:
+        """같은 타입의 최근 100개 summary 길이 중앙값. 샘플 부족 시 None."""
+        import statistics as _statistics
+        rows = self.conn.execute(
+            "SELECT LENGTH(summary) AS len FROM nodes "
+            "WHERE type = ? AND summary IS NOT NULL "
+            "  AND status = 'active' AND enriched_at IS NOT NULL "
+            "ORDER BY enriched_at DESC LIMIT 100",
+            (node_type,),
+        ).fetchall()
+        if len(rows) < config.SUMMARY_LENGTH_MIN_SAMPLE:
+            return None
+        return _statistics.median(r[0] for r in rows)
+
+    def _validate_summary_length(
+        self, new_summary: str, node_type: str
+    ) -> tuple[bool, str | None]:
+        """새 summary가 길이 이상치인지 검증.
+
+        Returns:
+            (True, None)      — 정상
+            (False, reason)   — 이상치
+        """
+        median_len = self._get_summary_median_length(node_type)
+        if median_len is None:
+            return True, None  # 샘플 부족 → 패스
+        limit = config.SUMMARY_LENGTH_MULTIPLIER * median_len
+        if len(new_summary) > limit:
+            return False, (
+                f"length_anomaly: {len(new_summary)} chars > "
+                f"{config.SUMMARY_LENGTH_MULTIPLIER}x median {median_len:.0f}"
+            )
+        return True, None
