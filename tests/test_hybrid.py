@@ -1,4 +1,4 @@
-"""hybrid.py BCM+UCB 테스트."""
+"""hybrid.py BCM+UCB+SPRT 테스트."""
 
 import json
 import math
@@ -36,7 +36,9 @@ def _create_test_db():
             last_activated TEXT,
             summary TEXT DEFAULT '',
             key_concepts TEXT DEFAULT '',
-            facets TEXT DEFAULT ''
+            facets TEXT DEFAULT '',
+            score_history TEXT DEFAULT '[]',
+            promotion_candidate INTEGER DEFAULT 0
         );
         CREATE TABLE IF NOT EXISTS edges (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -313,3 +315,115 @@ def test_log_recall_activations():
     assert rows[0]["action_type"] == "recall"
     assert rows[1]["action_type"] == "node_activated"
     assert rows[2]["action_type"] == "node_activated"
+
+
+# ─── _sprt_check 테스트 ──────────────────────────────────────────
+
+def test_sprt_check_non_signal_skipped():
+    """Signal이 아닌 노드 → False (스킵)."""
+    from storage.hybrid import _sprt_check
+
+    conn = sqlite3.connect(str(_test_db))
+    node = {"id": 1, "type": "Insight", "score_history": "[]"}
+    result = _sprt_check(node, 0.9, conn)
+    conn.close()
+
+    assert result is False
+
+
+def test_sprt_check_insufficient_obs():
+    """관측 수 < SPRT_MIN_OBS → False."""
+    from storage.hybrid import _sprt_check
+
+    # Signal 노드 추가
+    conn = sqlite3.connect(str(_test_db))
+    conn.execute(
+        "INSERT INTO nodes (id, type, content, score_history) "
+        "VALUES (10, 'Signal', 'test signal', '[]')"
+    )
+    conn.commit()
+
+    node = {"id": 10, "type": "Signal", "score_history": "[]"}
+    result = _sprt_check(node, 0.9, conn)
+
+    # score_history에 1개만 추가됨 → 5개 미만
+    hist = json.loads(
+        conn.execute("SELECT score_history FROM nodes WHERE id=10").fetchone()[0]
+    )
+    conn.close()
+
+    assert result is False
+    assert len(hist) == 1
+
+
+def test_sprt_check_promote_high_scores():
+    """연속 고점수 → promote (True)."""
+    from storage.hybrid import _sprt_check
+
+    conn = sqlite3.connect(str(_test_db))
+    # 고점수 히스토리가 충분한 Signal 노드
+    high_scores = [0.8] * 10
+    conn.execute(
+        "INSERT INTO nodes (id, type, content, score_history) "
+        "VALUES (11, 'Signal', 'strong signal', ?)",
+        (json.dumps(high_scores),),
+    )
+    conn.commit()
+
+    node = {"id": 11, "type": "Signal", "score_history": json.dumps(high_scores)}
+    result = _sprt_check(node, 0.85, conn)
+    conn.close()
+
+    assert result is True
+
+
+def test_sprt_check_reject_low_scores():
+    """연속 저점수 → reject (False)."""
+    from storage.hybrid import _sprt_check
+
+    conn = sqlite3.connect(str(_test_db))
+    low_scores = [0.2] * 10
+    conn.execute(
+        "INSERT INTO nodes (id, type, content, score_history) "
+        "VALUES (12, 'Signal', 'weak signal', ?)",
+        (json.dumps(low_scores),),
+    )
+    conn.commit()
+
+    node = {"id": 12, "type": "Signal", "score_history": json.dumps(low_scores)}
+    result = _sprt_check(node, 0.15, conn)
+    conn.close()
+
+    assert result is False
+
+
+def test_sprt_check_updates_score_history():
+    """score_history가 DB에 갱신되는지 확인."""
+    from storage.hybrid import _sprt_check
+
+    conn = sqlite3.connect(str(_test_db))
+    conn.execute(
+        "INSERT INTO nodes (id, type, content, score_history) "
+        "VALUES (13, 'Signal', 'history test', '[]')"
+    )
+    conn.commit()
+
+    node = {"id": 13, "type": "Signal", "score_history": "[]"}
+    _sprt_check(node, 0.75, conn)
+    conn.commit()
+
+    hist = json.loads(
+        conn.execute("SELECT score_history FROM nodes WHERE id=13").fetchone()[0]
+    )
+    conn.close()
+
+    assert len(hist) == 1
+    assert hist[0] == 0.75
+
+
+def test_sprt_constants():
+    """SPRT 임계값 상수 확인."""
+    from storage.hybrid import _SPRT_A, _SPRT_B
+
+    assert abs(_SPRT_A - 2.773) < 0.01   # ln((1-0.2)/0.05)
+    assert abs(_SPRT_B - (-1.558)) < 0.01  # ln(0.2/(1-0.05))

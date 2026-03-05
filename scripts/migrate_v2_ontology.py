@@ -555,9 +555,11 @@ def step8_create_initial_snapshot(conn: sqlite3.Connection) -> bool:
 def step9_add_node_columns(conn: sqlite3.Connection) -> bool:
     """B-index: BCM/UCB용 컬럼 3개 추가 (theta_m, activity_history, visit_count)."""
     columns = [
-        ("theta_m",          "REAL DEFAULT 0.5"),
-        ("activity_history", "TEXT DEFAULT '[]'"),
-        ("visit_count",      "INTEGER DEFAULT 0"),
+        ("theta_m",              "REAL DEFAULT 0.5"),
+        ("activity_history",     "TEXT DEFAULT '[]'"),
+        ("visit_count",          "INTEGER DEFAULT 0"),
+        ("score_history",        "TEXT DEFAULT '[]'"),
+        ("promotion_candidate",  "INTEGER DEFAULT 0"),
     ]
     added = 0
     try:

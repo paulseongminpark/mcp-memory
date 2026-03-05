@@ -15,6 +15,7 @@ from config import (
     CONTEXT_HISTORY_LIMIT, BCM_HISTORY_WINDOW,
     UCB_C_FOCUS, UCB_C_AUTO, UCB_C_DMN,
     GRAPH_MAX_HOPS, LAYER_ETA,
+    SPRT_ALPHA, SPRT_BETA, SPRT_P1, SPRT_P0, SPRT_MIN_OBS,
 )
 from storage import sqlite_store, vector_store
 from graph.traversal import build_graph  # traverse 제거 — UCB로 교체
@@ -277,6 +278,55 @@ def _bcm_update(
             conn.close()
 
 
+# ─── _sprt_check() — C-11 SPRT 승격 판정 ─────────────────────────
+
+_SPRT_A = math.log((1 - SPRT_BETA) / SPRT_ALPHA)       # 승격 임계 ≈ 2.773
+_SPRT_B = math.log(SPRT_BETA / (1 - SPRT_ALPHA))       # 기각 임계 ≈ -1.558
+_SPRT_LLR_POS = math.log(SPRT_P1 / SPRT_P0)            # score>0.5 시 LLR ≈ 0.847
+_SPRT_LLR_NEG = math.log((1 - SPRT_P1) / (1 - SPRT_P0))  # score≤0.5 시 LLR ≈ -0.847
+
+
+def _sprt_check(node: dict, score: float, conn) -> bool:
+    """recall score 추가 후 SPRT 판단.
+
+    Signal 타입 노드에만 적용.
+    score_history 갱신 → SPRT 누적합 계산 → promotion_candidate 플래그.
+
+    Returns:
+        True if SPRT says "promote", False otherwise
+    """
+    if node.get("type") != "Signal":
+        return False
+
+    # score_history 갱신 (최대 50개)
+    raw = node.get("score_history") or "[]"
+    try:
+        history = json.loads(raw)
+        if not isinstance(history, list):
+            history = []
+    except (json.JSONDecodeError, ValueError):
+        history = []
+
+    history = (history + [round(score, 4)])[-50:]
+    conn.execute(
+        "UPDATE nodes SET score_history=? WHERE id=?",
+        (json.dumps(history), node["id"]),
+    )
+
+    if len(history) < SPRT_MIN_OBS:
+        return False
+
+    # SPRT 누적합 (전체 history 기준 — 순차 검정)
+    cumulative = 0.0
+    for obs in history:
+        cumulative += _SPRT_LLR_POS if obs > 0.5 else _SPRT_LLR_NEG
+        if cumulative >= _SPRT_A:
+            return True   # "promote" 신호 도달
+        if cumulative <= _SPRT_B:
+            return False  # "reject" 도달
+    return False  # 미결정 (중간 구간)
+
+
 # ─── _log_recall_activations() — A-12 ────────────────────────────
 
 def _log_recall_activations(
@@ -421,7 +471,26 @@ def hybrid_search(
         query=query,
     )
 
-    # 8. 활성화 이벤트 로깅 (A-12)
+    # 8. SPRT 승격 판정 (C-11)
+    try:
+        sprt_conn = sqlite_store._connect()
+        for node in result:
+            if node.get("type") == "Signal":
+                if _sprt_check(node, node.get("score", 0.0), sprt_conn):
+                    sprt_conn.execute(
+                        "UPDATE nodes SET promotion_candidate=1 WHERE id=?",
+                        (node["id"],),
+                    )
+        sprt_conn.commit()
+    except Exception:
+        pass  # SPRT 실패가 검색을 중단시키지 않음
+    finally:
+        try:
+            sprt_conn.close()
+        except Exception:
+            pass
+
+    # 9. 활성화 이벤트 로깅 (A-12)
     _log_recall_activations(result, query)
 
     return result
