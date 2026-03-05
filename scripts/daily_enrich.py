@@ -262,6 +262,270 @@ def phase5(conn: sqlite3.Connection, ga: GraphAnalyzer,
     return stats
 
 
+# ─── Phase 6: pruning (edge → node) ─────────────────────
+
+def phase6_pruning(conn: sqlite3.Connection, dry_run: bool = True) -> dict:
+    """
+    Phase 6: Pruning (edge → node 순서)
+
+    Step A: B-6 edge pruning (Bäuml ctx_log 기반 strength 평가)
+    Step B: D-6 node BSP Stage 2 (pruning_candidate 표시)
+    Step C: D-6 node BSP Stage 3 (30일 경과 → archived)
+    Step D: action_log 기록
+
+    Returns:
+        {
+          "edges": {"keep": int, "archive": int, "delete": int},
+          "nodes": {
+            "candidates": int,
+            "protected": int,
+            "marked_probation": int,
+            "archived": int,
+          },
+          "dry_run": bool,
+        }
+    """
+    results: dict = {"dry_run": dry_run}
+
+    # Step A: Edge Pruning
+    print("\n[Phase 6-A] Edge pruning (Bäuml ctx_log)...")
+    edge_stats = _run_edge_pruning(conn, dry_run=dry_run)
+    results["edges"] = edge_stats
+    print(
+        f"  edges → keep={edge_stats['keep']} "
+        f"archive={edge_stats['archive']} delete={edge_stats['delete']}"
+    )
+
+    # Step B: Node Pruning Stage 2
+    print("\n[Phase 6-B] Node pruning Stage 2 (BSP candidate 표시)...")
+    node_stage2 = _run_node_stage2(conn, dry_run=dry_run)
+    print(
+        f"  nodes → candidates={node_stage2['candidates']} "
+        f"protected={node_stage2['protected']} "
+        f"marked={node_stage2['marked_probation']}"
+    )
+
+    # Step C: Node Pruning Stage 3
+    print("\n[Phase 6-C] Node pruning Stage 3 (30일 경과 archive)...")
+    archived_ids = _run_node_stage3(conn, dry_run=dry_run)
+    print(f"  archived={len(archived_ids)}")
+
+    results["nodes"] = {
+        "candidates": node_stage2["candidates"],
+        "protected": node_stage2["protected"],
+        "marked_probation": node_stage2["marked_probation"],
+        "archived": len(archived_ids),
+    }
+
+    # Step D: action_log 기록
+    if not dry_run:
+        _log_pruning_action(conn, results)
+
+    return results
+
+
+def _run_edge_pruning(conn: sqlite3.Connection, dry_run: bool) -> dict:
+    """
+    B-6 edge pruning: strength 평가 → archive / delete / keep.
+
+    ctx_log: edges.description 컬럼에 JSON 배열로 저장된 쿼리 맥락 로그.
+    """
+    import math
+    from datetime import timedelta
+
+    PRUNE_STRENGTH_THRESHOLD = 0.05
+    PRUNE_MIN_CONTEXT_DIVERSITY = 2
+
+    stats = {"keep": 0, "archive": 0, "delete": 0}
+
+    active_edges = conn.execute(
+        "SELECT id, source_id, target_id, relation, strength, "
+        "       frequency, last_activated, description, archived_at "
+        "FROM edges "
+        "WHERE archived_at IS NULL"
+    ).fetchall()
+
+    now_utc = datetime.now(timezone.utc)
+    now_str = now_utc.isoformat()
+
+    for edge in active_edges:
+        edge_id = edge["id"]
+        freq = edge["frequency"] or 0
+        last_act = edge["last_activated"]
+        days = (
+            (now_utc - datetime.fromisoformat(last_act)).days
+            if last_act else 9999
+        )
+        strength = freq * math.exp(-0.005 * days)
+
+        # 강도 기준 통과
+        if strength > PRUNE_STRENGTH_THRESHOLD:
+            stats["keep"] += 1
+            continue
+
+        # Bäuml: 맥락 다양성 체크
+        try:
+            ctx_log = json.loads(edge["description"] or "[]")
+            unique_queries = len(
+                {c.get("q", "") for c in ctx_log if isinstance(c, dict)}
+            )
+        except (json.JSONDecodeError, TypeError):
+            unique_queries = 0
+
+        if unique_queries >= PRUNE_MIN_CONTEXT_DIVERSITY:
+            stats["keep"] += 1
+            continue
+
+        # source 노드 tier/layer 조회
+        src_row = conn.execute(
+            "SELECT tier, layer FROM nodes WHERE id = ?", (edge["source_id"],)
+        ).fetchone()
+        src_tier = src_row["tier"] if src_row and src_row["tier"] is not None else 2
+        src_layer = src_row["layer"] if src_row and src_row["layer"] is not None else 0
+
+        # L3+(tier=0) 또는 layer>=2: archive (복구 가능)
+        if src_tier == 0 or src_layer >= 2:
+            decision = "archive"
+        else:
+            decision = "delete"
+
+        if not dry_run:
+            if decision == "archive":
+                probation_dt = (now_utc + timedelta(days=30)).isoformat()
+                conn.execute(
+                    "UPDATE edges SET archived_at=?, probation_end=? WHERE id=?",
+                    (now_str, probation_dt, edge_id),
+                )
+            else:
+                conn.execute("DELETE FROM edges WHERE id=?", (edge_id,))
+
+        stats[decision] += 1
+
+    if not dry_run:
+        conn.commit()
+
+    return stats
+
+
+def _run_node_stage2(conn: sqlite3.Connection, dry_run: bool) -> dict:
+    """
+    D-6 BSP Stage 2: pruning 후보 식별 → pruning_candidate 표시.
+    check_access()로 L4/L5 + Top-10 허브 자동 보호.
+    """
+    from utils.access_control import check_access
+
+    candidates = conn.execute("""
+        SELECT
+            n.id, n.content, n.type, n.layer, n.quality_score,
+            n.observation_count, n.last_activated, n.tier,
+            COUNT(e.id) AS edge_count
+        FROM nodes n
+        LEFT JOIN edges e ON (e.source_id = n.id OR e.target_id = n.id)
+        WHERE n.status = 'active'
+          AND COALESCE(n.quality_score, 0) < 0.3
+          AND COALESCE(n.observation_count, 0) < 2
+          AND (n.last_activated IS NULL OR n.last_activated < datetime('now', '-90 days'))
+          AND n.layer IN (0, 1)
+        GROUP BY n.id
+        HAVING edge_count < 3
+        ORDER BY COALESCE(n.quality_score, 0) ASC
+        LIMIT 100
+    """).fetchall()
+
+    total_candidates = len(candidates)
+    protected = 0
+    allowed_ids = []
+
+    for c in candidates:
+        if check_access(c["id"], "write", "system:daily_enrich", conn):
+            allowed_ids.append(c["id"])
+        else:
+            protected += 1
+
+    if not dry_run:
+        now_str = datetime.now(timezone.utc).isoformat()
+        for nid in allowed_ids:
+            conn.execute(
+                "UPDATE nodes SET status='pruning_candidate', updated_at=? WHERE id=?",
+                (now_str, nid),
+            )
+            conn.execute(
+                "INSERT INTO correction_log "
+                "(node_id, field, old_value, new_value, reason, corrected_by, created_at) "
+                "VALUES (?, 'status', 'active', 'pruning_candidate', "
+                "'BSP Stage 2: q<0.3 + obs<2 + inactive 90d + edge<3', "
+                "'system:daily_enrich', datetime('now'))",
+                (nid,),
+            )
+        conn.commit()
+
+    return {
+        "candidates": total_candidates,
+        "protected": protected,
+        "marked_probation": len(allowed_ids) if not dry_run else 0,
+    }
+
+
+def _run_node_stage3(conn: sqlite3.Connection, dry_run: bool) -> list[int]:
+    """
+    D-6 BSP Stage 3: pruning_candidate 중 30일 경과 → archived.
+    삭제하지 않음. status='archived'로만 전환.
+    """
+    expired = conn.execute(
+        "SELECT id FROM nodes "
+        "WHERE status = 'pruning_candidate' "
+        "  AND updated_at < datetime('now', '-30 days')"
+    ).fetchall()
+
+    expired_ids = [r["id"] for r in expired]
+
+    if not expired_ids or dry_run:
+        if dry_run and expired_ids:
+            print(f"  [DRY RUN] {len(expired_ids)}개 archive 예정")
+        return expired_ids
+
+    now_str = datetime.now(timezone.utc).isoformat()
+    for nid in expired_ids:
+        conn.execute(
+            "UPDATE nodes SET status='archived', updated_at=? WHERE id=?",
+            (now_str, nid),
+        )
+        conn.execute(
+            "INSERT INTO correction_log "
+            "(node_id, field, old_value, new_value, reason, corrected_by, created_at) "
+            "VALUES (?, 'status', 'pruning_candidate', 'archived', "
+            "'BSP Stage 3: 30-day grace period expired', "
+            "'system:daily_enrich', datetime('now'))",
+            (nid,),
+        )
+    conn.commit()
+
+    return expired_ids
+
+
+def _log_pruning_action(conn: sqlite3.Connection, results: dict) -> None:
+    """A-9 action_log에 pruning 결과 기록."""
+    try:
+        from storage import action_log as al
+        al.record(
+            action_type="archive",
+            actor="system:daily_enrich",
+            target_type="graph",
+            params=json.dumps({"phase": 6, "description": "BSP pruning + edge cleanup"}),
+            result=json.dumps({
+                "edges_keep":        results["edges"]["keep"],
+                "edges_archive":     results["edges"]["archive"],
+                "edges_delete":      results["edges"]["delete"],
+                "nodes_candidates":  results["nodes"]["candidates"],
+                "nodes_protected":   results["nodes"]["protected"],
+                "nodes_probation":   results["nodes"]["marked_probation"],
+                "nodes_archived":    results["nodes"]["archived"],
+            }),
+        )
+    except Exception:
+        pass  # action_log 실패는 무음 처리
+
+
 # ─── Phase 7: report ─────────────────────────────────────
 
 def generate_report(budget: TokenBudget, phase_stats: dict,
@@ -312,7 +576,7 @@ def generate_report(budget: TokenBudget, phase_stats: dict,
 def main():
     ap = argparse.ArgumentParser(description="mcp-memory enrichment pipeline")
     ap.add_argument("--dry-run", action="store_true")
-    ap.add_argument("--phase", type=int, help="Run specific phase only (1-5)")
+    ap.add_argument("--phase", type=int, help="Run specific phase only (1-6)")
     ap.add_argument("--budget-large", type=int,
                     default=config.TOKEN_BUDGETS["large"])
     ap.add_argument("--budget-small", type=int,
@@ -344,6 +608,7 @@ def main():
         (3, "Phase 3: verify", lambda: phase3(conn, ne, budget)),
         (4, "Phase 4: deep", lambda: phase4(conn, ga, budget)),
         (5, "Phase 5: judge", lambda: phase5(conn, ga, budget)),
+        (6, "Phase 6: pruning", lambda: phase6_pruning(conn, dry_run=dry_run)),
     ]
 
     consecutive_failures = 0
