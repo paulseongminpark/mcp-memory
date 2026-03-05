@@ -6,16 +6,16 @@
 ## 현재 상태
 
 ```
-phase: 2
-last_done: P2-W3-03 fix (Phase 6 schema mismatch, f4a861c)
-next: P2-CX-03 재검증 (pruning dry-run PASS 확인) + P2-GM-01 대기
+phase: 3
+last_done: P3-W3-03 (calibrate_drift.py import fix, 24618d0)
+next: Phase 3 CX 검증 (P3-CX-01~05) + GM 리포트 (P3-GM-01~02)
 blocked_by: 없음
 note: |
-  Phase 0+1+2 W3 완료.
-  P2-W3-03 핫픽스: edges.archived_at 미존재 → 보존/삭제 분기, nodes.last_activated → updated_at
-  hub_monitor.py take_snapshot: CREATE TABLE IF NOT EXISTS 추가
-  dry-run 결과: edges keep=57 archive=1882 delete=4388, nodes candidates=0
-  P2-CX-03: "no such column: archived_at" → f4a861c로 수정됨, 재검증 필요
+  Phase 0+1+2+3 W3 전부 완료.
+  P3-W3-01: ab_test.py 신규 (4cc3d7a)
+  P3-W3-02: sprt_simulate.py +forbidden params (d37d977)
+  P3-W3-03: calibrate_drift.py import fix (24618d0)
+  CX 실행 대기: P3-CX-01 (ab_test), P3-CX-02 (sprt), P3-CX-03 (drift)
 ```
 
 ## 소유 파일
@@ -78,3 +78,6 @@ scripts/migrate*
 | 2026-03-06 | P2-W3-02: pruning.py 신규 (+check_access) | ✅ 9d384e9 |
 | 2026-03-06 | P2-W3-03: daily_enrich.py Phase 6 추가 | ✅ 9d384e9 |
 | 2026-03-06 | P2-W3-03 fix: archived_at/last_activated 스키마 수정 | ✅ f4a861c |
+| 2026-03-06 | P3-W3-01: ab_test.py 신규 (goldset NDCG A/B) | ✅ 4cc3d7a |
+| 2026-03-06 | P3-W3-02: sprt_simulate.py +forbidden params | ✅ d37d977 |
+| 2026-03-06 | P3-W3-03: calibrate_drift.py import fix | ✅ 24618d0 |
