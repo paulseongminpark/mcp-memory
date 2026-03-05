@@ -74,8 +74,7 @@ def measure_embedding_stability(
             "note": "dry-run: 실제 임베딩 미생성",
         }
 
-    from storage.vector_store import get_node_embedding
-    from storage.embedding import openai_embed
+    from embedding.openai_embed import embed_text
     from utils.similarity import cosine_similarity
 
     similarities: list[float] = []
@@ -88,8 +87,8 @@ def measure_embedding_stability(
 
         try:
             # 같은 텍스트로 임베딩 2번 생성 (자연 변동 측정)
-            emb1 = openai_embed(text)
-            emb2 = openai_embed(text)
+            emb1 = embed_text(text)
+            emb2 = embed_text(text)
             sim = cosine_similarity(emb1, emb2)
             similarities.append(sim)
         except Exception as e:
