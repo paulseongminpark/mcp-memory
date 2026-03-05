@@ -6,16 +6,17 @@
 ## 현재 상태
 
 ```
-phase: 1
-last_done: P1-W3-06 (test_drift.py 16/16 PASS, 3b55aaf)
-next: Phase 2 대기 (P2-W3 태스크 — 0-impl-phase2.md 확인)
-blocked_by: Phase 1 CX/GM 검증 완료 대기
+phase: 2
+last_done: P2-W3-03 (daily_enrich Phase 6, 9d384e9)
+next: Phase 2 CX 검증 (P2-CX-03: pruning dry-run + 결과 검토)
+blocked_by: 없음
 note: |
   Phase 0 완료: P0-W3-01 (goldset.yaml)
   Phase 1 완료: P1-W3-01~06 + P1-AUX 전부
+  Phase 2 W3 완료: P2-W3-01~03 (hub_monitor + pruning + daily_enrich Phase 6)
   완료 테스트: test_access_control 23/23, test_drift 16/16
-  미실행 CX: P1-CX-05 (access+drift) — Paul codex exec 필요
-  compact 시각: 2026-03-05
+  미실행 CX: P1-CX-05 (Phase 1), P2-CX-03 (pruning dry-run) — Paul 실행 필요
+  compact 시각: 2026-03-06
 ```
 
 ## 소유 파일
@@ -74,3 +75,6 @@ scripts/migrate*
 | 2026-03-05 | P1-AUX: sprt_simulate.py + calibrate_drift.py | ✅ 2982e5c |
 | 2026-03-05 | P1-W3-03: enricher E7 drift + E1 길이 검증 | ✅ 0a5d8ec |
 | 2026-03-05 | P1-W3-06: test_drift.py 16/16 PASS | ✅ 3b55aaf |
+| 2026-03-06 | P2-W3-01: hub_monitor.py 신규 | ✅ 9d384e9 |
+| 2026-03-06 | P2-W3-02: pruning.py 신규 (+check_access) | ✅ 9d384e9 |
+| 2026-03-06 | P2-W3-03: daily_enrich.py Phase 6 추가 | ✅ 9d384e9 |
