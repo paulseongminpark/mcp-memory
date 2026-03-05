@@ -374,22 +374,23 @@ def step5_correct_invalid_relations(conn: sqlite3.Connection) -> bool:
     try:
         for old_rel, new_rel in RELATION_CORRECTIONS.items():
             edges = conn.execute(
-                "SELECT id FROM edges WHERE relation = ?", (old_rel,)
+                "SELECT id, source_id FROM edges WHERE relation = ?", (old_rel,)
             ).fetchall()
 
             if not edges:
                 continue
 
             # correction_log 기록 (UPDATE 전)
+            # node_id는 NOT NULL — edge의 source_id 사용
             for edge in edges:
                 conn.execute(
                     """INSERT INTO correction_log
-                       (edge_id, field, old_value, new_value, reason,
+                       (node_id, edge_id, field, old_value, new_value, reason,
                         corrected_by, created_at)
-                       VALUES (?, 'relation', ?, ?,
+                       VALUES (?, ?, 'relation', ?, ?,
                                'A-11: invalid relation corrected (v2.1 migration)',
                                'migration', ?)""",
-                    (edge["id"], old_rel, new_rel, now),
+                    (edge["source_id"], edge["id"], old_rel, new_rel, now),
                 )
 
             count = conn.execute(
