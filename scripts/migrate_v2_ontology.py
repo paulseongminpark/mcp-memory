@@ -122,11 +122,12 @@ RELATION_DEFS = [
     ("connects_with",         "semantic", "any",        "any", None,            "active", "normal"),
     ("inspired_by",           "semantic", "any",        "any", None,            "active", "normal"),
     ("exemplifies",           "semantic", "any",        "any", None,            "active", "normal"),
-    # perspective (4, 2개 deprecated)
-    ("viewed_through",  "perspective", "any", "any", None, "deprecated", "deprecated"),
-    ("interpreted_as",  "perspective", "any", "any", None, "deprecated", "deprecated"),
-    ("questions",       "perspective", "any", "any", None, "active",     "normal"),
-    ("validates",       "perspective", "any", "any", None, "active",     "normal"),
+    # perspective (5, 2개 deprecated)
+    ("viewed_through",   "perspective", "any", "any", None, "deprecated", "deprecated"),
+    ("interpreted_as",   "perspective", "any", "any", None, "deprecated", "deprecated"),
+    ("questions",        "perspective", "any", "any", None, "active",     "normal"),
+    ("validates",        "perspective", "any", "any", None, "active",     "normal"),
+    ("contextualizes",   "perspective", "any", "any", None, "active",     "normal"),
     # temporal (4)
     ("preceded_by",        "temporal", "any", "any", None, "active", "normal"),
     ("simultaneous_with",  "temporal", "any", "any", None, "active", "normal"),

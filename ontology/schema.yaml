@@ -269,7 +269,7 @@ node_types:
     required_fields: []
     optional_fields: [attempted_type, reason_failed]
 
-# 48 relation types (config.py ALL_RELATIONS와 동기화)
+# 50 relation types (config.py ALL_RELATIONS와 동기화)
 relation_types:
   # 인과 (8)
   caused_by:
@@ -297,7 +297,7 @@ relation_types:
     description: "A가 B에 의해 차단되었다"
     inverse: null
 
-  # 구조 (8)
+  # 구조 (9)
   part_of:
     description: "A는 B의 일부이다"
     inverse: null
@@ -309,7 +309,10 @@ relation_types:
     inverse: null
   governed_by:
     description: "A는 B에 의해 통제된다"
-    inverse: null
+    inverse: governs
+  governs:
+    description: "A가 B를 통제한다"
+    inverse: governed_by
   instantiated_as:
     description: "A가 B로 구체화되었다"
     inverse: null
@@ -383,7 +386,7 @@ relation_types:
     description: "A가 B의 예시이다"
     inverse: null
 
-  # 관점 (4)
+  # 관점 (5)
   viewed_through:
     description: "A가 B의 렌즈로 보인다"
     inverse: null
@@ -395,6 +398,9 @@ relation_types:
     inverse: null
   validates:
     description: "A가 B를 검증한다"
+    inverse: null
+  contextualizes:
+    description: "A가 B에 맥락을 부여한다"
     inverse: null
 
   # 시간 (4)

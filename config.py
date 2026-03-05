@@ -133,6 +133,7 @@ RELATION_TYPES = {
     ],
     "perspective": [
         "viewed_through", "interpreted_as", "questions", "validates",
+        "contextualizes",
     ],
     "temporal": [
         "preceded_by", "simultaneous_with", "born_from", "assembles",
