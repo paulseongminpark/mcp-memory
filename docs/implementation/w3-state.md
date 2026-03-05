@@ -6,10 +6,11 @@
 ## 현재 상태
 
 ```
-phase: 0
-last_done: P0-W3-01 (완료, d116cf2)
-next: (P0 W3 태스크 없음 — 다른 세션 완료 대기)
-blocked_by: P0-W1-03, P0-W2-03 (W1/W2 세션 의존)
+phase: 1
+last_done: P1-W3-05 (test_access_control.py 23/23 PASS, 82e64d2)
+next: P1-W3-03 (enricher drift) / P1-W3-06 (drift tests)
+blocked_by: P1-W1-04 (vector_store.get_node_embedding 미완료 — W1 세션 대기)
+note: AUX 완료 — sprt_simulate.py + calibrate_drift.py (2982e5c)
 ```
 
 ## 소유 파일
@@ -61,3 +62,8 @@ scripts/migrate*
 | 시각 | 태스크 | 결과 |
 |------|--------|------|
 | 2026-03-05 | P0-W3-01: goldset.yaml 25쿼리 초안 | ✅ d116cf2 |
+| 2026-03-05 | P1-W3-01: utils/access_control.py 신규 | ✅ 520ca2f |
+| 2026-03-05 | P1-W3-02: utils/similarity.py 신규 | ✅ fbca546 |
+| 2026-03-05 | P1-W3-04: node_enricher _apply check_access 삽입 | ✅ 3b7523b |
+| 2026-03-05 | P1-W3-05: test_access_control.py 23/23 PASS | ✅ 82e64d2 |
+| 2026-03-05 | P1-AUX: sprt_simulate.py + calibrate_drift.py | ✅ 2982e5c |
