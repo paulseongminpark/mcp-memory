@@ -8,9 +8,14 @@
 ```
 phase: 1
 last_done: P1-W3-06 (test_drift.py 16/16 PASS, 3b55aaf)
-next: (Phase 1 W3 태스크 전부 완료)
-blocked_by: 없음
-note: P1-CX-05 대기 — Paul이 codex exec으로 실행 필요
+next: Phase 2 대기 (P2-W3 태스크 — 0-impl-phase2.md 확인)
+blocked_by: Phase 1 CX/GM 검증 완료 대기
+note: |
+  Phase 0 완료: P0-W3-01 (goldset.yaml)
+  Phase 1 완료: P1-W3-01~06 + P1-AUX 전부
+  완료 테스트: test_access_control 23/23, test_drift 16/16
+  미실행 CX: P1-CX-05 (access+drift) — Paul codex exec 필요
+  compact 시각: 2026-03-05
 ```
 
 ## 소유 파일
