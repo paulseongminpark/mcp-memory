@@ -7,16 +7,15 @@
 
 ```
 phase: 2
-last_done: P2-W3-03 (daily_enrich Phase 6, 9d384e9)
-next: Phase 2 CX 검증 (P2-CX-03: pruning dry-run + 결과 검토)
+last_done: P2-W3-03 fix (Phase 6 schema mismatch, f4a861c)
+next: P2-CX-03 재검증 (pruning dry-run PASS 확인) + P2-GM-01 대기
 blocked_by: 없음
 note: |
-  Phase 0 완료: P0-W3-01 (goldset.yaml)
-  Phase 1 완료: P1-W3-01~06 + P1-AUX 전부
-  Phase 2 W3 완료: P2-W3-01~03 (hub_monitor + pruning + daily_enrich Phase 6)
-  완료 테스트: test_access_control 23/23, test_drift 16/16
-  미실행 CX: P1-CX-05 (Phase 1), P2-CX-03 (pruning dry-run) — Paul 실행 필요
-  compact 시각: 2026-03-06
+  Phase 0+1+2 W3 완료.
+  P2-W3-03 핫픽스: edges.archived_at 미존재 → 보존/삭제 분기, nodes.last_activated → updated_at
+  hub_monitor.py take_snapshot: CREATE TABLE IF NOT EXISTS 추가
+  dry-run 결과: edges keep=57 archive=1882 delete=4388, nodes candidates=0
+  P2-CX-03: "no such column: archived_at" → f4a861c로 수정됨, 재검증 필요
 ```
 
 ## 소유 파일
@@ -78,3 +77,4 @@ scripts/migrate*
 | 2026-03-06 | P2-W3-01: hub_monitor.py 신규 | ✅ 9d384e9 |
 | 2026-03-06 | P2-W3-02: pruning.py 신규 (+check_access) | ✅ 9d384e9 |
 | 2026-03-06 | P2-W3-03: daily_enrich.py Phase 6 추가 | ✅ 9d384e9 |
+| 2026-03-06 | P2-W3-03 fix: archived_at/last_activated 스키마 수정 | ✅ f4a861c |
