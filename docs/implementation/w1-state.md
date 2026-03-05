@@ -6,9 +6,9 @@
 ## 현재 상태
 
 ```
-phase: 1
-last_done: P1-W1-07
-next: (Phase 1 W1 완료 — W2/W3/CX/GM 대기)
+phase: 2
+last_done: P2-W1-01
+next: (Phase 2 W1 완료 — W2/W3/CX/GM 대기)
 blocked_by: 없음
 ```
 
@@ -71,3 +71,4 @@ scripts/daily_enrich.py
 | 21:20 | P1-W1-05 | ✅ hybrid.py TTL 캐싱 5분 (ae4203a) |
 | 21:25 | P1-W1-06 | ✅ action_log 테스트 7/7 PASS (01e6ca4) |
 | 21:30 | P1-W1-07 | ✅ hybrid BCM+UCB 테스트 16/16 PASS (7534835) |
+| 00:15 | P2-W1-01 | ✅ hybrid +_sprt_check + promotion_candidate + 테스트 22/22 PASS (5344895) |
