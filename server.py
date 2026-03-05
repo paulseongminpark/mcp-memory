@@ -9,6 +9,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from mcp.server.fastmcp import FastMCP
 
 from config import DB_PATH, OPENAI_API_KEY
+from ontology.validators import validate_node_type, suggest_closest_type
 from storage.sqlite_store import init_db
 
 if not OPENAI_API_KEY:
@@ -59,7 +60,42 @@ def remember(
         confidence: Confidence level 0.0-1.0 (default 1.0)
         source: Source of memory — claude, user, hook, obsidian (default claude)
     """
-    return _remember(
+    # ── [A-13 통합] 타입 검증 블록 ─────────────────────────────────────────
+    deprecated_warning: str | None = None
+
+    valid, correction = validate_node_type(type)
+
+    if valid:
+        # 유효 타입 — 대소문자 교정이 있으면 적용
+        if correction:
+            type = correction  # e.g., "pattern" → "Pattern"
+
+    else:
+        if correction:
+            # Deprecated 타입 — replaced_by로 자동 교정 + 경고
+            deprecated_warning = (
+                f"Type '{type}' is deprecated. Auto-converted to '{correction}'."
+            )
+            type = correction  # 교정 후 정상 저장 진행
+
+        else:
+            # 완전히 없는 타입 — 저장 차단 + content 기반 추천
+            suggestion = suggest_closest_type(content)
+            return {
+                "node_id": None,
+                "type": type,
+                "project": project,
+                "auto_edges": [],
+                "error": f"Unknown node type: '{type}'.",
+                "suggestion": suggestion,
+                "message": (
+                    f"Validation failed: unknown type '{type}'. "
+                    f"Suggested: '{suggestion}'"
+                ),
+            }
+    # ── [타입 검증 끝] ─────────────────────────────────────────────────────
+
+    result = _remember(
         content=content,
         type=type,
         tags=tags,
@@ -68,6 +104,12 @@ def remember(
         confidence=confidence,
         source=source,
     )
+
+    # Deprecated 타입 사용 시 경고 추가
+    if deprecated_warning:
+        result["warning"] = deprecated_warning
+
+    return result
 
 
 @mcp.tool()

@@ -1,79 +1,135 @@
-"""Ontology validation — schema.yaml을 동적으로 읽어 타입/관계 검증."""
+"""Ontology validation — type_defs 테이블 기반 (schema.yaml fallback 포함)."""
 
-from pathlib import Path
-
-import yaml
-
-SCHEMA_PATH = Path(__file__).parent / "schema.yaml"
-
-_schema: dict | None = None
+from __future__ import annotations
 
 
-def _load_schema() -> dict:
-    global _schema
-    if _schema is None:
-        with open(SCHEMA_PATH, encoding="utf-8") as f:
-            _schema = yaml.safe_load(f)
-    return _schema
+def validate_node_type(type_name: str) -> tuple[bool, str | None]:
+    """
+    type_defs 테이블 기반 노드 타입 검증.
+
+    반환값:
+      (True,  None)        — 정확히 일치 (유효)
+      (True,  canonical)   — 대소문자 교정 필요 (유효, canonical 사용)
+      (False, replaced_by) — deprecated 타입 (replaced_by로 자동 교정 가능)
+      (False, None)        — 완전히 없는 타입 (에러)
+
+    참고: type_defs 테이블이 없으면 schema.yaml fallback 사용.
+    """
+    from storage import sqlite_store
+
+    conn = sqlite_store._connect()
+    try:
+        # 1. 정확한 이름 매칭 (대소문자 포함)
+        row = conn.execute(
+            "SELECT name, status, replaced_by FROM type_defs WHERE name = ?",
+            (type_name,),
+        ).fetchone()
+
+        if row:
+            if row["status"] == "deprecated":
+                return False, row["replaced_by"]  # deprecated → replaced_by 반환
+            return True, None  # 정확 일치
+
+        # 2. 대소문자 무시 매칭 (SQLite LOWER 사용)
+        row2 = conn.execute(
+            "SELECT name, status, replaced_by FROM type_defs WHERE LOWER(name) = LOWER(?)",
+            (type_name,),
+        ).fetchone()
+
+        if row2:
+            if row2["status"] == "deprecated":
+                return False, row2["replaced_by"]  # deprecated (대소문자 불일치)
+            return True, row2["name"]  # 교정된 canonical 이름
+
+        # 3. type_defs에 없는 타입
+        return False, None
+
+    except Exception:
+        # type_defs 테이블 미존재 시 schema.yaml 기반 fallback
+        return _validate_via_schema_yaml(type_name)
+
+    finally:
+        conn.close()
 
 
-def reload_schema() -> None:
-    """스키마 핫 리로드 (YAML 편집 후 재시작 없이 적용)."""
-    global _schema
-    _schema = None
-    _load_schema()
-
-
-def get_valid_node_types() -> list[str]:
-    return list(_load_schema()["node_types"].keys())
-
-
-def get_valid_relation_types() -> list[str]:
-    return list(_load_schema()["relation_types"].keys())
-
-
-def validate_node_type(node_type: str) -> tuple[bool, str]:
-    """노드 타입 검증. (valid, message) 반환."""
-    valid_types = get_valid_node_types()
-    if node_type in valid_types:
-        return True, ""
-    # 대소문자 무시 매칭
+def _validate_via_schema_yaml(type_name: str) -> tuple[bool, str | None]:
+    """Fallback: type_defs 테이블 없을 때 schema.yaml 사용 (기존 로직 유지)."""
+    valid_types = _get_types_from_schema()
+    if type_name in valid_types:
+        return True, None
     lower_map = {t.lower(): t for t in valid_types}
-    if node_type.lower() in lower_map:
-        return True, lower_map[node_type.lower()]
-    return False, f"Unknown type '{node_type}'. Valid: {', '.join(valid_types)}"
+    if type_name.lower() in lower_map:
+        return True, lower_map[type_name.lower()]
+    return False, None
 
 
-def validate_relation_type(relation: str) -> tuple[bool, str]:
-    """관계 타입 검증."""
-    valid = get_valid_relation_types()
-    if relation in valid:
-        return True, ""
-    return False, f"Unknown relation '{relation}'. Valid: {', '.join(valid)}"
+def _get_types_from_schema() -> set[str]:
+    """schema.yaml에서 활성 타입 로드 (fallback용)."""
+    import yaml
+    from pathlib import Path
 
-
-def get_type_description(node_type: str) -> str:
-    schema = _load_schema()
-    type_def = schema["node_types"].get(node_type, {})
-    return type_def.get("description", "")
+    schema_path = Path(__file__).parent / "schema.yaml"
+    if not schema_path.exists():
+        return {"Unclassified"}
+    with open(schema_path, encoding="utf-8") as f:
+        data = yaml.safe_load(f)
+    return set(data.get("node_types", {}).keys())
 
 
 def suggest_closest_type(content: str) -> str:
-    """내용 기반 타입 추천 (키워드 휴리스틱). Claude가 직접 분류하므로 fallback용."""
+    """
+    content 본문 키워드 기반 타입 추천.
+    (type_defs에서 active 타입만 대상 — 향후 DB 조회로 전환 가능)
+
+    입력: 저장하려는 content 본문
+    출력: 추천 타입명 (str)
+    """
     content_lower = content.lower()
-    hints = {
-        "Decision": ["결정", "decided", "decision", "chose", "선택"],
-        "Failure": ["실패", "fail", "error", "버그", "mistake", "실수"],
-        "Pattern": ["패턴", "pattern", "반복", "recurring", "규칙"],
-        "Identity": ["가치", "철학", "philosophy", "성격", "스타일"],
-        "Preference": ["선호", "prefer", "좋아", "싫어"],
-        "Goal": ["목표", "goal", "비전", "vision", "방향"],
-        "Insight": ["깨달", "insight", "발견", "realize"],
-        "Question": ["질문", "question", "?", "어떻게", "왜"],
-        "Principle": ["원칙", "principle", "규칙", "rule"],
-        "AntiPattern": ["반복 실수", "anti-pattern", "주의"],
+    hints: dict[str, list[str]] = {
+        "Decision":    ["결정", "decided", "decision", "chose", "선택", "확정"],
+        "Failure":     ["실패", "fail", "error", "버그", "mistake", "실수", "오류"],
+        "Pattern":     ["패턴", "pattern", "반복", "recurring", "규칙", "매번"],
+        "Insight":     ["통찰", "insight", "발견", "깨달음", "이해", "알게"],
+        "Principle":   ["원칙", "principle", "기준", "철학", "approach", "방침"],
+        "Framework":   ["프레임워크", "framework", "구조", "체계", "설계"],
+        "Workflow":    ["워크플로우", "workflow", "프로세스", "절차", "흐름"],
+        "Goal":        ["목표", "goal", "달성", "aim", "objective"],
+        "Signal":      ["신호", "signal", "관찰", "느낌", "조짐", "경향"],
+        "AntiPattern": ["안티패턴", "antipattern", "피해야", "하지 말", "문제"],
+        "Experiment":  ["실험", "experiment", "테스트", "시도", "검증"],
+        "Observation": ["관찰", "observation", "발견", "noticed", "봤다"],
     }
     for type_name, keywords in hints.items():
         if any(kw in content_lower for kw in keywords):
             return type_name
     return "Unclassified"
+
+
+def validate_relation(relation: str) -> tuple[bool, str | None]:
+    """
+    relation_defs 테이블 기반 관계 검증.
+    insert_edge()에서 fallback이 이미 있으므로 MCP 레벨에서는 보조 역할만.
+
+    반환: (True, None) | (True, canonical) | (False, replaced_by) | (False, None)
+    """
+    from storage import sqlite_store
+
+    conn = sqlite_store._connect()
+    try:
+        row = conn.execute(
+            "SELECT name, status, replaced_by FROM relation_defs WHERE name = ?",
+            (relation,),
+        ).fetchone()
+
+        if not row:
+            return False, None
+        if row["status"] == "deprecated":
+            return False, row["replaced_by"]
+        return True, None
+
+    except Exception:
+        # relation_defs 미존재 시 — insert_edge fallback에 위임
+        return True, None
+
+    finally:
+        conn.close()
