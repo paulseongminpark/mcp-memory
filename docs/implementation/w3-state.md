@@ -7,10 +7,10 @@
 
 ```
 phase: 1
-last_done: P1-W3-05 (test_access_control.py 23/23 PASS, 82e64d2)
-next: P1-W3-03 (enricher drift) / P1-W3-06 (drift tests)
-blocked_by: P1-W1-04 (vector_store.get_node_embedding 미완료 — W1 세션 대기)
-note: AUX 완료 — sprt_simulate.py + calibrate_drift.py (2982e5c)
+last_done: P1-W3-06 (test_drift.py 16/16 PASS, 3b55aaf)
+next: (Phase 1 W3 태스크 전부 완료)
+blocked_by: 없음
+note: P1-CX-05 대기 — Paul이 codex exec으로 실행 필요
 ```
 
 ## 소유 파일
@@ -67,3 +67,5 @@ scripts/migrate*
 | 2026-03-05 | P1-W3-04: node_enricher _apply check_access 삽입 | ✅ 3b7523b |
 | 2026-03-05 | P1-W3-05: test_access_control.py 23/23 PASS | ✅ 82e64d2 |
 | 2026-03-05 | P1-AUX: sprt_simulate.py + calibrate_drift.py | ✅ 2982e5c |
+| 2026-03-05 | P1-W3-03: enricher E7 drift + E1 길이 검증 | ✅ 0a5d8ec |
+| 2026-03-05 | P1-W3-06: test_drift.py 16/16 PASS | ✅ 3b55aaf |
