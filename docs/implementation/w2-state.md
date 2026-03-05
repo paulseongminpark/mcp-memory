@@ -63,3 +63,4 @@ scripts/*
 | 22:10 | P1-W2-02 | ✅ recall.py 전체교체 — mode + 패치전환 + stats graceful (03ae414) |
 | 22:10 | P1-W2-03 | ✅ test_remember_v2.py 18개 PASS (03ae414) |
 | 22:10 | P1-W2-04 | ✅ test_recall_v2.py 18개 PASS (03ae414) |
+| 09:00 | P1-W2-02-fix | ✅ recall.py stats→meta 수정 (충돌 #8) + 테스트 18/18 (4fb8489) |
