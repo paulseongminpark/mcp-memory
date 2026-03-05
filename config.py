@@ -19,11 +19,22 @@ CHROMA_PATH = str(DATA_DIR / "chroma")
 DEFAULT_TOP_K = 5
 SIMILARITY_THRESHOLD = 0.3  # 자동 edge 생성 임계값
 GRAPH_MAX_HOPS = 2
-RRF_K = 60  # Reciprocal Rank Fusion 상수
+RRF_K = 30  # Reciprocal Rank Fusion 상수 (60→30: rank-1 가중치 2배, 상위 랭크 집중)
 GRAPH_BONUS = 0.3  # 그래프 이웃 보너스
 ENRICHMENT_QUALITY_WEIGHT = 0.2   # recall() quality_score 가중치
 ENRICHMENT_TEMPORAL_WEIGHT = 0.1  # recall() temporal_relevance 가중치
 EXPLORATION_RATE = 0.1  # 그래프 탐색 시 약한 edge 탐험 확률
+RWR_SURPRISE_WEIGHT = 0.05  # RWR 놀라움 지수 가중치 (k=30 시 0.1→0.05)
+
+# BCM 레이어별 학습률 (B-1 정본) — _hebbian_update() BCM 구현 시 사용
+LAYER_ETA: dict[int, float] = {
+    0: 0.02,   # L0 (Observation): 빠른 학습
+    1: 0.015,  # L1 (Signal)
+    2: 0.01,   # L2 (Pattern/Insight/Framework)
+    3: 0.005,  # L3 (Principle/Concept/Heuristic)
+    4: 0.001,  # L4 (Belief/Philosophy)
+    5: 0.0001, # L5 (Value): 가장 안정적
+}
 
 # ─── Enrichment Pipeline (v2.0) ───────────────────────────
 
