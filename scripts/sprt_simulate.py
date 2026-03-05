@@ -115,6 +115,55 @@ def print_thresholds(alpha: float, beta: float, p1: float, p0: float) -> None:
     print()
 
 
+def run_forbidden_params(n_sim: int = 1000) -> None:
+    """c-r3-12 Section 6: 절대 금지 파라미터 시뮬레이션.
+
+    3개의 위험 설정을 기본 파라미터와 비교하여 위험성을 시각화.
+    """
+    print("\n" + "=" * 60)
+    print("=== FORBIDDEN PARAMETERS (danger zone) ===")
+    print("=" * 60)
+
+    baseline = {"alpha": 0.05, "beta": 0.20, "p1": 0.70, "p0": 0.30, "min_obs": 5}
+
+    forbidden = [
+        {
+            "name": "low separation (p1=0.6, p0=0.4)",
+            "reason": "I1=0.082 -> avg ~34 steps, effectively broken",
+            "params": {**baseline, "p1": 0.60, "p0": 0.40},
+        },
+        {
+            "name": "high alpha (alpha=0.20)",
+            "reason": "20% false positive rate, noise becomes pattern",
+            "params": {**baseline, "alpha": 0.20},
+        },
+        {
+            "name": "min_obs=1",
+            "reason": "single observation decides, extreme noise amplification",
+            "params": {**baseline, "min_obs": 1},
+        },
+    ]
+
+    # Baseline first
+    print("\n[BASELINE] alpha=0.05, beta=0.20, p1=0.70, p0=0.30, min_obs=5")
+    for p_true in [0.7, 0.3, 0.5]:
+        r = sprt_simulate(p_true, n_sim=n_sim, **baseline)
+        print_report(r)
+
+    for f in forbidden:
+        print(f"\n[FORBIDDEN] {f['name']}")
+        print(f"  reason: {f['reason']}")
+        for p_true in [0.7, 0.3, 0.5]:
+            r = sprt_simulate(p_true, n_sim=n_sim, **f["params"])
+            print_report(r)
+
+        # Highlight danger
+        r_noise = sprt_simulate(0.3, n_sim=n_sim, **f["params"])
+        if r_noise["promote_rate"] > 0.10:
+            print(f"  ** DANGER: {r_noise['promote_rate']:.1%} false promote rate "
+                  f"(baseline: ~5%) **")
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="SPRT parameter simulation")
     parser.add_argument(
@@ -131,7 +180,9 @@ if __name__ == "__main__":
     parser.add_argument("--p0", type=float, default=0.30)
     parser.add_argument("--min-obs", type=int, default=5)
     parser.add_argument("--max-obs", type=int, default=50)
-    parser.add_argument("--n", type=int, default=10_000, help="시뮬레이션 횟수")
+    parser.add_argument("--n", type=int, default=10_000, help="simulation count")
+    parser.add_argument("--forbidden", action="store_true",
+                        help="run forbidden parameter simulations")
     args = parser.parse_args()
 
     print_thresholds(args.alpha, args.beta, args.p1, args.p0)
@@ -148,3 +199,6 @@ if __name__ == "__main__":
             max_obs=args.max_obs,
         )
         print_report(result)
+
+    if args.forbidden:
+        run_forbidden_params(n_sim=min(args.n, 1000))
