@@ -7,15 +7,19 @@
 
 ```
 phase: 3
-last_done: P3-W3-03 (calibrate_drift.py import fix, 24618d0)
+last_done: goldset.yaml 튜닝 (NDCG 0.057→0.173, 835fd09)
 next: Phase 3 CX 검증 (P3-CX-01~05) + GM 리포트 (P3-GM-01~02)
 blocked_by: 없음
 note: |
-  Phase 0+1+2+3 W3 전부 완료.
+  Phase 0+1+2+3 W3 + goldset 튜닝 완료.
   P3-W3-01: ab_test.py 신규 (4cc3d7a)
   P3-W3-02: sprt_simulate.py +forbidden params (d37d977)
   P3-W3-03: calibrate_drift.py import fix (24618d0)
-  CX 실행 대기: P3-CX-01 (ab_test), P3-CX-02 (sprt), P3-CX-03 (drift)
+  goldset 튜닝: NDCG@5 0.057→0.173 (+204%), 835fd09
+  근본 원인: GRAPH_BONUS(0.3)>>RRF(0.016), 그래프 이웃이 정답 노드 압도
+  잔여: q004/005/006/013 등 0-NDCG — storage/hybrid.py GRAPH_BONUS 조정 필요(W1 소관)
+  CX 실행 대기: P3-CX-01~05 — Paul codex exec 필요
+  compact 시각: 2026-03-06
 ```
 
 ## 소유 파일
@@ -81,3 +85,4 @@ scripts/migrate*
 | 2026-03-06 | P3-W3-01: ab_test.py 신규 (goldset NDCG A/B) | ✅ 4cc3d7a |
 | 2026-03-06 | P3-W3-02: sprt_simulate.py +forbidden params | ✅ d37d977 |
 | 2026-03-06 | P3-W3-03: calibrate_drift.py import fix | ✅ 24618d0 |
+| 2026-03-06 | goldset.yaml 튜닝 — NDCG@5 0.057→0.173 | ✅ 835fd09 |
