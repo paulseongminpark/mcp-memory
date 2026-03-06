@@ -113,7 +113,7 @@ Phase 3 완료 후 Main이 실행:
 ■ 2. STATE.md 갱신 (orchestration STATE.md)
 ■ 3. CHANGELOG.md 갱신 (mcp-memory에 CHANGELOG 없음 — STATE로 대체)
 ■ 4. HOME.md (옵시디언) 갱신
-□ 5. git commit + push
-□ 6. mcp-memory 외부 메모리에 v2.1 완료 기록
-□ 7. Paul에게 최종 보고
+■ 5. git commit + push (mcp-memory + orchestration + dev-vault 3개 레포)
+■ 6. mcp-memory 외부 메모리에 v2.1 완료 기록 (node #4254)
+■ 7. Paul에게 최종 보고
 ```
