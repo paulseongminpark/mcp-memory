@@ -73,3 +73,4 @@ scripts/daily_enrich.py
 | 21:30 | P1-W1-07 | ✅ hybrid BCM+UCB 테스트 16/16 PASS (7534835) |
 | 00:15 | P2-W1-01 | ✅ hybrid +_sprt_check + promotion_candidate + 테스트 22/22 PASS (5344895) |
 | 01:30 | P3-fix | ✅ hybrid 테스트 DB_PATH patch scope 수정 — 29/29 PASS (ac4b60b) |
+| 02:00 | P3-fix2 | ✅ action_log 테스트 DB_PATH patch scope 수정 — 117/117 PASS (5277309) |
