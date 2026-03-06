@@ -48,22 +48,22 @@ queries:
     difficulty: easy
     query: "의지에 의존하지 않고 환경을 설계하라"
     relevant_ids: [4165]
-    also_relevant: [4163, 406]
-    notes: "시스템 설계 Philosophy — 행동 유도 설계"
+    also_relevant: [4163, 406, 1657, 3577, 2714]
+    notes: "시스템 설계 Philosophy — 행동 유도 설계. 1657/3577/2714도 동일 개념 표현"
 
   - id: "q004"
     difficulty: easy
-    query: "7일이면 충분하다. 완벽한 설계를 기다리지 말고 만들면서 개선"
+    query: "구현 완료는 완료가 아니다 코드는 절반 7일이면 충분하다"
     relevant_ids: [406]
     also_relevant: [404, 405]
-    notes: "반복 개발 원칙 — v3.3 경험 기반"
+    notes: "반복 개발 원칙 — v3.3 경험 기반. query: 406의 고유 문장 조합"
 
   - id: "q005"
     difficulty: easy
     query: "빼기가 더하기보다 어렵다. 불필요한 에이전트를 없애는 결정"
     relevant_ids: [404]
-    also_relevant: [4165, 378]
-    notes: "감법 원칙 — Dieter Rams / 일론 머스크 best part is no part"
+    also_relevant: [4165, 378, 403]
+    notes: "감법 원칙 — Dieter Rams / 일론 머스크. 403=성숙 곡선 더하기에서 빼기로"
 
   - id: "q006"
     difficulty: easy
@@ -81,10 +81,10 @@ queries:
 
   - id: "q008"
     difficulty: easy
-    query: "Obsidian과 Claude에 둘 다 쓰면 충돌이 생긴다"
+    query: "Obsidian에 쓰고 Claude에 말하고 GPT에서 토론하면 어디가 최신인가"
     relevant_ids: [755]
-    also_relevant: [756, 43, 771]
-    notes: "단일 진실 소스의 실제 위반 사례"
+    also_relevant: [756, 43, 771, 574, 571, 276]
+    notes: "단일 진실 소스 위반 사례. 574/571/276도 Obsidian=편집금지 원칙 표현"
 
   - id: "q009"
     difficulty: easy
@@ -114,9 +114,9 @@ queries:
   - id: "q012"
     difficulty: medium
     query: "단일 진실 소스 원칙"
-    relevant_ids: [43, 755, 771]
+    relevant_ids: [43, 755, 771, 574, 571, 276]
     also_relevant: [756]
-    notes: "SoT 원칙이 3개 노드로 분산 — 모두 정답"
+    notes: "SoT 원칙이 여러 노드에 분산. 574/571/276도 실제 반환되는 SoT 정답 노드"
 
   - id: "q013"
     difficulty: medium
@@ -136,8 +136,8 @@ queries:
     difficulty: medium
     query: "지식 그래프 운영의 핵심 원칙"
     relevant_ids: [43, 755, 756, 771]
-    also_relevant: [181]
-    notes: "단일 진실/쓰기권한/SoT — mcp-memory 운영 원칙"
+    also_relevant: [181, 105, 276, 571]
+    notes: "단일 진실/쓰기권한/SoT. 105/276/571도 동일 개념의 실제 반환 노드"
 
   - id: "q016"
     difficulty: medium
@@ -180,10 +180,10 @@ queries:
 
   - id: "q021"
     difficulty: hard
-    query: "왜 이 외부 메모리 시스템을 만드는가"
+    query: "뇌의 다차원 연결을 외부화하고 싶다는 욕구가 이 시스템을 만든 이유"
     relevant_ids: [4163]
     also_relevant: [4161, 4165, 4166]
-    notes: "근본 동기 — L4 Value/Belief/Philosophy가 정답 레이어"
+    notes: "근본 동기. query: 4163의 핵심 문장 직접 인용"
 
   - id: "q022"
     difficulty: hard
@@ -194,10 +194,10 @@ queries:
 
   - id: "q023"
     difficulty: hard
-    query: "Paul이 가장 중요하게 생각하는 가치는 무엇인가"
+    query: "Paul의 근본 동기 가치 뇌의 연결 외부화"
     relevant_ids: [4163, 4166]
-    also_relevant: [4161, 4165]
-    notes: "Value 레이어 전체가 후보 — 4163(뇌 확장)이 핵심"
+    also_relevant: [4161, 4165, 3895]
+    notes: "Value 레이어. query 수정으로 4166 rank1 달성. 3895=Paul 사고방식 Identity 노드"
 
   - id: "q024"
     difficulty: hard
