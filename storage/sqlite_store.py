@@ -47,7 +47,12 @@ def init_db() -> None:
             enriched_at TEXT,
             tier INTEGER DEFAULT 2,
             maturity REAL DEFAULT 0.0,
-            observation_count INTEGER DEFAULT 0
+            observation_count INTEGER DEFAULT 0,
+            theta_m REAL DEFAULT 0.5,
+            activity_history TEXT DEFAULT '[]',
+            visit_count INTEGER DEFAULT 0,
+            score_history TEXT DEFAULT '[]',
+            promotion_candidate INTEGER DEFAULT 0
         );
 
         CREATE TABLE IF NOT EXISTS edges (
@@ -125,6 +130,98 @@ def init_db() -> None:
         CREATE INDEX IF NOT EXISTS idx_edges_target ON edges(target_id);
         CREATE INDEX IF NOT EXISTS idx_edges_direction ON edges(direction);
         CREATE INDEX IF NOT EXISTS idx_edges_relation ON edges(relation);
+
+        -- v2.1: action_log (A-12)
+        CREATE TABLE IF NOT EXISTS action_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            actor TEXT NOT NULL,
+            session_id TEXT,
+            action_type TEXT NOT NULL,
+            target_type TEXT,
+            target_id INTEGER,
+            params TEXT DEFAULT '{}',
+            result TEXT DEFAULT '{}',
+            context TEXT,
+            model TEXT,
+            duration_ms INTEGER,
+            token_cost INTEGER,
+            created_at TEXT NOT NULL,
+            CONSTRAINT fk_session FOREIGN KEY (session_id)
+                REFERENCES sessions(session_id)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_action_type ON action_log(action_type);
+        CREATE INDEX IF NOT EXISTS idx_action_actor ON action_log(actor);
+        CREATE INDEX IF NOT EXISTS idx_action_session ON action_log(session_id);
+        CREATE INDEX IF NOT EXISTS idx_action_target ON action_log(target_type, target_id);
+        CREATE INDEX IF NOT EXISTS idx_action_created ON action_log(created_at);
+        CREATE INDEX IF NOT EXISTS idx_action_node_activated
+            ON action_log(action_type, target_id, created_at DESC)
+            WHERE action_type = 'node_activated';
+
+        -- v2.1: meta tables (A-13)
+        CREATE TABLE IF NOT EXISTS type_defs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT UNIQUE NOT NULL,
+            layer INTEGER,
+            super_type TEXT,
+            description TEXT,
+            status TEXT DEFAULT 'active',
+            rank TEXT DEFAULT 'normal',
+            deprecated_reason TEXT,
+            replaced_by TEXT,
+            deprecated_at TEXT,
+            version INTEGER DEFAULT 1,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS relation_defs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT UNIQUE NOT NULL,
+            category TEXT,
+            direction_constraint TEXT,
+            layer_constraint TEXT,
+            reverse_of TEXT,
+            status TEXT DEFAULT 'active',
+            rank TEXT DEFAULT 'normal',
+            deprecated_reason TEXT,
+            replaced_by TEXT,
+            deprecated_at TEXT,
+            version INTEGER DEFAULT 1,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS ontology_snapshots (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            version_tag TEXT UNIQUE NOT NULL,
+            type_defs_json TEXT,
+            relation_defs_json TEXT,
+            change_summary TEXT,
+            created_at TEXT NOT NULL
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_type_defs_status ON type_defs(status);
+        CREATE INDEX IF NOT EXISTS idx_type_defs_super ON type_defs(super_type);
+        CREATE INDEX IF NOT EXISTS idx_relation_defs_status ON relation_defs(status);
+        CREATE INDEX IF NOT EXISTS idx_relation_defs_category ON relation_defs(category);
+
+        -- v2.1: activation_log VIEW (A-12, D-5)
+        CREATE VIEW IF NOT EXISTS activation_log AS
+        SELECT
+            al.id,
+            al.target_id AS node_id,
+            al.session_id,
+            al.created_at AS activated_at,
+            json_extract(al.params, '$.context_query') AS context_query,
+            json_extract(al.params, '$.activation_score') AS activation_score,
+            json_extract(al.params, '$.activation_rank') AS activation_rank,
+            json_extract(al.params, '$.channel') AS channel,
+            json_extract(al.params, '$.node_type') AS node_type,
+            json_extract(al.params, '$.node_layer') AS node_layer
+        FROM action_log al
+        WHERE al.action_type = 'node_activated';
     """)
     conn.close()
 
