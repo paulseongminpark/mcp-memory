@@ -42,7 +42,8 @@ def setup_test_db():
     """)
     conn.close()
 
-    with patch("config.DB_PATH", _test_db):
+    with patch("config.DB_PATH", _test_db), \
+         patch("storage.sqlite_store.DB_PATH", _test_db):
         yield
 
     if _test_db.exists():
