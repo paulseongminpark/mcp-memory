@@ -272,3 +272,28 @@ def update_tiers() -> dict:
     conn.commit()
     conn.close()
     return {"tier_0": r0, "tier_1": r1, "tier_2": r2}
+
+
+def log_correction(
+    node_id: int | None = None,
+    edge_id: int | None = None,
+    field: str = "",
+    old_value: str = "",
+    new_value: str = "",
+    reason: str = "",
+    corrected_by: str = "system",
+) -> None:
+    """correction_log 기록. 실패해도 main flow 중단 안 함."""
+    try:
+        conn = _connect()
+        now = datetime.now(timezone.utc).isoformat()
+        conn.execute(
+            "INSERT INTO correction_log "
+            "(node_id, edge_id, field, old_value, new_value, reason, corrected_by, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            (node_id or 0, edge_id, field, old_value, new_value, reason, corrected_by, now),
+        )
+        conn.commit()
+        conn.close()
+    except Exception:
+        pass

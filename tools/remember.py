@@ -1,88 +1,197 @@
-"""remember() — 기억을 저장하고 자동으로 관계를 생성한다."""
+"""remember() — 기억을 저장하고 자동으로 관계를 생성한다.
+
+v2.0: classify/store/link 3함수 분리 (A-14)
+    + 방화벽 F3: L4/L5 자동 edge 금지 (A-10)
+    + action_log 기록 (A-17)
+외부 API(MCP tool remember) 100% 하위호환.
+"""
+
+import json
+from dataclasses import dataclass
 
 from config import SIMILARITY_THRESHOLD, PROMOTE_LAYER, infer_relation
 from ontology.validators import validate_node_type, suggest_closest_type
 from storage import sqlite_store, vector_store
+from storage import action_log
 
 
-def remember(
+# ─── 분류 결과 ──────────────────────────────────────────────
+
+@dataclass
+class ClassificationResult:
+    """classify()의 반환값. DB 접촉 없는 순수 데이터."""
+    type: str
+    layer: int | None
+    tier: int
+    metadata: dict
+    original_type: str  # 교정 전 원본 타입 (action_log용)
+
+
+# ─── 방화벽 규칙 ────────────────────────────────────────────
+
+# A-10 F3: L4/L5 노드에 자동 edge 생성 금지 (하드코딩)
+FIREWALL_PROTECTED_LAYERS = {4, 5}
+
+
+# ─── classify() — 순수 분류, DB 접촉 없음 ───────────────────
+
+def classify(
     content: str,
     type: str = "Unclassified",
-    tags: str = "",
-    project: str = "",
     metadata: dict | None = None,
-    confidence: float = 1.0,
-    source: str = "claude",
-) -> dict:
-    # 0. 온톨로지 타입 검증
+) -> ClassificationResult:
+    """온톨로지 검증 + tier/layer 배정. DB 접촉 없음.
+
+    Returns:
+        ClassificationResult — 분류 결과 (type, layer, tier, metadata, original_type)
+    """
+    original_type = type
+
+    # 온톨로지 타입 검증
     valid, correction = validate_node_type(type)
     if not valid:
         suggested = suggest_closest_type(content)
-        type = suggested  # fallback to heuristic or Unclassified
+        type = suggested
     elif correction:
         type = correction  # 대소문자 교정
 
-    # 0.5 provisional embedding 플래그 (S5 해결)
+    # provisional embedding 플래그
     metadata = dict(metadata) if metadata else {}
     metadata["embedding_provisional"] = "true"
 
-    # 0.6 자동 tier/layer 배정
+    # 자동 tier/layer 배정
     layer = PROMOTE_LAYER.get(type)
     if layer is not None and layer >= 3:
         tier = 0  # core
     elif layer == 2:
-        tier = 2  # auto (quality_score 없으니 enrichment 후 승격)
+        tier = 2  # auto (enrichment 후 승격)
     else:
         tier = 2  # auto
 
-    # 1. SQLite에 노드 저장
-    node_id = sqlite_store.insert_node(
+    return ClassificationResult(
         type=type,
-        content=content,
+        layer=layer,
+        tier=tier,
         metadata=metadata,
+        original_type=original_type,
+    )
+
+
+# ─── store() — 순수 저장 ────────────────────────────────────
+
+def store(
+    content: str,
+    cls: ClassificationResult,
+    tags: str = "",
+    project: str = "",
+    confidence: float = 1.0,
+    source: str = "claude",
+) -> dict:
+    """SQLite + ChromaDB에 노드 저장.
+
+    Returns:
+        {"node_id": int, "type": str, "project": str}
+        ChromaDB 실패 시 "warning" 키 포함
+    """
+    # SQLite
+    node_id = sqlite_store.insert_node(
+        type=cls.type,
+        content=content,
+        metadata=cls.metadata,
         project=project,
         tags=tags,
         confidence=confidence,
         source=source,
-        layer=layer,
-        tier=tier,
+        layer=cls.layer,
+        tier=cls.tier,
     )
 
-    # 2. ChromaDB에 임베딩 저장 (provisional)
-    vec_meta = {"type": type, "project": project, "tags": tags, "embedding_provisional": "true"}
+    # action_log: node_created
+    action_log.record(
+        action_type="node_created",
+        actor="claude",
+        target_type="node",
+        target_id=node_id,
+        params=json.dumps({
+            "original_type": cls.original_type,
+            "resolved_type": cls.type,
+            "layer": cls.layer,
+            "tier": cls.tier,
+            "project": project,
+            "source": source,
+        }),
+    )
+
+    # ChromaDB (provisional)
+    vec_meta = {
+        "type": cls.type,
+        "project": project,
+        "tags": tags,
+        "embedding_provisional": "true",
+    }
     try:
         vector_store.add(node_id, content, vec_meta)
     except Exception as e:
-        # ChromaDB 실패 시 SQLite 노드는 유지하되 경고 포함
         return {
             "node_id": node_id,
-            "type": type,
+            "type": cls.type,
             "project": project,
-            "auto_edges": [],
             "warning": f"Stored in SQLite but embedding failed: {e}",
-            "message": f"Stored as node #{node_id} (embedding failed)",
         }
 
-    # 3. 유사 노드 검색 → 자동 edge 생성
+    return {
+        "node_id": node_id,
+        "type": cls.type,
+        "project": project,
+    }
+
+
+# ─── link() — 자동 edge 생성 + 방화벽 F3 ────────────────────
+
+def link(
+    node_id: int,
+    content: str,
+    type: str,
+    layer: int | None,
+    project: str = "",
+) -> list[dict]:
+    """유사 노드 검색 → 자동 edge 생성.
+
+    방화벽 F3: L4/L5 노드에 대한 자동 edge 생성을 차단한다.
+    - 새 노드가 L4/L5면: 자동 edge 전부 차단 (수동 link만 허용)
+    - 유사 노드가 L4/L5면: 해당 edge만 차단
+    """
+    # F3-a: 새 노드 자체가 L4/L5이면 자동 edge 전체 차단
+    if layer is not None and layer in FIREWALL_PROTECTED_LAYERS:
+        return []
+
     auto_edges = []
     try:
         similar = vector_store.search(content, top_k=5)
     except Exception:
-        similar = []
+        return auto_edges
+
     for sim_id, distance, _ in similar:
         if sim_id == node_id:
             continue
         if distance > SIMILARITY_THRESHOLD:
             continue
+
         sim_node = sqlite_store.get_node(sim_id)
         if not sim_node:
             continue
-        # 규칙 기반 relation 추론 (α)
+
+        # F3-b: 유사 노드가 L4/L5이면 해당 edge 차단
+        sim_layer = sim_node.get("layer")
+        if sim_layer is not None and sim_layer in FIREWALL_PROTECTED_LAYERS:
+            continue
+
+        # 규칙 기반 relation 추론
         relation = infer_relation(
             src_type=type,
             src_layer=layer,
             tgt_type=sim_node.get("type", ""),
-            tgt_layer=sim_node.get("layer"),
+            tgt_layer=sim_layer,
             src_project=project,
             tgt_project=sim_node.get("project", ""),
         )
@@ -94,11 +203,88 @@ def remember(
             description=f"auto: similarity={1.0 - distance:.2f}",
             strength=strength,
         )
-        auto_edges.append({"edge_id": edge_id, "target_id": sim_id, "relation": relation, "strength": round(strength, 2)})
+        auto_edges.append({
+            "edge_id": edge_id,
+            "target_id": sim_id,
+            "relation": relation,
+            "strength": round(strength, 2),
+        })
+
+        # action_log: edge_auto
+        action_log.record(
+            action_type="edge_auto",
+            actor="claude",
+            target_type="edge",
+            target_id=edge_id,
+            params=json.dumps({
+                "source_id": node_id,
+                "target_id": sim_id,
+                "relation": relation,
+                "strength": round(strength, 2),
+            }),
+        )
+
+    return auto_edges
+
+
+# ─── remember() — 최상위 API (하위호환 유지) ────────────────
+
+def remember(
+    content: str,
+    type: str = "Unclassified",
+    tags: str = "",
+    project: str = "",
+    metadata: dict | None = None,
+    confidence: float = 1.0,
+    source: str = "claude",
+) -> dict:
+    """기억을 저장하고 자동으로 관계를 생성한다.
+
+    기존 MCP API 100% 호환. 내부적으로 classify → store → link 파이프라인.
+
+    Args:
+        content: 기억할 내용
+        type: 온톨로지 타입 (default: Unclassified)
+        tags: 태그 (쉼표 구분)
+        project: 프로젝트명
+        metadata: 추가 메타데이터
+        confidence: 확신도 0.0-1.0
+        source: 생성 주체
+
+    Returns:
+        {"node_id", "type", "project", "auto_edges", "message"}
+    """
+    # 1. 분류
+    cls = classify(content, type=type, metadata=metadata)
+
+    # 2. 저장
+    store_result = store(
+        content, cls,
+        tags=tags, project=project,
+        confidence=confidence, source=source,
+    )
+    node_id = store_result["node_id"]
+
+    # 3. ChromaDB 실패 시 edge 생성 스킵
+    if "warning" in store_result:
+        return {
+            "node_id": node_id,
+            "type": cls.type,
+            "project": project,
+            "auto_edges": [],
+            "warning": store_result["warning"],
+            "message": f"Stored as node #{node_id} (embedding failed)",
+        }
+
+    # 4. 자동 edge 생성 (방화벽 F3 적용)
+    auto_edges = link(
+        node_id, content,
+        type=cls.type, layer=cls.layer, project=project,
+    )
 
     return {
         "node_id": node_id,
-        "type": type,
+        "type": cls.type,
         "project": project,
         "auto_edges": auto_edges,
         "message": f"Stored as node #{node_id} with {len(auto_edges)} auto-edge(s)",

@@ -54,3 +54,22 @@ def search(query: str, top_k: int = 5, where: dict | None = None) -> list[tuple[
         meta = results["metadatas"][0][i] if results["metadatas"] else {}
         output.append((int(id_str), distance, meta))
     return output
+
+
+def get_node_embedding(node_id: int) -> list[float] | None:
+    """ChromaDB에서 node_id의 현재 임베딩 벡터 반환.
+
+    노드가 없거나 임베딩이 없으면 None.
+    """
+    try:
+        coll = _get_collection()
+        result = coll.get(
+            ids=[str(node_id)],
+            include=["embeddings"],
+        )
+        embeddings = result.get("embeddings")
+        if embeddings and len(embeddings) > 0 and embeddings[0]:
+            return list(embeddings[0])
+    except Exception:
+        pass
+    return None

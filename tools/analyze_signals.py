@@ -87,17 +87,30 @@ def analyze_signals(
 
     # 5. min_cluster_size 이상만 + 성숙도 계산
     node_map = {s["id"]: s for s in signals}
+    total_queries = _get_total_recall_count()
     results = []
     for cluster_ids in raw_clusters:
         if len(cluster_ids) < min_cluster_size:
             continue
         cluster_nodes = [node_map[nid] for nid in cluster_ids if nid in node_map]
         maturity = _compute_maturity(cluster_nodes)
+
+        # Bayesian 클러스터 평균
+        bayesian_p = _bayesian_cluster_score(cluster_nodes, total_queries)
+
+        # SPRT 플래그 카운트
+        sprt_flagged = sum(
+            1 for n in cluster_nodes
+            if n.get("promotion_candidate")
+        )
+
         results.append({
             "node_ids": cluster_ids,
             "size": len(cluster_ids),
             "maturity": round(maturity, 2),
-            "recommendation": _recommend(maturity),
+            "bayesian_p": round(bayesian_p, 3),
+            "sprt_flagged": sprt_flagged,
+            "recommendation": _recommend_v2(maturity, bayesian_p, sprt_flagged),
             "themes": [n.get("summary") or n["content"][:80] for n in cluster_nodes[:3]],
             "domains": _collect_domains(cluster_nodes),
             "can_promote_to": VALID_PROMOTIONS.get("Signal", []),
@@ -124,11 +137,58 @@ def _compute_maturity(nodes: list[dict]) -> float:
 
 
 def _recommend(maturity: float) -> str:
+    """레거시 — 하위호환용. 신규는 _recommend_v2() 사용."""
     if maturity > 0.9:
         return "auto_promote"
     elif maturity > 0.6:
         return "user_review"
     return "not_ready"
+
+
+def _recommend_v2(maturity: float, bayesian_p: float, sprt_flagged: int) -> str:
+    """기존 maturity + Bayesian P + SPRT flag 통합 판단.
+
+    우선순위:
+      auto_promote: maturity 매우 높음 AND Bayesian 강한 증거
+      user_review: Bayesian 중간 증거 OR SPRT 2개 이상 플래그
+      not_ready: 그 외
+    """
+    if maturity > 0.9 and bayesian_p > 0.6:
+        return "auto_promote"
+    if bayesian_p > 0.5 or sprt_flagged >= 2:
+        return "user_review"
+    if maturity > 0.6:
+        return "user_review"
+    return "not_ready"
+
+
+def _bayesian_cluster_score(nodes: list[dict], total_queries: int) -> float:
+    """클러스터 내 Signal들의 평균 Bayesian P(real pattern)."""
+    if not nodes or total_queries <= 0:
+        return 0.0
+    probs = []
+    for n in nodes:
+        k = n.get("frequency") or 0
+        n_total = max(total_queries, k)
+        # Prior: Beta(1, 10)
+        alpha_post = 1 + k
+        beta_post = 10 + (n_total - k)
+        probs.append(alpha_post / (alpha_post + beta_post))
+    return sum(probs) / len(probs)
+
+
+def _get_total_recall_count() -> int:
+    """meta 테이블에서 글로벌 recall 횟수 조회. 없으면 0."""
+    conn = sqlite_store._connect()
+    try:
+        row = conn.execute(
+            "SELECT value FROM meta WHERE key='total_recall_count'"
+        ).fetchone()
+        return int(row[0]) if row else 0
+    except Exception:
+        return 0  # meta 테이블 미존재 시 fallback
+    finally:
+        conn.close()
 
 
 def _collect_domains(nodes: list[dict]) -> list[str]:

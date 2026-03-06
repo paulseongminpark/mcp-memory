@@ -25,6 +25,30 @@ ENRICHMENT_QUALITY_WEIGHT = 0.2   # recall() quality_score 가중치
 ENRICHMENT_TEMPORAL_WEIGHT = 0.1  # recall() temporal_relevance 가중치
 EXPLORATION_RATE = 0.1  # 그래프 탐색 시 약한 edge 탐험 확률
 
+# ─── BCM + UCB (v2.1, B-14) ──────────────────────────────
+UCB_C_FOCUS = 0.3       # focus 모드 탐험 계수
+UCB_C_AUTO = 1.0        # auto 모드 (기본)
+UCB_C_DMN = 2.5         # dmn 모드 (탐험 극대화)
+BCM_HISTORY_WINDOW = 20          # BCM 이력 윈도우 크기
+CONTEXT_HISTORY_LIMIT = 5        # 재공고화 ctx_log 최대 항목
+LAYER_ETA = {0: 0.020, 1: 0.015, 2: 0.010, 3: 0.005, 4: 0.001, 5: 0.0001}
+
+# ─── Recall (v2.1, B-15) ─────────────────────────────────
+PATCH_SATURATION_THRESHOLD = 0.75  # 패치 포화 판정 비율
+
+# ─── Promotion (v2.1, C-11, C-12) ────────────────────────
+PROMOTION_SWR_THRESHOLD = 0.55   # SWR Gate 통과 기준
+SPRT_ALPHA = 0.05                # 오승격 확률 상한
+SPRT_BETA = 0.2                  # 놓침 확률 상한
+SPRT_P1 = 0.7                    # 진짜 Signal 판정 기준
+SPRT_P0 = 0.3                    # 노이즈 판정 기준
+SPRT_MIN_OBS = 5                 # SPRT 최소 관측 수
+
+# ─── Drift Detection (v2.1, D-12) ────────────────────────
+DRIFT_THRESHOLD = 0.5            # semantic drift cosine sim 하한
+SUMMARY_LENGTH_MULTIPLIER = 2.0  # summary 이상치 배수 기준
+SUMMARY_LENGTH_MIN_SAMPLE = 10   # 이상치 판단 최소 샘플
+
 # ─── Enrichment Pipeline (v2.0) ───────────────────────────
 
 # 4-Model 배분 — Anthropic (claude-*) 또는 OpenAI 모델 사용 가능
@@ -93,7 +117,7 @@ RELATION_TYPES = {
         "resolved_by", "prevented_by", "enabled_by", "blocked_by",
     ],
     "structural": [
-        "part_of", "composed_of", "extends", "governed_by",
+        "part_of", "composed_of", "extends", "governed_by", "governs",
         "instantiated_as", "expressed_as", "contains", "derived_from",
     ],
     "layer_movement": [
@@ -109,6 +133,7 @@ RELATION_TYPES = {
     ],
     "perspective": [
         "viewed_through", "interpreted_as", "questions", "validates",
+        "contextualizes",
     ],
     "temporal": [
         "preceded_by", "simultaneous_with", "born_from", "assembles",
