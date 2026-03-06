@@ -11,8 +11,8 @@
 ```
 
 - 인덱스 파일(`b-index.md`)은 라운드 없이 유지, 내용만 갱신
-- **다음 파일: `b-r3-14-*.md`** (Round 3 시작)
-- R1: 1~9, R2: 10~13 — 오케스트레이터 rename 완료
+- **Round 3 완료: 14~16** (hybrid-final, recall-final, graph-optimization)
+- R1: 1~9, R2: 10~13, R3: 14~16 — 모두 완료
 
 ## 완료 항목
 
@@ -32,13 +32,23 @@
 | 12 | [b-neural-12-bcm-ucb-integration.md](b-neural-12-bcm-ucb-integration.md) | BCM+UCB 통합: UCB→탐색경로(L75-76), BCM→학습결과(L116). visit_count는 _bcm_update 내부. theta_m 초기화 UPDATE nodes SET 필요. |
 | 13 | [b-neural-13-recall-flow.md](b-neural-13-recall-flow.md) | recall() 전체 흐름: 1 트랜잭션 3N+K UPDATEs. B-6 Pruning은 daily_enrich만. Phase1 구현 순서: B-10→B-11→B-4→B-12. |
 
+| 14 | [b-r3-14-hybrid-final.md](b-r3-14-hybrid-final.md) | storage/hybrid.py 전체 교체 코드: _bcm_update+_ucb_traverse+_traverse_sql+_log_recall_activations. diff 포함. |
+| 15 | [b-r3-15-recall-final.md](b-r3-15-recall-final.md) | tools/recall.py 전체 교체 코드: mode 파라미터, 패치 전환, total_recall_count(stats 테이블). |
+| 16 | [b-r3-16-graph-optimization.md](b-r3-16-graph-optimization.md) | all_edges+build_graph 최적화: Option A(TTL 캐싱 즉시), Option B+C(Phase 2 SQL-only UCB). |
+
 ## 미완료 항목
-없음 — 13개 전체 완료.
+없음 — 16개 전체 완료.
 
 ## 오케스트레이터 확정 사항
 - BCM 직행 (D세션 tanh→BCM 단계 없음)
 - B-5 재공고화: 전체 Phase 1 첫 번째 구현
 - B-7 SQL CTE: 성능 1순위 확정
+
+## Round 3 최종 심화 완료 (2026-03-05)
+
+- B-14: hybrid.py 전체 교체 코드 — diff 포함, 7개 함수, 310줄
+- B-15: recall.py 전체 교체 코드 — mode/패치전환/stats 테이블
+- B-16: 최적화 로드맵 — Phase 1(TTL 캐싱), Phase 2(SQL-only UCB)
 
 ## 다음 세션: 구현 시작
 Phase 1 구현 순서 (b-neural-13 기준):

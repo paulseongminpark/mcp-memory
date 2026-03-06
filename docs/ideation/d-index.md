@@ -33,6 +33,10 @@
 | 8 | `d-r2-8-drift-detector-impl.md` | E7 L654-668 실제 수정 코드 + get_node_embedding() + cosine_similarity + summary 길이 검증 | r2 |
 | 9 | `d-r2-9-hub-monitor-ready.md` | node_id=INTEGER 확인 + hub_snapshots 자동 생성 + 3230노드 5초 예측 + A-10 공존 패턴 | r2 |
 | 10 | `d-r2-10-activation-actionlog-merge.md` | action_log 통합(옵션A 권장) + recall뷰 설계 + temporal_search SQL 수정 + 마이그레이션 경로 | r2 |
+| 11 | `d-r3-11-validators-final.md` | validators.py type_defs 전환 + server.py deprecated 처리 + 테스트 10개 + edge relation fallback 확인 | r3 |
+| 12 | `d-r3-12-drift-final.md` | utils/similarity.py + get_node_embedding() + E7 블록 교체(drift탐지) + E1 summary 길이검증 + calibrate_drift.py | r3 |
+| 13 | `d-r3-13-access-control.md` | utils/access_control.py (LAYER_PERMISSIONS + check_access 3계층) + hub_monitor 사용 코드 + pruning 통합 | r3 |
+| 14 | `d-r3-14-pruning-integration.md` | daily_enrich.py Phase 6: edge(B-6)→node(D-6 BSP) 순서 + action_log 기록 + dry_run 지원 | r3 |
 
 ---
 
@@ -58,11 +62,10 @@
 
 ---
 
-## 미완료 / 다음 주제 (r3부터)
+## 미완료 / 다음 주제 (r4부터)
 
 | 파일명 예정 | 주제 | 비고 |
 |------------|------|------|
-| `d-r3-11-schema-drift.md` | 스키마 드리프트 5개 누락 타입 실제 diff 실행 | d-r2-1에 명령어만, 실행 미확인 |
-| `d-r3-12-bcm-integration.md` | BCM 구현 코드 (B-1 연계) | B 세션 완료 후 D가 통합 |
-| `d-r3-13-actionlog-finalize.md` | A-9 action_log 24 타입 확정 후 D-10 완성 | A 세션 결과 대기 |
-| `d-r3-14-hub-monitor-run.md` | hub_monitor.py 실제 실행 + 결과 기록 | 코드 준비됨, 실행만 필요 |
+| `d-r4-15-schema-drift.md` | 스키마 드리프트 5개 누락 타입 실제 diff 실행 | d-r2-1에 명령어만, 실행 미확인 |
+| `d-r4-16-bcm-integration.md` | BCM 구현 코드 (B-1 연계) | B 세션 완료 후 D가 통합 |
+| `d-r4-17-hub-monitor-run.md` | hub_monitor.py 실제 실행 + 결과 기록 | 코드 준비됨, 실행만 필요 |

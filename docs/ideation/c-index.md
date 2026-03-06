@@ -2,6 +2,7 @@
 
 > compact 후 이 파일만 읽고 이어서 진행한다.
 > 다음 파일 번호: **c-r3-13-...**
+> R3 완료: c-r3-10(골드셋), c-r3-11(promote 3-gate), c-r3-12(SPRT 검증)
 
 ## 완료된 주제
 
@@ -17,9 +18,12 @@
 | `c-r2-7-promotion-integration.md` | R2 | SPRT→hybrid.py, Bayesian→analyze_signals.py, MDL→promote_node.py 삽입점 확정. DB migration SQL 5개 |
 | `c-r2-8-link-detector.md` | R2 | ChromaDB coll.get() 전체 추출, sklearn LR AUC 0.72-0.82 예측, top-20 enriched 출력 |
 | `c-r2-9-cross-session-alignment.md` | R2 | C-2 단일 η → B-1 LAYER_ETA 교체. SWR→Bayesian→MDL 직렬 게이트. k=30 시 RWR_SURPRISE_WEIGHT=0.05 |
-| `c-r3-10-config-changes.md` | R3 | config.py 실제 변경: RRF_K=30, RWR_SURPRISE_WEIGHT=0.05, LAYER_ETA 추가 |
-| `c-r3-11-migration.md` | R3 | scripts/migrate_phase2.py 생성 — score_history/θ_m/activity_history/recall_log |
-| `c-r3-12-scripts-structure.md` | R3 | scripts/eval/ab_test.py + goldset.yaml + link_detector/train_predict.py 생성 완료 |
+| `c-r3-10-config-changes.md` | R3 | [revert됨] config.py 변경 초안 |
+| `c-r3-11-migration.md` | R3 | [revert됨] migrate_phase2.py 초안 |
+| `c-r3-12-scripts-structure.md` | R3 | [revert됨] scripts 구조 초안 |
+| `c-r3-10-goldset-draft.md` | R3 | **[신규]** 골드셋 25개 쿼리 초안 (YAML, Paul 검토 대상) |
+| `c-r3-11-promotion-final.md` | R3 | **[신규]** promote_node.py 전체 교체 코드 (SWR+Bayesian+MDL 3-gate) |
+| `c-r3-12-sprt-validation.md` | R3 | **[신규]** SPRT 파라미터 수학 검증 + 3,230 노드 규모 추정 + 조정 가이드 |
 
 ## 핵심 확정 사항
 

@@ -22,6 +22,9 @@
 | 13 | a-arch-13-migration-sql.md | 심화5: type_defs/relation_defs 마이그레이션 SQL | 심화+SQL | 31 활성+19 deprecated 타입, 49 관계 INSERT, 6개 잘못된 관계 교정, 초기 스냅샷 v2.0-initial |
 | 14 | a-arch-14-remember-refactor.md | 심화6: remember() 3함수 분리 실제 코드 | 심화+코드 | classify/store/link + ClassificationResult dataclass. API 100% 하위호환. 테스트 7개 시나리오 |
 | 15 | a-arch-15-energy-enrichment.md | 심화7: 에너지 → enrichment 정책 자동화 | 심화+코드 | decide_enrichment_focus()가 daily_enrich.py Phase별 배치 크기 조절. 5가지 에너지 모드별 정책 |
+| 16 | a-r3-16-migrate-script.md | Phase 0 단일 마이그레이션 스크립트 | 최종+코드 | 9단계 순차 실행, 각 단계 독립 트랜잭션+롤백, 멱등성 보장. action_log+meta+교정+JSON+VIEW+컬럼 |
+| 17 | a-r3-17-actionlog-record.md | action_log.record() + 6개 삽입지점 | 최종+코드 | storage/action_log.py 신규, 25개 action taxonomy, 6개 파일 정확한 diff, 순환 import 방지 전략 |
+| 18 | a-r3-18-remember-final.md | remember() 3함수 분리 완성 + F3 + action_log | 최종+코드 | classify/store/link + ClassificationResult + F3 L4/L5 자동 edge 차단 + 테스트 12개 |
 | - | a-architecture.md | 원본 통합 파일 | 레퍼런스 | 분할 전 통합본 (플랜 파일과 동일 내용) |
 
 ## 상태
@@ -41,6 +44,9 @@
 - [x] 심화5: type_defs/relation_defs 마이그레이션 SQL
 - [x] 심화6: remember() 3함수 분리 실제 코드
 - [x] 심화7: 에너지 → enrichment 정책 자동화
+- [x] R3-16: Phase 0 단일 마이그레이션 스크립트 설계
+- [x] R3-17: action_log.record() 구현 + 6개 삽입지점 diff
+- [x] R3-18: remember() 3함수 분리 최종 — F3 방화벽 + action_log 통합
 
 ## 핵심 발견 (DB 진단)
 
