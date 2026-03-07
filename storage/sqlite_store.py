@@ -2,6 +2,7 @@
 
 import json
 import sqlite3
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -18,9 +19,19 @@ def _connect() -> sqlite3.Connection:
     return conn
 
 
-def init_db() -> None:
+@contextmanager
+def _db():
+    """DB 연결 context manager. 자동으로 conn.close() 보장."""
     conn = _connect()
-    conn.executescript("""
+    try:
+        yield conn
+    finally:
+        conn.close()
+
+
+def init_db() -> None:
+    with _db() as conn:
+        conn.executescript("""
         CREATE TABLE IF NOT EXISTS nodes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             type TEXT NOT NULL DEFAULT 'Unclassified',
@@ -223,7 +234,6 @@ def init_db() -> None:
         FROM action_log al
         WHERE al.action_type = 'node_activated';
     """)
-    conn.close()
 
 
 def insert_node(
@@ -238,15 +248,14 @@ def insert_node(
     tier: int = 2,
 ) -> int:
     now = datetime.now(timezone.utc).isoformat()
-    conn = _connect()
-    cur = conn.execute(
-        """INSERT INTO nodes (type, content, metadata, project, tags, confidence, source, layer, tier, created_at, updated_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-        (type, content, json.dumps(metadata or {}), project, tags, confidence, source, layer, tier, now, now),
-    )
-    node_id = cur.lastrowid
-    conn.commit()
-    conn.close()
+    with _db() as conn:
+        cur = conn.execute(
+            """INSERT INTO nodes (type, content, metadata, project, tags, confidence, source, layer, tier, created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (type, content, json.dumps(metadata or {}), project, tags, confidence, source, layer, tier, now, now),
+        )
+        node_id = cur.lastrowid
+        conn.commit()
     return node_id
 
 
@@ -262,21 +271,20 @@ def insert_edge(
     if relation not in ALL_RELATIONS:
         # 미정의 relation → connects_with fallback + correction_log 기록
         relation = "connects_with"
-    conn = _connect()
-    cur = conn.execute(
-        """INSERT INTO edges (source_id, target_id, relation, description, strength, created_at)
-           VALUES (?, ?, ?, ?, ?, ?)""",
-        (source_id, target_id, relation, description, strength, now),
-    )
-    edge_id = cur.lastrowid
-    if original_relation != relation:
-        conn.execute(
-            """INSERT INTO correction_log (node_id, edge_id, field, old_value, new_value, reason, corrected_by, created_at)
-               VALUES (?, ?, 'relation', ?, ?, 'relation not in ALL_RELATIONS', 'system', ?)""",
-            (source_id, edge_id, original_relation, relation, now),
+    with _db() as conn:
+        cur = conn.execute(
+            """INSERT INTO edges (source_id, target_id, relation, description, strength, created_at)
+               VALUES (?, ?, ?, ?, ?, ?)""",
+            (source_id, target_id, relation, description, strength, now),
         )
-    conn.commit()
-    conn.close()
+        edge_id = cur.lastrowid
+        if original_relation != relation:
+            conn.execute(
+                """INSERT INTO correction_log (node_id, edge_id, field, old_value, new_value, reason, corrected_by, created_at)
+                   VALUES (?, ?, 'relation', ?, ?, 'relation not in ALL_RELATIONS', 'system', ?)""",
+                (source_id, edge_id, original_relation, relation, now),
+            )
+        conn.commit()
     return edge_id
 
 
@@ -292,33 +300,40 @@ def search_fts(query: str, top_k: int = 5) -> list[tuple[int, str, float]]:
     escaped = _escape_fts_query(query)
     if not escaped:
         return []
-    conn = _connect()
-    try:
-        rows = conn.execute(
-            """SELECT n.id, n.content, rank
-               FROM nodes_fts f
-               JOIN nodes n ON n.id = f.rowid
-               WHERE nodes_fts MATCH ?
-               ORDER BY rank
-               LIMIT ?""",
-            (escaped, top_k),
-        ).fetchall()
-    except Exception:
-        conn.close()
-        return []
-    conn.close()
+    with _db() as conn:
+        try:
+            rows = conn.execute(
+                """SELECT n.id, n.content, rank
+                   FROM nodes_fts f
+                   JOIN nodes n ON n.id = f.rowid
+                   WHERE nodes_fts MATCH ?
+                   ORDER BY rank
+                   LIMIT ?""",
+                (escaped, top_k),
+            ).fetchall()
+        except Exception:
+            return []
     return [(r["id"], r["content"], r["rank"]) for r in rows]
 
 
 def get_node(node_id: int) -> dict | None:
-    conn = _connect()
-    row = conn.execute("SELECT * FROM nodes WHERE id = ?", (node_id,)).fetchone()
-    conn.close()
+    with _db() as conn:
+        row = conn.execute("SELECT * FROM nodes WHERE id = ?", (node_id,)).fetchone()
     return dict(row) if row else None
 
 
+def get_node_by_hash(content_hash: str) -> dict | None:
+    """SHA256 해시로 기존 노드 검색. 중복 저장 방지용."""
+    import hashlib
+    with _db() as conn:
+        rows = conn.execute("SELECT * FROM nodes WHERE status = 'active'").fetchall()
+    for row in rows:
+        if hashlib.sha256(row["content"].encode()).hexdigest() == content_hash:
+            return dict(row)
+    return None
+
+
 def get_recent_nodes(project: str = "", limit: int = 10, type_filter: str = "") -> list[dict]:
-    conn = _connect()
     sql = "SELECT * FROM nodes WHERE status = 'active'"
     params: list = []
     if project:
@@ -329,45 +344,42 @@ def get_recent_nodes(project: str = "", limit: int = 10, type_filter: str = "") 
         params.append(type_filter)
     sql += " ORDER BY created_at DESC LIMIT ?"
     params.append(limit)
-    rows = conn.execute(sql, params).fetchall()
-    conn.close()
+    with _db() as conn:
+        rows = conn.execute(sql, params).fetchall()
     return [dict(r) for r in rows]
 
 
 def get_edges(node_id: int) -> list[dict]:
-    conn = _connect()
-    rows = conn.execute(
-        """SELECT * FROM edges WHERE source_id = ? OR target_id = ?""",
-        (node_id, node_id),
-    ).fetchall()
-    conn.close()
+    with _db() as conn:
+        rows = conn.execute(
+            """SELECT * FROM edges WHERE source_id = ? OR target_id = ?""",
+            (node_id, node_id),
+        ).fetchall()
     return [dict(r) for r in rows]
 
 
 def get_all_edges() -> list[dict]:
-    conn = _connect()
-    rows = conn.execute("SELECT * FROM edges").fetchall()
-    conn.close()
+    with _db() as conn:
+        rows = conn.execute("SELECT * FROM edges").fetchall()
     return [dict(r) for r in rows]
 
 
 def update_tiers() -> dict:
     """Tier 자동 배정: tier=0(L3+), tier=1(L2+qs>=0.8), tier=2(나머지)"""
-    conn = _connect()
-    # tier=0: layer >= 3
-    r0 = conn.execute(
-        "UPDATE nodes SET tier = 0 WHERE status = 'active' AND layer >= 3"
-    ).rowcount
-    # tier=1: layer == 2 AND quality_score >= 0.8
-    r1 = conn.execute(
-        "UPDATE nodes SET tier = 1 WHERE status = 'active' AND layer = 2 AND quality_score >= 0.8"
-    ).rowcount
-    # tier=2: 나머지 (이미 default 2이지만 명시)
-    r2 = conn.execute(
-        "UPDATE nodes SET tier = 2 WHERE status = 'active' AND tier NOT IN (0, 1)"
-    ).rowcount
-    conn.commit()
-    conn.close()
+    with _db() as conn:
+        # tier=0: layer >= 3
+        r0 = conn.execute(
+            "UPDATE nodes SET tier = 0 WHERE status = 'active' AND layer >= 3"
+        ).rowcount
+        # tier=1: layer == 2 AND quality_score >= 0.8
+        r1 = conn.execute(
+            "UPDATE nodes SET tier = 1 WHERE status = 'active' AND layer = 2 AND quality_score >= 0.8"
+        ).rowcount
+        # tier=2: 나머지 (이미 default 2이지만 명시)
+        r2 = conn.execute(
+            "UPDATE nodes SET tier = 2 WHERE status = 'active' AND tier NOT IN (0, 1)"
+        ).rowcount
+        conn.commit()
     return {"tier_0": r0, "tier_1": r1, "tier_2": r2}
 
 
@@ -382,15 +394,41 @@ def log_correction(
 ) -> None:
     """correction_log 기록. 실패해도 main flow 중단 안 함."""
     try:
-        conn = _connect()
         now = datetime.now(timezone.utc).isoformat()
-        conn.execute(
-            "INSERT INTO correction_log "
-            "(node_id, edge_id, field, old_value, new_value, reason, corrected_by, created_at) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-            (node_id or 0, edge_id, field, old_value, new_value, reason, corrected_by, now),
-        )
-        conn.commit()
-        conn.close()
+        with _db() as conn:
+            conn.execute(
+                "INSERT INTO correction_log "
+                "(node_id, edge_id, field, old_value, new_value, reason, corrected_by, created_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                (node_id or 0, edge_id, field, old_value, new_value, reason, corrected_by, now),
+            )
+            conn.commit()
+    except Exception:
+        pass
+
+
+def get_meta(key: str) -> str | None:
+    """meta 테이블에서 값 조회. 없거나 에러 시 None."""
+    try:
+        with _db() as conn:
+            row = conn.execute("SELECT value FROM meta WHERE key=?", (key,)).fetchone()
+            return row[0] if row else None
+    except Exception:
+        return None
+
+
+def upsert_meta(key: str, value: str) -> None:
+    """meta 테이블 UPSERT. 에러 시 graceful skip."""
+    try:
+        with _db() as conn:
+            conn.execute(
+                """INSERT INTO meta(key, value, updated_at)
+                       VALUES(?, ?, datetime('now'))
+                   ON CONFLICT(key) DO UPDATE SET
+                       value = excluded.value,
+                       updated_at = datetime('now')""",
+                (key, value),
+            )
+            conn.commit()
     except Exception:
         pass

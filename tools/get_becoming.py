@@ -17,13 +17,12 @@ def get_becoming(
     promotable_types = list(VALID_PROMOTIONS.keys())
     placeholders = ",".join("?" * len(promotable_types))
 
-    conn = sqlite_store._connect()
     sql = f"""SELECT * FROM nodes
               WHERE type IN ({placeholders})
               AND status = 'active'
               ORDER BY quality_score DESC NULLS LAST"""
-    rows = conn.execute(sql, promotable_types).fetchall()
-    conn.close()
+    with sqlite_store._db() as conn:
+        rows = conn.execute(sql, promotable_types).fetchall()
 
     nodes = [dict(r) for r in rows]
 

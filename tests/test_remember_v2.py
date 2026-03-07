@@ -67,8 +67,8 @@ class TestClassify:
 
     @patch("tools.remember.validate_node_type", return_value=(True, None))
     def test_classify_unknown_type_no_layer(self, _mock):
-        """PROMOTE_LAYER에 없는 타입 → layer=None, tier=2."""
-        cls = classify("임의 내용", type="Project")
+        """PROMOTE_LAYER에 layer 미배정 타입(Unclassified) → layer=None, tier=2."""
+        cls = classify("임의 내용", type="Unclassified")
         assert cls.layer is None
         assert cls.tier == 2
 
@@ -128,6 +128,7 @@ class TestRemember:
     @patch("tools.remember.sqlite_store")
     def test_basic_return_format(self, mock_sqls, mock_vs, mock_alog, _mock_valid):
         """반환 형태: node_id, type, project, auto_edges, message 필수."""
+        mock_sqls.get_node_by_hash.return_value = None
         mock_sqls.insert_node.return_value = 42
         mock_vs.add.return_value = None
         mock_vs.search.return_value = []
@@ -149,6 +150,7 @@ class TestRemember:
     @patch("tools.remember.sqlite_store")
     def test_invalid_type_correction(self, mock_sqls, mock_vs, mock_alog, _s, _v):
         """잘못된 타입 → 교정된 타입으로 저장."""
+        mock_sqls.get_node_by_hash.return_value = None
         mock_sqls.insert_node.return_value = 43
         mock_vs.add.return_value = None
         mock_vs.search.return_value = []
@@ -163,6 +165,7 @@ class TestRemember:
     @patch("tools.remember.sqlite_store")
     def test_chromadb_failure_graceful(self, mock_sqls, mock_vs, mock_alog, _v):
         """ChromaDB 실패 시 SQLite 노드 생성 + warning + auto_edges=[]."""
+        mock_sqls.get_node_by_hash.return_value = None
         mock_sqls.insert_node.return_value = 44
         mock_vs.add.side_effect = Exception("ChromaDB down")
 
@@ -178,6 +181,7 @@ class TestRemember:
     @patch("tools.remember.sqlite_store")
     def test_action_log_node_created(self, mock_sqls, mock_vs, mock_alog, _v):
         """store() 호출 시 action_log.record('node_created') 호출 확인."""
+        mock_sqls.get_node_by_hash.return_value = None
         mock_sqls.insert_node.return_value = 45
         mock_vs.add.return_value = None
         mock_vs.search.return_value = []
@@ -195,6 +199,7 @@ class TestRemember:
     @patch("tools.remember.sqlite_store")
     def test_action_log_edge_auto(self, mock_sqls, mock_vs, mock_alog, _v):
         """자동 edge 생성 시 action_log.record('edge_auto') 호출 확인."""
+        mock_sqls.get_node_by_hash.return_value = None
         mock_sqls.insert_node.return_value = 46
         mock_sqls.get_node.return_value = {"layer": 1, "type": "Signal", "project": ""}
         mock_sqls.insert_edge.return_value = 10

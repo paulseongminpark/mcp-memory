@@ -139,6 +139,23 @@ def stage3_archive_expired(
     return len(expired_ids)
 
 
+def stage4_prune_dead_edges(conn: sqlite3.Connection, dry_run: bool = True) -> int:
+    """Stage 4: 비활성 엣지 제거. COALESCE(last_activated, created_at)로 신규 엣지 보호."""
+    rows = conn.execute(
+        "SELECT id FROM edges"
+        " WHERE COALESCE(last_activated, created_at) < datetime('now', '-180 days')"
+        " AND frequency = 0 AND strength < 0.2"
+    ).fetchall()
+    ids = [r["id"] for r in rows]
+    if dry_run:
+        print(f"[DRY RUN] {len(ids)}개 dead edge 삭제 예정")
+        return len(ids)
+    for eid in ids:
+        conn.execute("DELETE FROM edges WHERE id=?", (eid,))
+    conn.commit()
+    return len(ids)
+
+
 def print_status(conn: sqlite3.Connection) -> None:
     """현재 pruning 현황 출력."""
     active = conn.execute(
@@ -190,6 +207,10 @@ if __name__ == "__main__":
     # Stage 3: 만료 노드 archive
     print("\n[Stage 3] 만료 archive...")
     stage3_archive_expired(conn, dry_run=dry_run, actor=args.actor)
+
+    # Stage 4: dead edge 제거
+    print("\n[Stage 4] dead edge 제거...")
+    stage4_prune_dead_edges(conn, dry_run=dry_run)
 
     print_status(conn)
     conn.close()

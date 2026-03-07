@@ -39,6 +39,22 @@ def _get_graph() -> tuple[list, object]:
     if _GRAPH_CACHE is None or (now - _GRAPH_CACHE_TS) > _GRAPH_TTL:
         all_edges = sqlite_store.get_all_edges()
         graph = build_graph(all_edges)
+        # visit_count를 DB에서 로드 → UCB 탐색에서 활용 (B-12)
+        try:
+            node_ids = list(graph.nodes())
+            if node_ids:
+                conn = sqlite_store._connect()
+                ph = ",".join("?" * len(node_ids))
+                rows = conn.execute(
+                    f"SELECT id, visit_count FROM nodes WHERE id IN ({ph})",
+                    node_ids,
+                ).fetchall()
+                conn.close()
+                for nid, vc in rows:
+                    if nid in graph:
+                        graph.nodes[nid]["visit_count"] = vc or 1
+        except Exception:
+            pass
         _GRAPH_CACHE = (all_edges, graph)
         _GRAPH_CACHE_TS = now
     return _GRAPH_CACHE
@@ -229,6 +245,7 @@ def _bcm_update(
 
             # BCM delta_w: 양수면 강화, 음수면 약화
             delta_w = eta * v_i * (v_i - theta_m) * v_j
+            new_strength = max(0.01, min(2.0, (edge.get("strength") or 1.0) + delta_w))
             new_freq = max(0.0, (edge.get("frequency") or 0) + delta_w * 10)
 
             # θ_m: 슬라이딩 제곱평균 갱신
@@ -236,8 +253,8 @@ def _bcm_update(
             new_theta = sum(h ** 2 for h in history) / len(history)
 
             conn.execute(
-                "UPDATE edges SET frequency=?, last_activated=? WHERE id=?",
-                (new_freq, now, eid),
+                "UPDATE edges SET frequency=?, strength=?, last_activated=? WHERE id=?",
+                (new_freq, new_strength, now, eid),
             )
             conn.execute(
                 "UPDATE nodes SET theta_m=?, activity_history=? WHERE id=?",
@@ -471,12 +488,14 @@ def hybrid_search(
         query=query,
     )
 
-    # 8. SPRT 승격 판정 (C-11)
+    # 8. SPRT 승격 판정 (C-11) — score를 0-1 정규화 후 판정
     try:
         sprt_conn = sqlite_store._connect()
+        max_score = result[0]["score"] if result else 1.0
         for node in result:
             if node.get("type") == "Signal":
-                if _sprt_check(node, node.get("score", 0.0), sprt_conn):
+                normalized = node.get("score", 0.0) / max_score if max_score > 0 else 0.0
+                if _sprt_check(node, normalized, sprt_conn):
                     sprt_conn.execute(
                         "UPDATE nodes SET promotion_candidate=1 WHERE id=?",
                         (node["id"],),

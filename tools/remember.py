@@ -6,6 +6,7 @@ v2.0: classify/store/link 3함수 분리 (A-14)
 외부 API(MCP tool remember) 100% 하위호환.
 """
 
+import hashlib
 import json
 from dataclasses import dataclass
 
@@ -254,6 +255,12 @@ def remember(
     Returns:
         {"node_id", "type", "project", "auto_edges", "message"}
     """
+    # 0. content hash 중복 검사
+    content_hash = hashlib.sha256(content.encode()).hexdigest()
+    existing = sqlite_store.get_node_by_hash(content_hash)
+    if existing:
+        return {"status": "duplicate", "node_id": existing["id"]}
+
     # 1. 분류
     cls = classify(content, type=type, metadata=metadata)
 

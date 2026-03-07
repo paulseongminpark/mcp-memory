@@ -36,8 +36,7 @@ def swr_readiness(node_id: int) -> tuple[bool, float]:
     Returns:
         (ready: bool, readiness_score: float)
     """
-    conn = sqlite_store._connect()
-    try:
+    with sqlite_store._db() as conn:
         # vec_ratio: recall_log 소스 분포 (테이블 없으면 0.0 fallback)
         try:
             rows = conn.execute(
@@ -73,9 +72,6 @@ def swr_readiness(node_id: int) -> tuple[bool, float]:
                     projects.add(row[0])
             cross_ratio = len(projects) / max(len(edge_rows), 1)
 
-    finally:
-        conn.close()
-
     readiness = 0.6 * vec_ratio + 0.4 * cross_ratio
     return readiness > PROMOTION_SWR_THRESHOLD, round(readiness, 3)
 
@@ -86,16 +82,11 @@ def swr_readiness(node_id: int) -> tuple[bool, float]:
 
 def _get_total_recall_count() -> int:
     """meta 테이블에서 글로벌 recall 횟수 조회. 없으면 0."""
-    conn = sqlite_store._connect()
+    val = sqlite_store.get_meta("total_recall_count")
     try:
-        row = conn.execute(
-            "SELECT value FROM meta WHERE key='total_recall_count'"
-        ).fetchone()
-        return int(row[0]) if row else 0
-    except Exception:
-        return 0  # meta 테이블 미존재 시 fallback
-    finally:
-        conn.close()
+        return int(val) if val is not None else 0
+    except (ValueError, TypeError):
+        return 0
 
 
 def promotion_probability(node: dict, total_queries: int) -> float:
@@ -193,6 +184,8 @@ def promote_node(
             "message": f"Cannot promote {current_type} to {target_type}. Valid: {valid_targets}",
         }
 
+    gates_passed: list[str] = []
+
     # ── Gate 1: SWR readiness ──────────────────
     if not skip_gates:
         ready, swr_score = swr_readiness(node_id)
@@ -206,6 +199,7 @@ def promote_node(
                     "Need more vector recalls or cross-domain neighbors."
                 ),
             }
+        gates_passed.append("swr")
 
     # ── Gate 2: Bayesian P(real) ───────────────
     if not skip_gates:
@@ -222,6 +216,7 @@ def promote_node(
                     "Need more recall frequency relative to total queries."
                 ),
             }
+        gates_passed.append("bayesian")
 
     # ── Gate 3: MDL ────────────────────────────
     if not skip_gates and related_ids:
@@ -238,6 +233,7 @@ def promote_node(
                 "reason": mdl_reason,
                 "message": f"MDL gate rejected: signals not semantically similar enough. {mdl_reason}",
             }
+        gates_passed.append("mdl")
 
     # ── 승격 실행 ───────────────────────────────
     now = datetime.now(timezone.utc).isoformat()
@@ -255,30 +251,52 @@ def promote_node(
     metadata.pop("embedding_provisional", None)
 
     new_layer = PROMOTE_LAYER.get(target_type, node.get("layer"))
-    conn = sqlite_store._connect()
-    conn.execute(
-        """UPDATE nodes
-           SET type = ?, layer = ?, metadata = ?, updated_at = ?
-           WHERE id = ?""",
-        (target_type, new_layer, json.dumps(metadata, ensure_ascii=False), now, node_id),
-    )
-
     edge_ids = []
-    for rid in (related_ids or []):
-        if rid == node_id:
-            continue
-        try:
-            cur = conn.execute(
-                """INSERT INTO edges (source_id, target_id, relation, description, strength, created_at)
-                   VALUES (?, ?, 'realized_as', ?, 1.0, ?)""",
-                (rid, node_id, f"{current_type}→{target_type}: {reason}", now),
-            )
-            edge_ids.append(cur.lastrowid)
-        except Exception:
-            pass
+    with sqlite_store._db() as conn:
+        conn.execute(
+            """UPDATE nodes
+               SET type = ?, layer = ?, metadata = ?, updated_at = ?
+               WHERE id = ?""",
+            (target_type, new_layer, json.dumps(metadata, ensure_ascii=False), now, node_id),
+        )
 
-    conn.commit()
-    conn.close()
+        for rid in (related_ids or []):
+            if rid == node_id:
+                continue
+            try:
+                cur = conn.execute(
+                    """INSERT INTO edges (source_id, target_id, relation, description, strength, created_at)
+                       VALUES (?, ?, 'realized_as', ?, 1.0, ?)""",
+                    (rid, node_id, f"{current_type}→{target_type}: {reason}", now),
+                )
+                edge_ids.append(cur.lastrowid)
+            except Exception:
+                pass
+
+        conn.commit()
+
+    # ── action_log 기록 ─────────────────────────
+    try:
+        from storage import action_log
+        action_log.record(
+            action_type="node_promoted",
+            actor="claude",
+            target_type="node",
+            target_id=node_id,
+            params=json.dumps({
+                "from_type": current_type,
+                "to_type": target_type,
+                "reason": reason,
+                "skip_gates": skip_gates,
+                "gates_passed": gates_passed,
+            }),
+            result=json.dumps({
+                "new_layer": new_layer,
+                "realized_as_edges": edge_ids,
+            }),
+        )
+    except Exception:
+        pass
 
     return {
         "node_id": node_id,
@@ -287,6 +305,6 @@ def promote_node(
         "new_layer": new_layer,
         "realized_as_edges": edge_ids,
         "promotion_count": len(history),
-        "gates_passed": [] if skip_gates else ["swr", "bayesian", "mdl"],
+        "gates_passed": gates_passed,
         "message": f"Promoted #{node_id}: {current_type} → {target_type} (L{new_layer})",
     }

@@ -249,10 +249,27 @@ VALID_PROMOTIONS = {
     "Principle": ["Belief", "Philosophy", "Value"],
 }
 
-# Promotion 관련 layer 매핑
+# Promotion 관련 layer 매핑 — 47 active 타입 (deprecated 3개 제외: Evidence, Heuristic, Concept)
 PROMOTE_LAYER = {
-    "Observation": 0, "Evidence": 0, "Signal": 1,
-    "Pattern": 2, "Insight": 2, "Principle": 3,
-    "Framework": 2, "Heuristic": 2, "Concept": 2,
-    "Belief": 4, "Philosophy": 4, "Value": 5,
+    # ── Layer 0 (7) ───────────────────────────────────────────
+    "Observation": 0, "Trigger": 0, "Context": 0,
+    "Conversation": 0, "Narrative": 0, "Question": 0, "Preference": 0,
+    # ── Layer 1 (18) ──────────────────────────────────────────
+    "Decision": 1, "Plan": 1, "Workflow": 1, "Experiment": 1,
+    "Failure": 1, "Breakthrough": 1, "Evolution": 1, "Signal": 1,
+    "Goal": 1, "Ritual": 1, "Tool": 1, "Skill": 1,
+    "AntiPattern": 1, "Constraint": 1, "Assumption": 1,
+    "SystemVersion": 1, "Agent": 1, "Project": 1,
+    # ── Layer 2 (7) ───────────────────────────────────────────
+    "Pattern": 2, "Insight": 2, "Framework": 2, "Trade-off": 2,
+    "Tension": 2, "Metaphor": 2, "Connection": 2,
+    # ── Layer 3 (6) ───────────────────────────────────────────
+    "Principle": 3, "Identity": 3, "Boundary": 3,
+    "Vision": 3, "Paradox": 3, "Commitment": 3,
+    # ── Layer 4 (4) ───────────────────────────────────────────
+    "Belief": 4, "Philosophy": 4, "Mental Model": 4, "Lens": 4,
+    # ── Layer 5 (4) ───────────────────────────────────────────
+    "Axiom": 5, "Value": 5, "Wonder": 5, "Aporia": 5,
+    # ── Meta ──────────────────────────────────────────────────
+    "Unclassified": None,  # layer 미배정
 }

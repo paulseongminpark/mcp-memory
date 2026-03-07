@@ -18,14 +18,13 @@ def analyze_signals(
     각 클러스터의 성숙도를 계산하여 승격 권고를 반환.
     """
     # 1. Signal 노드 조회
-    conn = sqlite_store._connect()
     sql = "SELECT * FROM nodes WHERE type = 'Signal' AND status = 'active'"
     params: list = []
     if domain:
         sql += " AND domains LIKE ?"
         params.append(f'%"{domain}"%')
-    rows = conn.execute(sql, params).fetchall()
-    conn.close()
+    with sqlite_store._db() as conn:
+        rows = conn.execute(sql, params).fetchall()
 
     signals = [dict(r) for r in rows]
     if not signals:
@@ -179,16 +178,11 @@ def _bayesian_cluster_score(nodes: list[dict], total_queries: int) -> float:
 
 def _get_total_recall_count() -> int:
     """meta 테이블에서 글로벌 recall 횟수 조회. 없으면 0."""
-    conn = sqlite_store._connect()
+    val = sqlite_store.get_meta("total_recall_count")
     try:
-        row = conn.execute(
-            "SELECT value FROM meta WHERE key='total_recall_count'"
-        ).fetchone()
-        return int(row[0]) if row else 0
-    except Exception:
-        return 0  # meta 테이블 미존재 시 fallback
-    finally:
-        conn.close()
+        return int(val) if val is not None else 0
+    except (ValueError, TypeError):
+        return 0
 
 
 def _collect_domains(nodes: list[dict]) -> list[str]:

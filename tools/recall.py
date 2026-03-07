@@ -108,15 +108,14 @@ def _increment_recall_count():
     향후 UCB 정규화, 사용 패턴 분석에 활용.
     """
     try:
-        conn = sqlite_store._connect()
-        conn.execute("""
-            INSERT INTO meta(key, value, updated_at)
-                VALUES('total_recall_count', '1', datetime('now'))
-            ON CONFLICT(key) DO UPDATE SET
-                value = CAST(CAST(value AS INTEGER) + 1 AS TEXT),
-                updated_at = datetime('now')
-        """)
-        conn.commit()
-        conn.close()
+        with sqlite_store._db() as conn:
+            conn.execute("""
+                INSERT INTO meta(key, value, updated_at)
+                    VALUES('total_recall_count', '1', datetime('now'))
+                ON CONFLICT(key) DO UPDATE SET
+                    value = CAST(CAST(value AS INTEGER) + 1 AS TEXT),
+                    updated_at = datetime('now')
+            """)
+            conn.commit()
     except Exception:
         pass  # meta 테이블 미생성 시 graceful skip

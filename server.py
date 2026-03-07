@@ -8,9 +8,10 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from mcp.server.fastmcp import FastMCP
 
-from config import DB_PATH, OPENAI_API_KEY
+from config import DB_PATH, OPENAI_API_KEY, PROMOTE_LAYER
 from ontology.validators import validate_node_type, suggest_closest_type
 from storage.sqlite_store import init_db
+from utils.access_control import check_access, LAYER_PERMISSIONS
 
 if not OPENAI_API_KEY:
     import warnings
@@ -45,6 +46,7 @@ def remember(
     metadata: dict | None = None,
     confidence: float = 1.0,
     source: str = "claude",
+    actor: str = "system",
 ) -> dict:
     """Store a memory node with automatic embedding and relationship detection.
 
@@ -95,6 +97,21 @@ def remember(
             }
     # ── [타입 검증 끝] ─────────────────────────────────────────────────────
 
+    # ── [A-10 F1: L4/L5 접근 제어] ────────────────────────────────────────
+    target_layer = PROMOTE_LAYER.get(type)
+    if target_layer in (4, 5):
+        allowed = LAYER_PERMISSIONS.get(target_layer, {}).get("write", ["paul"])
+        actor_base = actor.split(":")[0] if ":" in actor else actor
+        if "all" not in allowed and actor_base not in allowed and actor not in allowed:
+            return {
+                "node_id": None,
+                "type": type,
+                "project": project,
+                "auto_edges": [],
+                "error": f"Access denied: L{target_layer} write requires actor in {allowed}, got '{actor}'",
+                "message": f"A-10 F1: '{actor}' cannot create L{target_layer} node ({type})",
+            }
+
     result = _remember(
         content=content,
         type=type,
@@ -110,6 +127,9 @@ def remember(
         result["warning"] = deprecated_warning
 
     return result
+
+
+MAX_TOP_K = 50
 
 
 @mcp.tool()
@@ -128,8 +148,9 @@ def recall(
         query: Search query (natural language or keywords)
         type_filter: Filter by node type (e.g. "Decision", "Pattern")
         project: Filter by project name
-        top_k: Number of results to return (default 5)
+        top_k: Number of results to return (default 5, max 50)
     """
+    top_k = min(top_k, MAX_TOP_K)
     return _recall(
         query=query,
         type_filter=type_filter,
@@ -234,6 +255,7 @@ def promote_node(
     target_type: str,
     reason: str = "",
     related_ids: list[int] | None = None,
+    actor: str = "system",
 ) -> dict:
     """Promote a node to a higher-layer type (e.g. Signal → Pattern).
 
@@ -247,6 +269,13 @@ def promote_node(
         reason: Why this promotion is justified
         related_ids: Other node IDs in the same cluster (creates realized_as edges)
     """
+    # ── [접근 제어] promote 대상 노드 write 권한 확인 ────────────────────
+    if not check_access(node_id, "write", actor):
+        return {
+            "error": f"Access denied: actor='{actor}' cannot promote node #{node_id}",
+            "message": f"check_access denied 'write' on node #{node_id} for actor='{actor}'",
+        }
+
     return _promote_node(
         node_id=node_id,
         target_type=target_type,
