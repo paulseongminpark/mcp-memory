@@ -1,5 +1,23 @@
 # mcp-memory CHANGELOG
 
+## v2.2.1 (2026-03-08)
+### Layer A Refactor: Typed Vector Channel
+- TYPE_BOOST additive(0.03) → TYPE_CHANNEL_WEIGHT(0.5) RRF 채널 교체
+- 타입 힌트 감지 시 타입별 독립 벡터 검색 → 4번째 RRF 신호로 추가
+- MAX_TYPE_HINTS=2 (API 호출 제한)
+- A/B test에서 additive boost 무효 확인 → RRF 채널 기반으로 전환
+
+### Goldset v2.2 (Paul 수동 검증)
+- q026-q075 50개 쿼리 Paul 직접 검증 (relevant_ids + also_relevant 교체)
+- also_relevant 5개→1~3개로 정리 (과도한 정답 제거)
+- q026-q050 NDCG@5: 0.123 → 0.519 (+0.396)
+- 발견: Identity 중복 노드 5개, q049 쿼리 범위 확장 필요
+
+### Metrics (Paul 검증 goldset 기준)
+- NDCG@5: 0.441 → 0.460 (+0.019)
+- NDCG@10: 0.452 → 0.488 (+0.036)
+- Tests: 161 → 163 (+2)
+
 ## v2.2.0 (2026-03-08)
 ### 3-Layer Type-Aware Search
 - **Layer C**: 타입 태그 재임베딩 — `[Type] summary + key_concepts + content[:200]`로 벡터 공간에서 타입 분리

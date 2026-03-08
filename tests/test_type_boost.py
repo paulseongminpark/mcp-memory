@@ -1,14 +1,15 @@
-"""Type boost 키워드 감지 테스트."""
+"""Type-aware vector channel 테스트 — _detect_type_hints + config 상수."""
 import sys
 from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 
-def test_type_keywords_import():
-    from config import TYPE_KEYWORDS, TYPE_BOOST
+def test_type_config_import():
+    from config import TYPE_KEYWORDS, TYPE_CHANNEL_WEIGHT, MAX_TYPE_HINTS
     assert isinstance(TYPE_KEYWORDS, dict)
-    assert TYPE_BOOST > 0
+    assert TYPE_CHANNEL_WEIGHT > 0
+    assert MAX_TYPE_HINTS >= 1
 
 
 def test_detect_workflow():
@@ -35,3 +36,17 @@ def test_multiple_types():
     hints = _detect_type_hints("에이전트 팀 구조 설계 프레임워크")
     assert "Agent" in hints
     assert "Framework" in hints
+
+
+def test_max_type_hints_cap():
+    from config import MAX_TYPE_HINTS
+    from storage.hybrid import _detect_type_hints
+    # 여러 키워드가 한 쿼리에 있어도 MAX_TYPE_HINTS 이하로 제한
+    hints = _detect_type_hints("워크플로우 도구 에이전트 실패 실험 결정 진화 목표 패턴")
+    assert len(hints) <= MAX_TYPE_HINTS
+
+
+def test_returns_list():
+    from storage.hybrid import _detect_type_hints
+    hints = _detect_type_hints("워크플로우 자동화")
+    assert isinstance(hints, list)

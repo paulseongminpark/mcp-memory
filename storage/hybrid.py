@@ -18,7 +18,7 @@ from config import (
     UCB_C_FOCUS, UCB_C_AUTO, UCB_C_DMN,
     GRAPH_MAX_HOPS, LAYER_ETA,
     SPRT_ALPHA, SPRT_BETA, SPRT_P1, SPRT_P0, SPRT_MIN_OBS,
-    TYPE_KEYWORDS, TYPE_BOOST,
+    TYPE_KEYWORDS, TYPE_CHANNEL_WEIGHT, MAX_TYPE_HINTS,
 )
 from storage import sqlite_store, vector_store
 from graph.traversal import build_graph  # traverse 제거 — UCB로 교체
@@ -392,14 +392,16 @@ def _log_recall_activations(
 
 # ─── Type-aware helpers ──────────────────────────────────────────
 
-def _detect_type_hints(query: str) -> dict[str, float]:
-    """쿼리에서 타입 키워드 감지 → {type: boost}."""
-    hints: dict[str, float] = {}
+def _detect_type_hints(query: str) -> list[str]:
+    """쿼리에서 타입 키워드 감지 → 매칭된 타입 리스트 (최대 MAX_TYPE_HINTS개)."""
+    hints: list[str] = []
     for node_type, keywords in TYPE_KEYWORDS.items():
         for kw in keywords:
             if kw in query:
-                hints[node_type] = TYPE_BOOST
+                hints.append(node_type)
                 break
+        if len(hints) >= MAX_TYPE_HINTS:
+            break
     return hints
 
 
@@ -474,6 +476,21 @@ def hybrid_search(
     # 2. FTS5 키워드 검색 (SQLite)
     fts_results = sqlite_store.search_fts(query, top_k=top_k * 4)
 
+    # 2b. Layer A: typed vector search (type hint 감지 시 추가 채널)
+    typed_vec_by_type: dict[str, list] = {}
+    if _type_hints:
+        for hint_type in _type_hints:
+            try:
+                typed_where: dict = {"type": hint_type}
+                if project:
+                    typed_where["project"] = project
+                t_results = vector_store.search(
+                    query, top_k=top_k * 2, where=typed_where
+                )
+                typed_vec_by_type[hint_type] = t_results
+            except Exception:
+                pass
+
     # 3. seed_ids 수집 (벡터/FTS 상위 결과)
     seed_ids = []
     for node_id, _, _ in vec_results[:3]:
@@ -503,6 +520,11 @@ def hybrid_search(
     for node_id in graph_neighbors:
         scores[node_id] += GRAPH_BONUS
 
+    # 5b. Layer A: typed vector RRF 채널 (타입별 독립 랭킹)
+    for hint_type, t_results in typed_vec_by_type.items():
+        for rank, (node_id, distance, _) in enumerate(t_results, 1):
+            scores[node_id] += TYPE_CHANNEL_WEIGHT / (RRF_K + rank)
+
     # 6. 필터 + enrichment 가중치 + 정렬
     sorted_ids = sorted(scores, key=lambda x: scores[x], reverse=True)
     candidates = []
@@ -523,8 +545,7 @@ def hybrid_search(
         )
         tier = node.get("tier", 2)
         tier_bonus = {0: 0.15, 1: 0.05, 2: 0.0}.get(tier, 0.0)
-        type_boost = _type_hints.get(node.get("type", ""), 0.0)
-        node["score"] = scores[node_id] + enrichment_bonus + tier_bonus + type_boost
+        node["score"] = scores[node_id] + enrichment_bonus + tier_bonus
         candidates.append(node)
 
     candidates.sort(key=lambda n: n["score"], reverse=True)

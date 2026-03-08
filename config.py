@@ -286,8 +286,9 @@ VERIFY_THRESHOLDS = {
     "duplicate_pct": 0.0,
 }
 
-# ── Type-aware search boost ──────────────────────────────────
-TYPE_BOOST = 0.03  # 타입 매칭 시 추가 점수
+# ── Type-aware search ────────────────────────────────────────
+TYPE_CHANNEL_WEIGHT = 0.5   # typed vector RRF 채널 가중치 (1.0 = 일반 채널과 동일)
+MAX_TYPE_HINTS = 2          # 쿼리당 최대 type hint 수 (API 호출 제한)
 
 TYPE_KEYWORDS: dict[str, list[str]] = {
     "Workflow": ["워크플로우", "절차", "단계", "파이프라인", "프로세스", "체인", "실행 순서"],

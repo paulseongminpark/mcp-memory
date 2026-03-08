@@ -276,16 +276,18 @@ queries:
   also_relevant:
   - 721
   - 377
-  notes: Workflow 노드 — verify → /sync → /session-end 체인
+  - 1370
+  notes: Workflow 노드 — verify → /sync → /session-end 체인. Paul 검증 2026-03-08
 - id: q028
   difficulty: easy
   query: Codex CLI와 Gemini CLI 설정 방법
   relevant_ids:
   - 319
   also_relevant:
-  - 391
-  - 189
-  notes: Tool 노드 — 외부 CLI 설정 v4.0
+  - 1362
+  - 222
+  - 1488
+  notes: Tool 노드 — 외부 CLI 설정 v4.0. Paul 검증 2026-03-08
 - id: q029
   difficulty: easy
   query: Claude Code 스킬 목록과 사용법
@@ -293,45 +295,47 @@ queries:
   - 44
   - 281
   also_relevant:
-  - 834
-  - 864
-  notes: Skill 노드 — 스킬 시스템
+  - 1623
+  - 219
+  - 227
+  notes: Skill 노드 — 스킬 시스템. Paul 검증 2026-03-08
 - id: q030
   difficulty: medium
   query: 에이전트가 23개에서 15개로 줄어든 이유
   relevant_ids:
   - 772
   also_relevant:
-  - 403
-  - 404
-  notes: Evolution 노드 — 에이전트 감축, 성숙 곡선과 연결
+  - 181
+  notes: Evolution 노드 — 에이전트 감축. Paul 검증 2026-03-08
 - id: q031
   difficulty: medium
   query: Hook 시스템이 자동으로 하는 일
   relevant_ids:
   - 397
   also_relevant:
-  - 593
-  - 286
-  notes: Workflow 노드 — 8종 hook 자동화 레이어
+  - 2601
+  - 151
+  notes: Workflow 노드 — 8종 hook 자동화 레이어. Paul 검증 2026-03-08
 - id: q032
   difficulty: easy
   query: Cross-CLI 메모리 공유 방법
   relevant_ids:
   - 391
   also_relevant:
-  - 319
-  - 189
-  notes: Tool 노드 — CLI 전환 시 맥락 보존
+  - 607
+  - 1579
+  - 752
+  - 667
+  notes: Tool 노드 — CLI 전환 시 맥락 보존. Paul 검증 2026-03-08
 - id: q033
   difficulty: medium
   query: 에이전트 팀 구성과 역할 분담
   relevant_ids:
-  - 873
+  - 2816
   also_relevant:
-  - 1357
-  - 154
-  notes: Agent 노드 — 4팀 + 허브 구조
+  - 405
+  - 873
+  notes: Principle 노드 — 역할 분리 다중 에이전트 오케스트레이션. Paul 검증 2026-03-08
 - id: q034
   difficulty: medium
   query: 마찰을 제거하고 단축키로 만드는 설계 원칙
@@ -339,100 +343,114 @@ queries:
   - 4120
   also_relevant:
   - 4165
-  - 4163
-  notes: Signal 노드 — 마찰 제거 집착
+  - 708
+  notes: Signal 노드 — 마찰 제거 집착. Paul 검증 2026-03-08
 - id: q035
   difficulty: easy
   query: Flat Root 파일 구조 패턴
   relevant_ids:
   - 221
   also_relevant:
-  - 926
-  notes: Pattern 노드 — v3.3.1 파일 구조
+  - 759
+  - 1616
+  notes: Pattern 노드 — v3.3.1 파일 구조. Paul 검증 2026-03-08
 - id: q036
   difficulty: medium
   query: 체인 에이전트 결과를 파일로 오프로딩하는 패턴
   relevant_ids:
   - 926
   also_relevant:
+  - 874
+  - 151
   - 377
-  - 378
-  notes: Pattern 노드 — .chain-temp 패턴, 토큰 절감
+  notes: Pattern 노드 — .chain-temp 패턴, 토큰 절감. Paul 검증 2026-03-08
 - id: q037
   difficulty: medium
   query: 메모리 시스템의 SQLite 스키마 구조
   relevant_ids:
   - 3917
-  also_relevant: []
-  notes: Framework 노드 — mcp-memory DB 스키마
+  also_relevant:
+  - 188
+  - 148
+  - 164
+  - 227
+  notes: Framework 노드 — mcp-memory DB 스키마. Paul 검증 2026-03-08
 - id: q038
   difficulty: medium
   query: tech-review 포스트 자동 생성 실패 원인
   relevant_ids:
   - 979
   also_relevant:
-  - 344
-  notes: Failure 노드 — 2/23 자동 생성 실패
+  - 941
+  - 3259
+  notes: Failure 노드 — 2/23 자동 생성 실패. Paul 검증 2026-03-08
 - id: q039
   difficulty: medium
   query: Codex와 Gemini 실전 테스트 결과
   relevant_ids:
   - 189
   also_relevant:
-  - 1007
-  notes: Experiment 노드 — e2e 검증 결과
+  - 282
+  - 1448
+  - 236
+  notes: Experiment 노드 — e2e 검증 결과. #282 내용수정필요(200K→1M). Paul 검증 2026-03-08
 - id: q040
   difficulty: hard
   query: 리좀형 팀 구조 설계 원칙
   relevant_ids:
   - 225
   also_relevant:
-  - 873
-  - 1357
-  notes: Framework 노드 — meta-orchestrator 중심 리좀 구조
+  - 188
+  - 1304
+  - 810
+  notes: Framework 노드 — meta-orchestrator 중심 리좀 구조. Paul 검증 2026-03-08
 - id: q041
   difficulty: medium
   query: 모델 변경 실험과 에이전트 최적화
   relevant_ids:
   - 912
   also_relevant:
-  - 908
-  - 942
-  notes: Experiment 노드 — 1차→2차 모델 비교
+  - 1347
+  - 590
+  notes: Experiment 노드 — 1차→2차 모델 비교. Paul 검증 2026-03-08
 - id: q042
   difficulty: medium
   query: 시간 축 추적과 메모 자동 삽입 습관
   relevant_ids:
   - 4121
   also_relevant:
-  - 4120
-  notes: Signal 노드 — 시간 축 추적 습관
+  - 607
+  - 667
+  - 751
+  notes: Signal 노드 — 시간 축 추적 습관. Paul 검증 2026-03-08
 - id: q043
   difficulty: hard
   query: 다중 소스 교차 검증으로 온톨로지 신뢰도 높이기
   relevant_ids:
   - 4126
   also_relevant:
-  - 4120
-  - 4121
-  notes: Signal 노드 — checkpoint+Obsidian+daily-memo 교차 검증
+  - 1289
+  - 3931
+  notes: Signal 노드 — checkpoint+Obsidian+daily-memo 교차 검증. Paul 검증 2026-03-08
 - id: q044
   difficulty: medium
   query: enrichment 배치 처리 중 GPT null 반환 버그
   relevant_ids:
   - 4150
   also_relevant:
-  - 4177
-  notes: Failure 노드 — enrich_batch Phase C 버그
+  - 1364
+  - 1325
+  - 1526
+  notes: Failure 노드 — enrich_batch Phase C 버그. Paul 검증 2026-03-08
 - id: q045
   difficulty: medium
   query: Obsidian 볼트 구조와 중앙 MOC 허브
   relevant_ids:
   - 1074
   also_relevant:
-  - 275
-  - 573
-  notes: Framework 노드 — 볼트 구조 설계
+  - 35
+  - 36
+  notes: Framework 노드 — 볼트 구조 설계. Paul 검증 2026-03-08
 - id: q046
   difficulty: medium
   query: Claude Code 중심 멀티 AI 시스템 개요
@@ -440,16 +458,17 @@ queries:
   - 275
   - 573
   also_relevant:
-  - 225
-  notes: Narrative 노드 — 시스템 전체 개요
+  - 43
+  notes: Narrative 노드 — 시스템 전체 개요. Paul 검증 2026-03-08
 - id: q047
   difficulty: hard
   query: 포트폴리오에서 AI 방법론을 어떻게 보여줄 것인가
   relevant_ids:
   - 1601
   - 1602
-  also_relevant: []
-  notes: Tension/Narrative 노드 — 포트폴리오 프레이밍 고충
+  also_relevant:
+  - 3773
+  notes: Tension 노드 — 포트폴리오 프레이밍. Identity 중복노드 cleanup 필요(3575/2712/3641/3707). Paul 검증 2026-03-08
 - id: q048
   difficulty: hard
   query: '성숙 곡선: 더하기에서 빼기로 전환하는 시점'
@@ -457,23 +476,29 @@ queries:
   - 403
   also_relevant:
   - 404
-  - 772
-  notes: Pattern 노드 — 에이전트 수 증감 곡선, 감법 원칙 연결
+  - 3895
+  - 4164
+  - 2696
+  notes: Pattern 노드 — 에이전트 수 증감 곡선, 감법 원칙 연결. Paul 검증 2026-03-08
 - id: q049
   difficulty: hard
   query: GPT 맞춤형 지침과 AI 대화 전략
   relevant_ids:
   - 1618
   also_relevant:
+  - 708
+  - 43
   - 405
-  notes: Tool 노드 — GPT 글로벌 지침
+  notes: Tool 노드 — 멀티AI 맞춤 지침. 쿼리 범위 확장 필요(CLI+구독형 분기). Paul 검증 2026-03-08
 - id: q050
   difficulty: medium
   query: RELATION_RULES 타입 기반 관계 자동 매핑
   relevant_ids:
-  - 4189
-  also_relevant: []
-  notes: Decision 노드 — 관계 규칙 기반 매핑 설계 결정
+  - 1292
+  also_relevant:
+  - 222
+  - 3652
+  notes: Principle 노드 — 지식그래프 관계 원칙. Paul 검증 2026-03-08
 - id: q051
   difficulty: easy
   query: git diff 결과를 보고 영향받는 테스트만 골라 최소 테스트셋을 만드는 절차는 뭐였지?
@@ -484,25 +509,17 @@ queries:
   also_relevant:
   - 1413
   - 167
-  - 1370
-  - 181
-  - 378
-  notes: Workflow L1 — 변경 파일 기반 최소 테스트셋 생성 절차
+  notes: Workflow L1 — 변경 파일 기반 최소 테스트셋 생성 절차. Paul 검증 2026-03-08
 - id: q052
   difficulty: medium
   query: 배포 전에 TypeScript 에러, console.log, localhost 하드코딩, git status를 점검하는 배포 체인은
     어떻게 되어 있지?
   relevant_ids:
   - 126
-  - 119
   - 112
   also_relevant:
-  - 4035
-  - 1668
-  - 1413
-  - 1325
   - 1526
-  notes: Workflow L1 — 배포 자동화 체크리스트
+  notes: Workflow L1 — 배포 자동화 체크리스트. Paul 검증 2026-03-08
 - id: q053
   difficulty: medium
   query: meta-orchestrator는 세션 시작 시 무엇을 읽고 어떤 팀을 활성화할지 어떻게 판단했지?
@@ -511,96 +528,64 @@ queries:
   - 198
   - 126
   also_relevant:
-  - 132
-  - 1302
-  - 151
-  - 1528
-  - 188
-  notes: Agent/Workflow L1 — 메타 오케스트레이터의 입력과 판단 로직
+  - 1296
+  notes: Agent/Workflow L1 — 메타 오케스트레이터의 입력과 판단 로직. Paul 검증 2026-03-08
 - id: q054
   difficulty: easy
   query: tech-review-ops, ai-feedback-loop, daily-ops 세 팀을 어떤 역할로 나눴는지 정리한 항목은 뭐였지?
   relevant_ids:
   - 198
-  - 133
-  - 141
   also_relevant:
-  - 2726
   - 810
-  - 404
   - 1301
-  - 2712
-  notes: Agent L1 — 팀 구조와 역할 분담
+  notes: Agent L1 — 팀 구조와 역할 분담. Paul 검증 2026-03-08
 - id: q055
   difficulty: easy
   query: 할 일 목록을 보고 추가하고 완료 처리하면서 핸드폰 inbox까지 동기화하는 /todo 스킬은 뭐였지?
   relevant_ids:
   - 136
   - 106
-  - 117
   also_relevant:
-  - 1313
-  - 227
-  - 181
-  - 219
   - 1311
-  notes: Skill L1 — 명령형 작업 관리 스킬
+  - 227
+  notes: Skill L1 — 명령형 작업 관리 스킬. Paul 검증 2026-03-08
 - id: q056
   difficulty: easy
   query: 세션 종료 후 daily memo를 동기화하는 실행 스킬이나 스크립트는 뭐였지?
   relevant_ids:
   - 136
   - 33
-  - 106
   also_relevant:
-  - 132
-  - 752
-  - 151
-  - 3931
-  - 188
-  notes: Skill/Tool L1 — 메모 동기화 자동화
+  - 613
+  notes: Skill L1 — 메모 동기화 자동화. Paul 검증 2026-03-08
 - id: q057
   difficulty: easy
   query: orchestration 프로젝트 구조와 핵심 경로를 정리한 프로젝트 개요는 뭐였지?
   relevant_ids:
   - 15
-  - 165
   - 102
-  also_relevant:
-  - 609
-  - 227
-  - 1290
-  - 3575
-  - 1656
-  notes: Project L1 — 프로젝트 구조와 경로 정리
+  also_relevant: []
+  notes: Project L1 — 프로젝트 구조와 경로 정리. Paul 검증 2026-03-08
 - id: q058
   difficulty: medium
   query: 사용 중인 AI 도구를 역할과 접근 방식까지 나눠서 정리한 내용은 어디 있었지?
   relevant_ids:
   - 42
   - 104
-  - 4155
   also_relevant:
-  - 135
-  - 84
-  - 148
   - 405
-  - 600
-  notes: Tool L1 — 도구 선택 기준과 역할 배치
+  - 43
+  - 148
+  notes: Tool L1 — 도구 선택 기준과 역할 배치. Paul 검증 2026-03-08
 - id: q059
   difficulty: medium
   query: 컨텍스트 비대화를 막기 위해 병렬 독립 세션과 index 파일을 쓰는 패턴은 뭐였지?
   relevant_ids:
   - 4235
   - 4119
-  - 4092
   also_relevant:
-  - 756
-  - 276
-  - 378
-  - 222
-  - 574
-  notes: Pattern L2 — 컨텍스트 관리 패턴
+  - 4092
+  notes: Pattern L2 — 컨텍스트 관리 패턴. Paul 검증 2026-03-08
 - id: q060
   difficulty: medium
   query: dev 볼트 구조를 계층적으로 설명한 프레임워크 문서는 뭐였지?
@@ -608,28 +593,17 @@ queries:
   - 36
   - 37
   - 120
-  also_relevant:
-  - 35
-  - 164
-  - 3367
-  - 758
-  - 378
-  notes: Framework L2 — 볼트 구조 프레임워크
+  also_relevant: []
+  notes: Framework L2 — 볼트 구조 프레임워크. Paul 검증 2026-03-08
 - id: q061
   difficulty: medium
   query: portfolio에서 Obsidian 섹션 v4.0을 재작성하며 Hook, Architecture, Problem, Evolution,
     Lessons 구조로 바꾼 세션 서사는 뭐였지?
   relevant_ids:
-  - 27
-  - 99
   - 98
-  also_relevant:
-  - 227
-  - 2601
-  - 77
-  - 2638
-  - 188
-  notes: Narrative L0 — 작업 맥락과 전개를 담은 세션 서사
+  - 27
+  also_relevant: []
+  notes: Narrative L0 — 작업 맥락과 전개를 담은 세션 서사. Paul 검증 2026-03-08
 - id: q062
   difficulty: hard
   query: 해마와 신피질, 기억 공고화를 온톨로지 레이어와 승격 흐름에 대응시킨 연결은 어떻게 설명됐지?
@@ -637,146 +611,92 @@ queries:
   - 4209
   - 4046
   also_relevant:
-  - 132
-  - 4166
   - 4044
-  - 758
-  - 3931
-  notes: Connection L2 — 뇌과학과 온톨로지 아키텍처 연결
+  - 4166
+  notes: Connection L2 — 뇌과학과 온톨로지 아키텍처 연결. Paul 검증 2026-03-08
 - id: q063
   difficulty: hard
   query: IHS 허브 보호 설계에서 레이어별 human review 기준을 어떻게 나눴는지 찾고 싶다
   relevant_ids:
   - 4223
-  - 4280
-  - 124
   also_relevant:
-  - 3849
-  - 1289
   - 4044
-  - 1365
-  - 1526
-  notes: Pattern/Framework L2 — 허브 보호와 레이어별 검토 규칙
+  notes: Pattern L2 — 허브 보호와 레이어별 검토 규칙. Paul 검증 2026-03-08
 - id: q064
   difficulty: hard
   query: Signal을 Pattern으로 올릴 때 단순 반복 횟수 대신 압축이나 일반화로 판단해야 한다는 논의는 뭐였지?
   relevant_ids:
   - 4049
-  - 4235
-  - 4119
   also_relevant:
-  - 3202
-  - 708
   - 1349
   - 2726
-  - 404
-  notes: Pattern/Framework L2 — 승격 판단 기준과 패턴 인식
+  notes: Pattern L2 — 승격 판단 기준과 패턴 인식. Paul 검증 2026-03-08
 - id: q065
   difficulty: easy
   query: E14 전체 배치가 100% 실패했던 직접 원인과 거기서 얻은 교훈은 뭐였지?
   relevant_ids:
   - 4243
-  - 4172
-  - 4212
-  also_relevant:
-  - 35
-  - 4067
-  - 236
-  - 4173
-  - 1301
-  notes: Failure L1 — 배치 실패 원인 분석
+  also_relevant: []
+  notes: Failure L1 — 배치 실패 원인 분석. Paul 검증 2026-03-08
 - id: q066
   difficulty: easy
   query: auto-compact 이후 자동 재실행이 안 된다는 실패 사례에서 확인한 한계는 뭐였지?
   relevant_ids:
   - 4218
-  - 4143
-  - 4172
   also_relevant:
-  - 760
   - 377
-  - 282
-  - 222
-  - 927
-  notes: Failure L1 — 자동화 한계 발견
+  notes: Failure L1 — 자동화 한계 발견. Paul 검증 2026-03-08
 - id: q067
   difficulty: hard
   query: semantic feedback loop가 어떻게 오염되는지 실제 경로를 검증한 실패 분석은 뭐였지?
   relevant_ids:
   - 4220
-  - 4149
-  - 4243
   also_relevant:
+  - 189
   - 4165
-  - 1289
-  - 1334
-  - 1657
   - 1277
-  notes: Failure/Experiment L1 — 검색 오염 경로 검증
+  notes: Failure L1 — 검색 오염 경로 검증. Paul 검증 2026-03-08
 - id: q068
   difficulty: medium
   query: v3.3 전체 시스템 e2e 테스트 실험에서 1차와 2차 비교 결과는 어떻게 나왔지?
   relevant_ids:
   - 189
   also_relevant:
-  - 35
-  - 879
-  - 1012
   - 406
   - 921
-  notes: Experiment L1 — 다단계 E2E 실험 결과
+  notes: Experiment L1 — 다단계 E2E 실험 결과. Paul 검증 2026-03-08
 - id: q069
   difficulty: medium
   query: Subagent-Driven Development로 UI Lab 07부터 10까지 구현한 실험 기록은 뭐였지?
   relevant_ids:
   - 189
-  also_relevant:
-  - 147
-  - 86
-  - 151
-  - 220
-  - 222
-  notes: Experiment L1 — 서브에이전트 개발 실험
+  also_relevant: []
+  notes: Experiment L1 — 서브에이전트 개발 실험. Paul 검증 2026-03-08
 - id: q070
   difficulty: medium
   query: 에이전트 수가 23에서 24로 바뀌고 스킬 수가 13에서 11로 조정된 진화 기록을 찾고 싶다
   relevant_ids:
-  - 193
-  - 191
-  also_relevant:
   - 2816
-  - 3141
+  also_relevant:
   - 3143
-  - 617
   - 3221
-  notes: Evolution L1 — 에이전트/스킬 구성 변화
+  notes: Principle/Insight — 멀티에이전트 오케스트레이션 트렌드. Paul 검증 2026-03-08
 - id: q071
   difficulty: medium
   query: 7일 동안 시스템이 v1.0에서 어떻게 진화했는지 요약한 기록은 뭐였지?
   relevant_ids:
   - 193
-  - 191
   also_relevant:
-  - 3745
-  - 43
   - 406
-  - 151
-  - 3679
-  notes: Evolution L1 — 버전 진화 기록
+  notes: Evolution L1 — 버전 진화 기록. Paul 검증 2026-03-08
 - id: q072
   difficulty: easy
   query: v2.1 구현 세션을 4개의 Claude Code 세션과 2개의 CLI로 나누기로 한 결정은 뭐였지?
   relevant_ids:
-  - 4248
   - 4257
-  - 4229
-  also_relevant:
-  - 3813
-  - 2696
-  - 1579
-  - 1488
-  - 188
-  notes: Decision L1 — 멀티세션 역할 분담 결정
+  - 4248
+  also_relevant: []
+  notes: Decision L1 — 멀티세션 역할 분담 결정. Paul 검증 2026-03-08
 - id: q073
   difficulty: medium
   query: 리뷰 아키텍처를 3 CLI x 3 Rounds x 9 Categories로 설계한 결정은 뭐였지?
@@ -784,36 +704,22 @@ queries:
   - 4257
   - 4255
   - 4247
-  also_relevant:
-  - 3813
-  - 135
-  - 2696
-  - 590
-  - 849
-  notes: Decision/Framework L1 — 리뷰 구조 설계 결정
+  also_relevant: []
+  notes: Decision L1 — 리뷰 구조 설계 결정. Paul 검증 2026-03-08
 - id: q074
   difficulty: easy
   query: Auto Memory 개선과 Cross-CLI .ctx 정리, Playwright MCP 활성화를 목표로 한 세션 목표는 뭐였지?
   relevant_ids:
-  - 4231
   - 4045
-  also_relevant:
-  - 132
-  - 276
-  - 151
-  - 603
-  - 222
-  notes: Goal L1 — 세션 목표 설정
+  - 4231
+  also_relevant: []
+  notes: Goal L1 — 세션 목표 설정. Paul 검증 2026-03-08
 - id: q075
   difficulty: medium
   query: 반복 작업이 보이면 바로 단축키나 스크립트로 바꾸려는 습관이 관찰된 신호는 뭐였지?
   relevant_ids:
-  - 4126
-  also_relevant:
-  - 3576
-  - 3728
-  - 760
   - 2714
-  - 3931
-  notes: Signal L1 — 마찰 제거와 자동화 집착이 드러난 관찰 신호
-correction_note: q051-q075 relevant_ids를 type-filtered 벡터 검색으로 교정
+  also_relevant:
+  - 3728
+  notes: Principle L3 — 환경+규칙 설계로 자동화. Paul 검증 2026-03-08
+correction_note: q026-q075 Paul 수동 검증 완료 2026-03-08
