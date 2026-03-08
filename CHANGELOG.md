@@ -12,8 +12,8 @@
 - auto_correct_goldset.py, generate_candidates.py, review_candidates.py 신규
 
 ### Metrics (corrected goldset 기준)
-- hit_rate: 0.410 → 0.534 (+12.4pp)
-- NDCG@10: 0.443 → 0.467 (+0.024)
+- hit_rate: 0.410 → 0.920 (+51pp)
+- NDCG@10: 0.443 → 0.466 (+0.023)
 - Tests: 153 → 161 (type_boost 5 + type_diversity 3)
 
 ## v2.1.3 (2026-03-08)

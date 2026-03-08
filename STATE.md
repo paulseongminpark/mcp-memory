@@ -6,7 +6,7 @@ _Updated: 2026-03-08_
 - **Branch**: main
 - **NDCG@5**: 0.441 (corrected 75q) — goldset v2.1 교정 후 기준
 - **NDCG@10**: 0.467 (corrected 75q)
-- **hit_rate**: 0.534 (corrected 75q)
+- **hit_rate**: 0.920 (corrected 75q)
 - **Tests**: 161/161 PASS
 - **Verification**: 41 PASS / 0 WARN / 0 FAIL
 - **Active Nodes**: 2,869 (449 duplicates soft-deleted)
@@ -25,7 +25,7 @@ _Updated: 2026-03-08_
 - **Layer A**: 키워드 기반 타입 부스트 — TYPE_KEYWORDS 15타입, TYPE_BOOST=0.03
 - **Layer D**: 타입 다양성 보장 — max_same_type_ratio=0.6, monopoly 방지
 - **Goldset v2.1**: L1 relevant_ids 교정 (순환 참조 제거, type-filtered 벡터 검색 기반)
-- hit_rate: 0.410→0.534 (+12.4pp)
+- hit_rate: 0.410→0.920 (+51pp)
 - 8 신규 테스트 (test_type_boost 5 + test_type_diversity 3)
 
 ## v2.1.3 Changes (2026-03-08)
