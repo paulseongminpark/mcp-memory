@@ -52,6 +52,16 @@ def recall(
     # 학습 경로: BCM + SPRT + action_log (검색과 분리)
     post_search_learn(results, query)
 
+    # P2-W2-02: Correction top-inject — 사용자 교정 노드 최우선 삽입
+    corrections_raw = hybrid_search(
+        query, type_filter="Correction", top_k=top_k, mode=mode
+    )
+    corrections_filtered = [c for c in corrections_raw if c.get("score", 0) > 0.5]
+    if corrections_filtered:
+        existing_ids = {r["id"] for r in results}
+        corrections_new = [c for c in corrections_filtered if c["id"] not in existing_ids]
+        results = corrections_new + results
+
     # total_recall_count 갱신 (통계/UCB 정규화용)
     _increment_recall_count()
 
