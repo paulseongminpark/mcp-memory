@@ -293,7 +293,7 @@ def _escape_fts_query(query: str) -> str:
     # FTS5 special: AND OR NOT + - * ^ ~ : " ( )
     # Safest approach: quote each term individually
     terms = query.split()
-    return " ".join(f'"{t}"' for t in terms if t)
+    return " ".join('"' + t.replace('"', '""') + '"' for t in terms if t)
 
 
 def search_fts(query: str, top_k: int = 5) -> list[tuple[int, str, float]]:

@@ -759,12 +759,20 @@ class NodeEnricher:
         elif tid == "E5":
             node["domains"] = json.dumps(result, ensure_ascii=False)
 
+    _ALLOWED_UPDATE_KEYS = frozenset({
+        "summary", "key_concepts", "tags", "facets", "domains",
+        "secondary_types", "abstraction_level", "temporal_relevance",
+        "actionability", "quality_score", "layer",
+        "enrichment_status", "enriched_at",
+    })
+
     def _update_node(self, node_id: int, updates: dict):
         """DB 업데이트 + 즉시 commit (C6 atomicity 해결)."""
-        if not updates:
+        safe = {k: v for k, v in updates.items() if k in self._ALLOWED_UPDATE_KEYS}
+        if not safe:
             return
-        cols = ", ".join(f"{k} = ?" for k in updates)
-        vals = list(updates.values()) + [node_id]
+        cols = ", ".join(f"{k} = ?" for k in safe)
+        vals = list(safe.values()) + [node_id]
         self.conn.execute(f"UPDATE nodes SET {cols} WHERE id = ?", vals)
         self.conn.commit()
 

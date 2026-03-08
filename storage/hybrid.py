@@ -6,6 +6,7 @@ Phase 1: BCM + UCB 통합 (B-12), 재공고화 (B-10), 패치 전환 지원 (B-4
 from collections import defaultdict
 from datetime import datetime, timezone
 import json
+import logging
 import math
 import time
 
@@ -288,8 +289,8 @@ def _bcm_update(
             )
 
         conn.commit()
-    except Exception:
-        pass  # BCM 실패가 검색을 중단시키지 않음
+    except Exception as e:
+        logging.warning("BCM update failed: %s", e)  # BCM 실패가 검색을 중단시키지 않음
     finally:
         if conn:
             conn.close()
@@ -393,8 +394,8 @@ def _log_recall_activations(
             )
     except ImportError:
         pass  # action_log 미구현 시 graceful skip
-    except Exception:
-        pass  # 로깅 실패가 검색을 중단시키지 않음
+    except Exception as e:
+        logging.warning("action_log failed: %s", e)  # 로깅 실패가 검색을 중단시키지 않음
 
 
 # ─── hybrid_search() ─────────────────────────────────────────────
@@ -501,8 +502,8 @@ def hybrid_search(
                         (node["id"],),
                     )
         sprt_conn.commit()
-    except Exception:
-        pass  # SPRT 실패가 검색을 중단시키지 않음
+    except Exception as e:
+        logging.warning("SPRT check failed: %s", e)  # SPRT 실패가 검색을 중단시키지 않음
     finally:
         try:
             sprt_conn.close()

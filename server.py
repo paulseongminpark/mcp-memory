@@ -138,6 +138,7 @@ def recall(
     type_filter: str = "",
     project: str = "",
     top_k: int = 5,
+    mode: str = "auto",
 ) -> dict:
     """Search memories using 3-way hybrid search (Vector + FTS5 + Graph).
 
@@ -149,6 +150,7 @@ def recall(
         type_filter: Filter by node type (e.g. "Decision", "Pattern")
         project: Filter by project name
         top_k: Number of results to return (default 5, max 50)
+        mode: Search mode — "auto" (default), "focus" (strong connections), "dmn" (exploratory)
     """
     top_k = min(top_k, MAX_TOP_K)
     return _recall(
@@ -156,6 +158,7 @@ def recall(
         type_filter=type_filter,
         project=project,
         top_k=top_k,
+        mode=mode,
     )
 
 
@@ -281,6 +284,7 @@ def promote_node(
         target_type=target_type,
         reason=reason,
         related_ids=related_ids,
+        skip_gates=False,
     )
 
 
