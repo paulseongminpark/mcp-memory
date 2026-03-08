@@ -454,7 +454,7 @@ def hybrid_search(
     # 6. 필터 + enrichment 가중치 + 정렬
     sorted_ids = sorted(scores, key=lambda x: scores[x], reverse=True)
     candidates = []
-    for node_id in sorted_ids[:top_k * 4]:
+    for node_id in sorted_ids[:top_k * 10]:
         node = sqlite_store.get_node(node_id)
         if not node:
             continue
