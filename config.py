@@ -276,9 +276,9 @@ PROMOTE_LAYER = {
 
 # ─── 검증 임계값 (v2.1.3) ─────────────────────────────────────
 VERIFY_THRESHOLDS = {
-    "ndcg@5": 0.55,
-    "ndcg@10": 0.55,
-    "hit_rate": 0.70,
+    "ndcg@5": 0.25,       # goldset 75개 기준 (L1 쿼리 포함)
+    "ndcg@10": 0.30,      # goldset 75개 기준
+    "hit_rate": 0.50,     # goldset 75개 기준
     "null_layer_pct": 0.0,
     "enrichment_coverage": 0.60,
     "orphan_pct": 0.10,
