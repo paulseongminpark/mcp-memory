@@ -1,0 +1,219 @@
+[
+  {
+    "id": 16,
+    "type": "Principle",
+    "content": "## 파일 규칙\n- node_modules/, .git/, dist/, build/ 읽기 금지\n- 파일 재읽기 금지 (한 번 읽으면 캐시)\n- Living Docs: STATE.md + CHANGELOG.md 갱신 (변경 시 커밋 전 필수)",
+    "tags": "obsidian,AGENTS",
+    "project": ""
+  },
+  {
+    "id": 73,
+    "type": "Preference",
+    "content": "Paul은 PowerShell에서 직접 실행 선호. 데이터 흐름과 구조를 시각적으로 보고 싶어함. 대시보드/그래프 뷰가 테이블보다 선호됨.",
+    "tags": "checkpoint,mcp-memory,paul,preference,visualization",
+    "project": "mcp-memory"
+  },
+  {
+    "id": 123,
+    "type": "Workflow",
+    "content": "## 절차\n1. `git diff --name-only` 로 변경 파일 목록 추출\n2. 각 파일의 import/export 관계 분석\n3. 영향받는 테스트 파일 매핑\n4. 최소 테스트셋 JSON 출력",
+    "tags": "obsidian,SKILL",
+    "project": ""
+  },
+  {
+    "id": 137,
+    "type": "Skill",
+    "content": "## 실행\n```bash\nbash C:/dev/.claude/scripts/sync-daily-memo.sh\n```",
+    "tags": "obsidian,sync-memo",
+    "project": ""
+  },
+  {
+    "id": 177,
+    "type": "SystemVersion",
+    "content": "## Phase 4: Codex CLI 세팅\n- **instructions.md** 안전 규칙 강화: push 금지, main 직접 커밋 금지, .ctx/ 읽기\n- **config.toml** implement 프로필 추가: auto-edit, high reasoning\n- **MCP context7** 서버 연결\n- **스킬 5종**: state-reader, diff-only, review-checklist, worktree-setup, test-matrix\n- **worktree 템플릿**: .agents/templates/w",
+    "tags": "obsidian,CHANGELOG",
+    "project": "orchestration"
+  },
+  {
+    "id": 180,
+    "type": "SystemVersion",
+    "content": "## Phase 2: 스킬 최적화 (14→9)\n- **삭제 9개**: context-scan, cross-review, tr-verify, sync-all, docs-review, research, write, writing-plans, memory-review\n- **disable-model-invocation: true** 전체 적용 (per-turn system-reminder 제거, ~8K 토큰 절감)\n- **/sync → /sync all**: sync-all 기능 흡수\n- **/compressor → /compact**:",
+    "tags": "obsidian,CHANGELOG",
+    "project": "orchestration"
+  },
+  {
+    "id": 211,
+    "type": "SystemVersion",
+    "content": "## 추가\n- cc-system 통합: crystalize-prompt, design-pipeline, skill-creator, subagent-creator, hook-creator\n- C:\\dev 볼트 git repo 초기화 → dev-vault GitHub 연결 (main 브랜치)\n- Skills 11개 → 17개 신규: skill-creator, subagent-creator, hook-creator, catchup, gpt-review, commit-push-pr\n- 버전 관리 체계 (CHANGELOG.md, ROADMA",
+    "tags": "obsidian,CHANGELOG",
+    "project": "orchestration"
+  },
+  {
+    "id": 640,
+    "type": "Workflow",
+    "content": "## 4-1. 배포 체인\n```\n\"배포해줘\" (또는 \"deploy\", \"Vercel\")\n  ↓\npf-deployer (자동 호출)\n  체크리스트 실행:\n  ├─ TypeScript 에러? → npx tsc --noEmit\n  ├─ console.log 남아있음? → grep 검사\n  ├─ localhost 하드코딩? → grep 검사\n  ├─ 미커밋 파일? → git status\n  └─ 이미지 alt 텍스트? → 확인\n\n  결과:\n  ✅ 통과: 4개\n  ❌ 실패: 1개 (console.log 2건)\n  판정: NO-GO ❌\n\n→ ",
+    "tags": "obsidian,USER-GUIDE",
+    "project": "orchestration"
+  },
+  {
+    "id": 655,
+    "type": "Skill",
+    "content": "## TODO\n| 명령어 | 설명 |\n|--------|------|\n| `/todo` | 할 일 목록 보기 + 핸드폰 INBOX 동기화 |\n| `/todo add \"내용\"` | 항목 추가 |\n| `/todo done 1` | 첫 번째 미완료 항목 완료 |",
+    "tags": "obsidian,USER-GUIDE",
+    "project": "orchestration"
+  },
+  {
+    "id": 766,
+    "type": "Goal",
+    "content": "## 세션 목적\norchestration v3.2를 위한 전체 시스템 감사 및 재설계.\n- GitHub 레포 구조 정리\n- Claude Code 시스템 (에이전트/스킬/훅) 최적화\n- Living Docs 중앙집중화\n- 토큰/컨텍스트 최적화",
+    "tags": "obsidian,2026-02-24-v3.2-audit-session",
+    "project": "orchestration"
+  },
+  {
+    "id": 804,
+    "type": "Decision",
+    "content": "## dispatch 업그레이드 (2A.3)\n**사용자**: 한 세션에서 보통 한 작업, 가끔 겹침. dispatch 더 업그레이드 가능?\n**Claude**: 업그레이드 제안 3가지:\n1. **세션 목표 설정**: dispatch 호출 시 \"이번 세션 목표\" 명시적 설정 → compressor가 세션 종료 시 목표 대비 달성률 기록\n2. **작업 모드 전환**: `/dispatch ops` `/dispatch build` 등 모드 지정 → 해당 팀 컨텍스트만 로드 (토큰 최소화)\n3. **스마트 추천**: 현재 작업 파일 경로 분",
+    "tags": "obsidian,2026-02-24-v3.2-dialogue",
+    "project": "orchestration"
+  },
+  {
+    "id": 915,
+    "type": "Insight",
+    "content": "## 에이전트별 상세 비교\n#### tr-monitor (Haiku → Opus)\n- **1차**: 5건 성공/실패 + 미커밋 1건. 사실 보고.\n- **2차**: 동일 결과 + 빌드 시간 **step별 분해**(Perplexity API 91%), **이중 Deploy 패턴 감지**(Actions 분 낭비), schedule cron 지연 편차(0~34분), **잠재 문제 3건 예측**\n- **차이**: Opus가 **패턴 분석**과 **잠재 문제 예측**을 자발적으로 수행\n\n#### context-linker (Haiku → O",
+    "tags": "obsidian,e2e-test-report",
+    "project": "orchestration"
+  },
+  {
+    "id": 946,
+    "type": "Experiment",
+    "content": "## 2026-02-22 02:53 [portfolio] Claude Code\n- UI Lab 07~10 구현 완료 (Subagent-Driven Development)\n  - page-07 Warm Index: OpenAI 인덱스 구조 + Anthropic 크림 팔레트\n  - page-08 Warm Card Grid: OpenAI 카드 그리드 + Anthropic 크림 카드\n  - page-09 Quiet Precision: 제3의 미학, Playfair Display + Inter\n  - page-10 Deep Warm: 제3의",
+    "tags": "obsidian,2026-02-22",
+    "project": "orchestration"
+  },
+  {
+    "id": 1013,
+    "type": "Experiment",
+    "content": "## 작업 요약\n- v3.3 전체 시스템 e2e 테스트 완료: 12개 시나리오 설계 + 1차(기본 모델) + 2차(All Opus) + 비교 분석\n- 1차 실험: 26에이전트 + 12스킬 + 8훅 + 5체인 + 5팀 + 2CLI → FAIL 0건, WARN 3건\n- 2차 실험: Haiku/Sonnet 6개 → Opus 재실행 → 추가 발견 +15건, 리스크 예측 +7건\n- 실제 버그 3건 발견·수정: meta-orchestrator model 미갱신(sonnet→opus), Codex 호출 문법(codex exec -p), PreT",
+    "tags": "obsidian,2026-02-25",
+    "project": "orchestration"
+  },
+  {
+    "id": 1026,
+    "type": "Decision",
+    "content": "## 결정 사항\n- [Decision] conductor/tracks/는 빈 디렉토리 유지 — Gemini 사용 시 동적 생성 (트랙 사전 정의 불필요)\n- [Decision] orchestration 로컬 handoff 삭제 — 글로벌 v4.0 handoff가 완전 대체\n- [Decision] 에이전트 model 불일치 2건(security-auditor, orch-state) 의도적 상향으로 유지",
+    "tags": "obsidian,2026-02-27",
+    "project": "orchestration"
+  },
+  {
+    "id": 1038,
+    "type": "Goal",
+    "content": "## 세션 목표\nAuto Memory 시스템 개선 + Cross-CLI .ctx 정리 + Playwright MCP 활성화",
+    "tags": "obsidian,2026-03-03",
+    "project": "orchestration"
+  },
+  {
+    "id": 1050,
+    "type": "Narrative",
+    "content": "## 작업 요약\n- aiWorkflowData.ts — TimelineItem 타입 변경(phase/question/body[]), TIMELINE 3주 질문 기반 재작성\n- AiWorkflowSection.tsx — Evolution 섹션 UI (3칸 수평 그리드→세로스택, 질문 21px bold 강조)\n- AiWorkflowSection.tsx — 시스템에 대하여: opencode 제거, 하네스 도구/agent engineering OS 맥락 반영\n- docs/evolution-interview-2026-03-03.md — 인터",
+    "tags": "obsidian,2026-03-04",
+    "project": "orchestration"
+  },
+  {
+    "id": 1052,
+    "type": "Goal",
+    "content": "## 다음 할 일\n- Key Decisions 레이아웃 선택 (V1/V2/V3 중) → AiWorkflowSection 반영\n- 모바일 반응형 확인 (375px)\n- untracked 파일 정리 (orch-graph.html, diagram_1_new.png, ref_obsidian.jpg)",
+    "tags": "obsidian,2026-03-04",
+    "project": "orchestration"
+  },
+  {
+    "id": 1056,
+    "type": "Narrative",
+    "content": "## [1] 2026-03-01 portfolio\n세션 목표: Obsidian 섹션 v4.0 재작성\n\n완료:\n  - 5섹션 역순 공개 구조: Hook → Architecture → Problem → Evolution → Lessons\n  - EVOLUTION v4.0까지 확장, Cross-CLI 그래프 노드/엣지 추가\n  - Impact을 Hook으로 이동, /catchup Before/After 제거",
+    "tags": "obsidian,session-summary",
+    "project": "orchestration"
+  },
+  {
+    "id": 1058,
+    "type": "Narrative",
+    "content": "## 구현 완료 파일\n| 파일 | 경로 | 상태 |\n|------|------|------|\n| `analyze-session.sh` | `~/.claude/scripts/analyze-session.sh` | ✅ 완성 |\n| `session-stop.sh` | `~/.claude/hooks/session-stop.sh` | ✅ 완성 |\n| `sync-memory.sh` | `~/.claude/scripts/sync-memory.sh` | ✅ 완성 (Phase 2) |\n| `memory-review.sh` | `~/.claude/s",
+    "tags": "obsidian,2026-02-18-auto-memory-phase1",
+    "project": "orchestration"
+  },
+  {
+    "id": 1070,
+    "type": "SystemVersion",
+    "content": "## Phase 2 / Phase 3\n- **Phase 2:** `/sync-all` → `sync-memory.sh` → MEMORY.md 검증 이동 ✅\n- **Phase 3:** `/memory-review` → `memory-review.sh` → 주간 정리 ✅\n\n두 Phase 모두 구현 완료. 전체 Auto Memory 시스템 운용 중.",
+    "tags": "obsidian,2026-02-18-auto-memory-phase1",
+    "project": "orchestration"
+  },
+  {
+    "id": 1125,
+    "type": "Narrative",
+    "content": "## 현재 상태\n- 완료: W1~W5 (Work 슬롯, TOC, All탭, 상세 라우팅, MD 주입,\n         실콘텐츠 주입, 탭 필터, 스크롤스파이)\n- 진행중: W6 준비\n- 다음: W6 OpenAI 스타일 레이아웃 전환",
+    "tags": "obsidian,2026-02-19-vault-orchestration-refactor",
+    "project": "orchestration"
+  },
+  {
+    "id": 1126,
+    "type": "Decision",
+    "content": "## 최근 결정\n- 2026-02-19: TechReview 통합 복원\n- 2026-02-15: W5 완료 확인",
+    "tags": "obsidian,2026-02-19-vault-orchestration-refactor",
+    "project": "orchestration"
+  },
+  {
+    "id": 1181,
+    "type": "Workflow",
+    "content": "## Task 1: [보안] GitHub PAT → ~/.bashrc 이전 + settings.json 제거\n> ⚠️ 이 태스크 전에 사용자가 GitHub에서 PAT 토큰 로테이션 필요.\n> `https://github.com/settings/tokens` 에서 기존 토큰 revoke → 새 토큰 생성.\n\n**Files:**\n- Modify: `~/.claude/settings.json` — env.GITHUB_PERSONAL_ACCESS_TOKEN 키 제거\n- Modify: `~/.bashrc` (또는 `~/.bash_profil",
+    "tags": "obsidian,2026-02-22-orch-system-overhaul",
+    "project": "orchestration"
+  },
+  {
+    "id": 1201,
+    "type": "Decision",
+    "content": "## decisions.md 경로 교체\ncontent = content.replace(\n    '/c/Users/pauls/.claude/decisions.md',\n    '/c/dev/01_projects/01_orchestration/context/decisions.md'\n)\n\nd = json.loads(content)\nwith open(path, 'w', encoding='utf-8') as f:\n    json.dump(d, f, indent=2, ensure_ascii=False)\nprint(\"decisions.md pat",
+    "tags": "obsidian,2026-02-22-orch-system-overhaul",
+    "project": "orchestration"
+  },
+  {
+    "id": 1227,
+    "type": "Workflow",
+    "content": "## Task 4: compressor 에이전트에 decisions.md append 추가\n**Files:**\n- Modify: `C:/Users/pauls/.claude/agents/compressor.md`\n\n**Step 1: compressor.md 현재 \"저장\" 섹션 확인**\n현재: session-summary.md, LOG, STATE.md 3곳\n\n**Step 2: 4번째 저장 대상 추가**\n\n기존 `## 저장 (3곳에 동시 저장)` 섹션에 추가:\n\n```markdown",
+    "tags": "obsidian,2026-02-22-session-visibility-impl",
+    "project": "orchestration"
+  },
+  {
+    "id": 1234,
+    "type": "Agent",
+    "content": "## 1. meta-orchestrator (독립)\n| 항목 | 내용 |\n|------|------|\n| 모델 | Sonnet |\n| 트리거 | 세션 시작 시 (catchup 직후), `/dispatch` 수동 |\n| 입력 | STATE.md + 미반영 결정 + 미커밋 현황 + Inbox.md 신규 여부 |\n| 출력 | 활성화할 팀 목록 + 각 팀 작업 지시 |\n\n판단 로직:\n- tech-review 미커밋 > 5개 → T1 활성화\n- Inbox.md 새 항목 → T3 활성화\n- 코드 변경 큰 세션 후 → T2 활성화\n- 일반 작업",
+    "tags": "obsidian,2026-02-23-agent-teams-design",
+    "project": "orchestration"
+  },
+  {
+    "id": 1297,
+    "type": "Agent",
+    "content": "## Meta Orchestrator\n세션 상태를 분석해 어떤 팀을 활성화할지 판단하고 작업 지시를 생성한다.",
+    "tags": "obsidian,2026-02-23-agent-teams-impl",
+    "project": "orchestration"
+  },
+  {
+    "id": 1335,
+    "type": "Principle",
+    "content": "## 암묵지\n- tech-review 경로: /c/dev/01_projects/03_tech-review/\n- Smart Brevity: What's new → Why it matters → Go deeper\n- 시간은 항상 KST 기준",
+    "tags": "obsidian,2026-02-23-agent-teams-impl",
+    "project": "orchestration"
+  },
+  {
+    "id": 1358,
+    "type": "Agent",
+    "content": "## Teams (3개)\n- tech-review-ops: tr-monitor → tr-updater → commit-writer\n- ai-feedback-loop: gemini + codex → ai-synthesizer\n- daily-ops: inbox-processor → orch-state → morning-briefer\n```\n\n---",
+    "tags": "obsidian,2026-02-23-agent-teams-impl",
+    "project": "orchestration"
+  },
+  {
+    "id": 1414,
+    "type": "Tool",
+    "content": "## 출력 스키마\n```json\n{\n  \"files_reviewed\": [\"path/to/file1.tsx\"],\n  \"issues\": [\n    {\n      \"file\": \"path/to/file.tsx\",\n      \"line\": 42,\n      \"severity\": \"HIGH\",\n      \"category\": \"bug|security|type|logic\",\n      \"description\": \"한줄 설명\",\n      \"context\": \"해당 줄의 코드 스니펫\"\n    }\n  ],\n  \"_meta\": {\n    \"fil",
+    "tags": "obsidian,2026-02-25-v3.3-codex-gemini-design",
+    "project": "orchestration"
+  }
+]

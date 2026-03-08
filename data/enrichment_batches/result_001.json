@@ -1,0 +1,219 @@
+[
+  {
+    "id": 4203,
+    "summary": "mcp-memory v2.0의 검증 체계를 온톨로지 자체, 실제 사용, 시스템 궁합의 3축으로 확정했다. 타입·관계·레이어 분포와 도구 호출 빈도, SoT 위반 여부까지 실증적으로 점검하는 프레임이다.",
+    "key_concepts": "3축 검증 프레임, 온톨로지 검증, 사용성 검증, 시스템 궁합, MCP 도구 추적, 단일 진실원천 위반, 승격 경로",
+    "domains": "ontology-engineering, system-architecture, quality-assurance",
+    "facets": "validation-framework, usage-analytics, integration-audit"
+  },
+  {
+    "id": 4204,
+    "summary": "9개의 무료 AI를 각자의 강점에 맞춰 병렬 리서치에 배정했다. 플랫폼별 특성에 맞는 차별화된 프롬프트로 최신 구현체, 학술 근거, 구조 비판을 동시에 수집하는 전략이다.",
+    "key_concepts": "병렬 리서치, AI 역할 분담, 프롬프트 차별화, 최신 구현체 조사, 학술 검토, 구조 분석, 산업 동향",
+    "domains": "research-automation, ontology-engineering, ai-systems",
+    "facets": "multi-agent-research, source-specialization, prompt-strategy"
+  },
+  {
+    "id": 4205,
+    "summary": "제1원칙 사고와 'best part is no part'를 orchestration 설계의 핵심 원칙으로 채택했다. 불필요한 타입·관계·도구를 최적화가 아니라 제거 대상으로 보는 메타인지적 설계 접근이다.",
+    "key_concepts": "제1원칙 사고, 불필요 요소 제거, 타입 재검토, 관계 재검토, MCP 도구 축소, 메타인지 설계",
+    "domains": "software-architecture, orchestration, workflow-design",
+    "facets": "first-principles, simplification, capability-pruning"
+  },
+  {
+    "id": 4206,
+    "summary": "init_db와 migrate_v2 사이의 스키마 드리프트 원인을 init_db의 불완전한 v2 반영으로 진단했다. 새 DB 생성은 init_db, 기존 DB 업그레이드는 migrate_v2가 담당하도록 역할을 분리하는 해법을 제시했다.",
+    "key_concepts": "스키마 드리프트, init_db, migrate_v2, 보정 로그, FTS5, 역할 분리",
+    "domains": "database-design, software-architecture, migration-engineering",
+    "facets": "schema-drift, init-vs-migrate, responsibility-separation"
+  },
+  {
+    "id": 4207,
+    "summary": "온톨로지 설계는 거의 완성됐지만 구현은 그 수준에 크게 못 미친다는 판단을 내렸다. 외부 AI의 지적은 대체로 타당하지만 이미 문서화된 내용이 많고, 핵심 문제는 설계와 구현 사이의 실행 격차다.",
+    "key_concepts": "설계-구현 격차, 구현 완성도, 외부 AI 감사, 검증 게이트, 승격 DB화, 문서 우위",
+    "domains": "ontology-engineering, software-delivery, knowledge-engineering",
+    "facets": "implementation-gap, audit-review, execution-risk"
+  },
+  {
+    "id": 4208,
+    "summary": "remember()가 만드는 generic edge 문제를 규칙 기반 relation 매핑으로 해결하는 방안을 정리했다. 새 노드와 기존 엣지에 모두 적용 가능한 하이브리드 접근으로 비용을 줄이면서 관계 품질을 크게 개선한다.",
+    "key_concepts": "자동 엣지 정밀화, 규칙 기반 매핑, 레이어 fallback, 전방향 적용, 소급 보정, 비용 절감, 보정 로그",
+    "domains": "graph-systems, ontology-engineering, cost-optimization",
+    "facets": "relation-mapping, retroactive-fix, hybrid-refinement, cost-reduction"
+  },
+  {
+    "id": 4209,
+    "summary": "뇌과학 이론과 온톨로지 아키텍처 사이의 대응 관계를 CLS, Hebbian learning, DMN, 확산 활성화 개념으로 매핑했다. promote와 daily_enrich를 기억 공고화와 수면 리플레이에 대응시키며 mcp-memory를 확장된 인지 체계로 해석한다.",
+    "key_concepts": "CLS 이론, 해마-신피질 대응, 기억 공고화, 수면 리플레이, Hebbian 학습, 확산 활성화, 확장된 마음",
+    "domains": "neuroscience, cognitive-architecture, knowledge-systems",
+    "facets": "brain-inspired-mapping, memory-consolidation, exploration-model, extended-cognition"
+  },
+  {
+    "id": 4210,
+    "summary": "Paul은 메타인지적 사고와 전제 해체를 매우 중시하며, 이를 모든 시스템 설계의 기반 원칙으로 삼고 있다. 제1원칙 사고와 'best part is no part'는 온톨로지와 orchestration을 포함한 전 프로젝트의 공통 기준이다.",
+    "key_concepts": "메타인지, 제1원칙 사고, best part is no part, 전제 해체, 설계 철학, 프로젝트 공통 원칙",
+    "domains": "cognitive-strategy, system-design, product-philosophy",
+    "facets": "meta-cognition, design-principles, assumption-challenging"
+  },
+  {
+    "id": 4211,
+    "summary": "YouTube transcript 저장 이후 실제 요약을 어떻게 생성할지 아직 결정되지 않았다. 스크립트 자동화와 완전 수동 요약 사이에서 작업 방식과 저장 흐름을 선택해야 한다.",
+    "key_concepts": "유튜브 요약, 트랜스크립트 저장, 스크립트 자동화, 수동 요약, summary 필드, 방법 결정",
+    "domains": "content-processing, workflow-automation, knowledge-management",
+    "facets": "summarization-workflow, automation-vs-manual, source-handling"
+  },
+  {
+    "id": 4212,
+    "summary": "relation_extractor.py에서 import re가 빠져 E14 전체 배치가 실패했다. 안트로픽 API의 JSON 코드블록 파싱에 re.search가 필요하다는 점을 확인하고 1줄 수정으로 복구했다.",
+    "key_concepts": "import re 누락, E14 배치 실패, 안트로픽 API, JSON 코드블록 파싱, 1줄 수정, 재발 방지",
+    "domains": "software-debugging, api-integration, data-processing",
+    "facets": "import-bug, response-parsing, batch-failure"
+  },
+  {
+    "id": 4213,
+    "summary": "Phase 1-5 enrichment pipeline이 2026-03-05 기준으로 전체 완료됐다. 3,255개 노드의 99%를 정제하고 엣지 품질과 orphan 수를 개선하면서 안트로픽 API 예산도 20달러 이내로 관리했다.",
+    "key_concepts": "정제 파이프라인 완료, 노드 정제율, 엣지 품질, orphan 감소, 단계별 실행, 예산 준수",
+    "domains": "data-pipeline, project-operations, knowledge-graphs",
+    "facets": "pipeline-completion, metric-tracking, budget-control"
+  },
+  {
+    "id": 4214,
+    "summary": "E14에서 refined=0으로 보이는 것은 실패가 아니라 정상 동작으로 해석됐다. LLM이 generic edge를 전수 검토했지만 대부분 supports 관계가 타당했고, 카운터는 DB 쓰기 단계에서만 증가한다.",
+    "key_concepts": "refined=0 해석, 범용 엣지 검증, supports 관계 타당성, API 단계, DB 쓰기 단계",
+    "domains": "graph-systems, llm-evaluation, pipeline-validation",
+    "facets": "edge-validation, counter-semantics, phase-separation"
+  },
+  {
+    "id": 4215,
+    "summary": "orphan node 연결 문제를 LLM API 대신 vector similarity로 해결했다. 임계값 조정을 통해 거의 모든 orphan를 0달러 비용으로 연결하는 실용적 대안을 입증했다.",
+    "key_concepts": "orphan node 연결, 벡터 유사도, 임계값 조정, 비용 절감, API 대체",
+    "domains": "information-retrieval, graph-systems, cost-optimization",
+    "facets": "vector-linking, threshold-tuning, zero-api-cost"
+  },
+  {
+    "id": 4216,
+    "summary": "Phase 1에서 small pool 토큰 예산이 예상보다 빨리 소진되면서 E14 등 후속 작업이 자동 스킵됐다. 예산 계획에는 노드 정제뿐 아니라 edge 작업까지 포함한 전체 파이프라인 부하를 반영해야 한다.",
+    "key_concepts": "토큰 예산, small pool 소진, 후속 작업 스킵, edge 작업 포함, 용량 계획",
+    "domains": "budget-planning, pipeline-operations, llm-systems",
+    "facets": "token-budgeting, downstream-dependency, capacity-planning"
+  },
+  {
+    "id": 4217,
+    "summary": "export_to_obsidian.py의 첫 실행으로 1,469건의 메모를 Obsidian용 디렉터리 구조로 내보냈다. 이후 작업 스케줄러에 등록해 매일 자동 export하는 운영 흐름을 계획하고 있다.",
+    "key_concepts": "Obsidian 내보내기, 메모 분류, 자동 동기화, 작업 스케줄러, 일일 export",
+    "domains": "knowledge-management, workflow-automation, data-export",
+    "facets": "obsidian-export, scheduled-sync, content-organization"
+  },
+  {
+    "id": 4218,
+    "summary": "Claude Code의 auto-compact는 컨텍스트 압축만 수행하며 사용자 메시지 없이 자동 재개되지 않는다. 따라서 장시간 무인 실행 후 자동 완료를 기대하는 시나리오는 현재 지원되지 않는다.",
+    "key_concepts": "auto-compact 한계, 자동 재실행 불가, 컨텍스트 압축, 세션 연속성, 야간 자동화 불가",
+    "domains": "developer-tooling, session-management, platform-behavior",
+    "facets": "platform-limitation, context-compaction, session-resumption"
+  },
+  {
+    "id": 4219,
+    "summary": "recall() 응답의 점수 필드는 rrf_score가 아니라 score라는 점을 확인했다. 결과 딕셔너리의 실제 키 구성을 명확히 하여 잘못된 필드 접근을 방지하는 기록이다.",
+    "key_concepts": "recall 결과 스키마, score 필드, rrf_score 혼동, 응답 키, 점수 범위",
+    "domains": "api-design, information-retrieval, developer-tooling",
+    "facets": "api-contract, response-schema, scoring-field"
+  },
+  {
+    "id": 4220,
+    "summary": "mcp-memory v2에서 summary, key_concepts, tags, embedding_text가 검증 없이 즉시 커밋되며 의미적 피드백 루프를 형성한다는 점을 확인했다. 오염된 임베딩이 검색과 Hebbian 강화를 통해 증폭되므로 코사인 유사도 기반 롤백과 correction_log가 필요하다.",
+    "key_concepts": "의미적 피드백 루프, 검증 부재, 임베딩 오염, 검색 오염, Hebbian 강화, 코사인 유사도 롤백",
+    "domains": "data-quality, machine-learning, knowledge-systems",
+    "facets": "feedback-loop, validation-gap, embedding-drift, rollback-detection"
+  },
+  {
+    "id": 4221,
+    "summary": "validators.py가 존재하지만 핵심 진입점 어디에서도 호출되지 않아 사실상 dead code 상태다. remember()와 insert_edge()에 검증 함수를 연결해야 온톨로지 규칙이 실제 실행 경로에서 강제된다.",
+    "key_concepts": "validators.py 미사용, dead code, 진입점 검증, 타입 검증 연결, 스키마 일관성",
+    "domains": "software-architecture, quality-assurance, ontology-engineering",
+    "facets": "dead-code, validator-integration, entrypoint-validation"
+  },
+  {
+    "id": 4222,
+    "summary": "schema.yaml과 migrate_v2.py 사이에 타입 수 불일치가 존재하고, init_db는 v2 컬럼을 자동 적용하지 못한다. init_db 내부에 마이그레이션 적용을 통합해 단일 진입점을 보장해야 스키마 드리프트를 줄일 수 있다.",
+    "key_concepts": "타입 불일치, init_db 한계, v2 마이그레이션, 단일 진입점, 자동화 필요",
+    "domains": "database-design, migration-engineering, ontology-engineering",
+    "facets": "schema-drift, single-entrypoint, migration-automation"
+  },
+  {
+    "id": 4223,
+    "summary": "IHS를 중심성 기반 허브 중요도 지표로 정의하고, 레이어별 RBAC와 주간 스냅샷으로 핵심 허브를 보호하는 설계를 제안했다. 중심성 급락이나 구조 변화에 대한 알림 기준까지 포함한 그래프 거버넌스 체계다.",
+    "key_concepts": "IHS 허브 보호, 중심성 지표, RBAC, 허브 스냅샷, 주간 추적, 이상 알림",
+    "domains": "graph-analytics, governance, ontology-engineering",
+    "facets": "centrality-metrics, access-control, change-monitoring"
+  },
+  {
+    "id": 4224,
+    "summary": "아이디에이션 세션에서는 질문을 되돌리기보다 스스로 탐구하고 결론까지 도달하는 방식을 원칙으로 삼는다. 결과는 구체적 설계안 형태로 남기고 즉시 저장하는 실행 중심 규칙이다.",
+    "key_concepts": "아이디에이션 원칙, 탐구 모드, 자율 판단, 결론 도달, 결과 저장",
+    "domains": "workflow-design, creative-process, knowledge-management",
+    "facets": "exploration-mode, autonomous-execution, result-orientation"
+  },
+  {
+    "id": 4225,
+    "summary": "아이디에이션 세션 규칙 v2는 주제별 파일 분할, 즉시 저장, 컨텍스트 80% 시 compact 후 재개를 표준 절차로 정의한다. 질문 없이 끝까지 진행하는 자율 작업 흐름을 운영 규칙으로 고정한 것이다.",
+    "key_concepts": "파일 분할 저장, 즉시 저장, 컨텍스트 관리, /compact 재개, 질문 금지",
+    "domains": "workflow-automation, documentation-practice, session-management",
+    "facets": "file-splitting, incremental-saving, context-management, autonomous-workflow"
+  },
+  {
+    "id": 4226,
+    "summary": "9개 AI의 deep research 결과를 통합해 ontology-claude-paul v2 문서를 완성했다. 다중 소스 분석을 하나의 747줄, 12섹션 문서로 응집한 통합 산출물이다.",
+    "key_concepts": "9개 AI 통합, ontology v2 문서화, 12섹션, 심층 리서치 통합, 최종 산출물",
+    "domains": "research-synthesis, ontology-engineering, documentation",
+    "facets": "multi-source-integration, document-assembly, deep-research"
+  },
+  {
+    "id": 4227,
+    "summary": "온톨로지 설계 방향으로 GPT의 단순화보다 Gemini의 정밀화 전략을 선택했다. 다만 Perplexity의 슬림 뷰 패턴은 일부 수용해 표현 계층에서는 경량화 여지를 남겼다.",
+    "key_concepts": "설계 방향 선택, 정밀화 우선, 타입 축소 거부, 슬림 뷰 부분 수용, Gemini 채택",
+    "domains": "ontology-engineering, design-strategy, decision-making",
+    "facets": "precision-first, simplification-tradeoff, hybrid-adoption"
+  },
+  {
+    "id": 4228,
+    "summary": "mcp-memory의 아키텍처 벤치마크로 Palantir Foundry를 채택했다. 스키마와 인제스트, 메타데이터와 인스턴스를 분리하는 구조와 Object/Property/Link/Action 모델을 참조점으로 삼는다.",
+    "key_concepts": "Palantir 벤치마크, Foundry 참조, 스키마-인제스트 분리, 메타데이터-인스턴스 분리, 4원소 모델",
+    "domains": "enterprise-architecture, benchmark-analysis, ontology-engineering",
+    "facets": "benchmark-selection, architectural-patterns, scale-aspiration"
+  },
+  {
+    "id": 4229,
+    "summary": "온톨로지 아이디에이션을 아키텍처, 뉴럴 메커니즘, ML, 검증·메트릭스의 4개 세션으로 분할했다. 각 세션을 독립적으로 진행한 뒤 오케스트레이터 세션에서 통합하는 병렬 탐구 구조다.",
+    "key_concepts": "세션 분할, 병렬 아이디에이션, 역할 분담, 오케스트레이터 통합, 주제별 탐구",
+    "domains": "workflow-design, research-automation, ontology-engineering",
+    "facets": "parallel-ideation, session-specialization, orchestration"
+  },
+  {
+    "id": 4230,
+    "summary": "promote_node()의 자동 승격은 당분간 보류하고 수동 운영을 유지하기로 했다. 대신 가지치기와 아카이브 정책은 반드시 구현해야 할 핵심 메커니즘으로 정의했다.",
+    "key_concepts": "수동 승격 유지, 가지치기 필수, BSP 3단계, 맥락 의존적 pruning, 아카이브 정책",
+    "domains": "knowledge-lifecycle, ontology-engineering, system-design",
+    "facets": "manual-promotion, pruning-policy, archive-strategy"
+  },
+  {
+    "id": 4231,
+    "summary": "PyTorch와 ML을 활용해 기억 승격과 증거 누적을 직접 모델링하는 실험 목표를 세웠다. BCM 정규화, MDL, 베이지안 누적, 드리프트-확산 모델을 현재 그래프 데이터에 적용할 가능성을 검토 중이다.",
+    "key_concepts": "PyTorch 모델링, BCM 정규화, MDL 승격, 베이지안 증거 누적, 드리프트-확산 모델, 실험 가능성",
+    "domains": "machine-learning, cognitive-modeling, experimentation",
+    "facets": "model-prototyping, evidence-accumulation, promotion-criteria, feasibility-study"
+  },
+  {
+    "id": 4232,
+    "summary": "9개 AI의 deep research는 Hebbian 단독 사용의 불안정성, 시간 감쇠 필요성, 검증 체계 부재의 치명성을 공통적으로 지적했다. 또한 Palantir 구조의 유용성과 하드코딩 파라미터의 근거 부족도 핵심 합의로 정리됐다.",
+    "key_concepts": "AI 합의, Hebbian 불안정성, 시간 감쇠, 검증 체계 부재, Palantir 참조, 하드코딩 파라미터",
+    "domains": "ontology-engineering, machine-learning, system-validation",
+    "facets": "consensus-analysis, stability-risks, parameter-grounding, forgetting-mechanisms"
+  },
+  {
+    "id": 4233,
+    "summary": "GPT와 Gemini는 온톨로지 설계에서 각각 운영 현실주의와 이상적 정밀화라는 상반된 철학을 제시했다. 이 긴장은 해소되지 않았지만 최종적으로는 Gemini의 방향이 선택됐다.",
+    "key_concepts": "설계 철학 긴장, 운영 현실주의, 이상적 설계주의, GPT vs Gemini, 방향 선택",
+    "domains": "design-philosophy, ontology-engineering, decision-making",
+    "facets": "philosophy-tension, realism-vs-formalism, strategic-choice"
+  }
+]

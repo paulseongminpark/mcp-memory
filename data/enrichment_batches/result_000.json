@@ -1,0 +1,219 @@
+[
+  {
+    "id": 16,
+    "summary": "파일 접근 범위와 재읽기 금지, Living Docs 갱신 의무를 정의한 작업 원칙이다. 빌드 산출물과 캐시성 디렉터리를 제외하고 변경 시 STATE.md와 CHANGELOG.md를 반드시 업데이트하도록 요구한다.",
+    "key_concepts": "파일 접근 제한, 재읽기 금지, 캐시 활용, Living Docs, STATE 갱신, CHANGELOG 갱신, 커밋 전 규칙",
+    "domains": "developer-workflow, documentation, repository-hygiene",
+    "facets": "access-control, cache-discipline, living-docs, pre-commit"
+  },
+  {
+    "id": 73,
+    "summary": "Paul의 작업 선호는 PowerShell에서 직접 실행하고 데이터 흐름을 시각적으로 파악하는 쪽에 가깝다. 표보다는 대시보드와 그래프 기반 표현을 더 선호한다.",
+    "key_concepts": "PowerShell 선호, 직접 실행, 데이터 흐름 시각화, 구조 파악, 대시보드 선호, 그래프 뷰, 테이블 비선호",
+    "domains": "developer-tooling, data-visualization, user-preferences",
+    "facets": "shell-first, visual-first, dashboard-view, graph-oriented"
+  },
+  {
+    "id": 123,
+    "summary": "변경 파일로부터 영향 범위를 추적해 최소 테스트셋을 도출하는 절차다. diff 추출, import/export 분석, 테스트 매핑 후 JSON으로 결과를 출력한다.",
+    "key_concepts": "변경 파일 추출, 영향도 분석, import/export 관계, 테스트 파일 매핑, 최소 테스트셋, JSON 출력",
+    "domains": "testing, static-analysis, developer-workflow",
+    "facets": "change-detection, dependency-analysis, test-selection, json-output"
+  },
+  {
+    "id": 137,
+    "summary": "일일 메모 동기화를 수행하는 간단한 실행 스킬이다. 지정된 bash 스크립트를 호출해 메모 동기화 작업을 자동화한다.",
+    "key_concepts": "일일 메모 동기화, bash 스크립트, 명령 실행, 자동화 스킬, sync-daily-memo",
+    "domains": "automation, knowledge-management, cli-tooling",
+    "facets": "script-execution, memo-sync, command-wrapper"
+  },
+  {
+    "id": 177,
+    "summary": "Codex CLI의 Phase 4 세팅 내역으로, 안전 규칙 강화와 implement 프로필 추가가 핵심이다. Context7 연결, 신규 스킬 묶음, worktree 템플릿까지 포함한 환경 정비를 기록한다.",
+    "key_concepts": "Codex CLI 세팅, 안전 규칙 강화, implement 프로필, Context7 연결, 스킬 추가, worktree 템플릿",
+    "domains": "cli-tooling, orchestration, agent-systems",
+    "facets": "safety-hardening, profile-config, mcp-integration, worktree-template"
+  },
+  {
+    "id": 180,
+    "summary": "스킬 수를 14개에서 9개로 줄이면서 중복 기능을 정리하고 호출 비용을 낮춘 최적화 단계다. disable-model-invocation 전면 적용과 명령어 정비를 통해 토큰 사용량도 절감했다.",
+    "key_concepts": "스킬 축소, 중복 제거, 토큰 절감, disable-model-invocation, 명령어 통합, 별칭 변경",
+    "domains": "agent-systems, orchestration, prompt-engineering",
+    "facets": "skill-pruning, token-optimization, command-alias, invocation-policy"
+  },
+  {
+    "id": 211,
+    "summary": "cc-system 통합, GitHub 연동, 스킬 확장 등 orchestration 환경의 기능 확장을 기록한 버전 변경이다. 볼트 저장소의 버전 관리 체계도 함께 정비했다.",
+    "key_concepts": "cc-system 통합, GitHub 연결, 스킬 확장, 볼트 저장소, 버전 관리 체계, orchestration 확장",
+    "domains": "orchestration, version-control, agent-systems, knowledge-management",
+    "facets": "system-integration, git-setup, skill-expansion, release-management"
+  },
+  {
+    "id": 640,
+    "summary": "배포 요청이 들어오면 pf-deployer가 사전 체크리스트를 실행해 배포 가능 여부를 판정하는 배포 체인이다. 타입 체크, 로그 검사, localhost 탐지, git 상태, alt 텍스트 확인 결과로 GO/NO-GO를 결정한다.",
+    "key_concepts": "배포 체인, pf-deployer, 사전 체크리스트, TypeScript 검사, console.log 검사, git status, GO/NO-GO 판정",
+    "domains": "devops, deployment, quality-assurance",
+    "facets": "preflight-check, automated-gating, static-checks, go-no-go"
+  },
+  {
+    "id": 655,
+    "summary": "할 일 목록 조회, 추가, 완료 처리를 제공하는 TODO 스킬 명세다. 휴대폰 INBOX와의 동기화까지 포함해 개인 작업 관리를 지원한다.",
+    "key_concepts": "할 일 목록, INBOX 동기화, 항목 추가, 완료 처리, 명령어 인터페이스, 개인 작업 관리",
+    "domains": "personal-productivity, automation, knowledge-management",
+    "facets": "task-tracking, mobile-sync, command-interface"
+  },
+  {
+    "id": 766,
+    "summary": "orchestration v3.2 전체 시스템을 감사하고 재설계하려는 세션 목표다. 레포 구조, 에이전트/스킬/훅 체계, Living Docs, 토큰/컨텍스트 최적화를 주요 축으로 둔다.",
+    "key_concepts": "시스템 감사, 재설계, 레포 구조 정리, 에이전트 최적화, Living Docs 중앙집중화, 토큰 최적화, 컨텍스트 최적화",
+    "domains": "architecture, orchestration, documentation, repository-management",
+    "facets": "system-audit, redesign, docs-centralization, context-optimization"
+  },
+  {
+    "id": 804,
+    "summary": "dispatch를 세션 목표 기반으로 더 지능적으로 확장하자는 결정 제안이다. 목표 추적, 작업 모드 전환, 파일 경로 기반 스마트 추천으로 컨텍스트 로드를 줄이고 라우팅 정확도를 높이려 한다.",
+    "key_concepts": "dispatch 업그레이드, 세션 목표 설정, 작업 모드 전환, 스마트 추천, 컨텍스트 최소화, 팀 라우팅",
+    "domains": "orchestration, context-management, agent-routing",
+    "facets": "goal-tracking, mode-switching, smart-recommendation, token-efficiency"
+  },
+  {
+    "id": 915,
+    "summary": "에이전트를 Haiku에서 Opus로 올렸을 때 단순 사실 보고를 넘어 패턴 분석과 잠재 리스크 예측이 강화된다는 통찰이다. 특히 빌드 단계 분해, 이중 배포 패턴 감지, 스케줄 지연 편차 분석 같은 추가 인사이트가 드러난다.",
+    "key_concepts": "모델 비교, Haiku 대 Opus, 패턴 분석, 리스크 예측, 빌드 시간 분해, 이중 배포 감지, 에이전트 성능 향상",
+    "domains": "model-evaluation, agent-systems, observability",
+    "facets": "comparative-analysis, pattern-detection, risk-forecasting, model-upgrade"
+  },
+  {
+    "id": 946,
+    "summary": "Subagent-Driven Development 방식으로 portfolio UI Lab 07부터 10까지 여러 화면 실험을 구현한 기록이다. OpenAI 구조와 Anthropic 색감, 제3의 미학, 타이포그래피 조합을 탐색했다.",
+    "key_concepts": "UI Lab, Subagent-Driven Development, 포트폴리오 화면 실험, OpenAI 구조, Anthropic 팔레트, 제3의 미학, 타이포그래피",
+    "domains": "ui-design, frontend, experimentation",
+    "facets": "design-exploration, visual-language, typography, subagent-workflow"
+  },
+  {
+    "id": 1013,
+    "summary": "v3.3 전체 시스템에 대해 12개 시나리오 기반 e2e 테스트를 수행하고 모델별 재실행 비교까지 완료한 실험이다. 2차 Opus 재검증에서 추가 이슈와 리스크를 더 발견했고 실제 버그 3건도 수정했다.",
+    "key_concepts": "e2e 테스트, 12개 시나리오, 모델 재실행 비교, 추가 이슈 발견, 리스크 예측, 실제 버그 수정, v3.3 검증",
+    "domains": "testing, orchestration, quality-assurance, agent-systems",
+    "facets": "scenario-coverage, rerun-analysis, defect-fixing, model-tiering"
+  },
+  {
+    "id": 1026,
+    "summary": "트랙 디렉터리는 사전 정의하지 않고 동적으로 생성하며, 로컬 handoff는 글로벌 v4.0 handoff로 통합하기로 한 구조 결정이다. 일부 에이전트의 모델 불일치는 의도적 상향으로 유지한다.",
+    "key_concepts": "동적 트랙 생성, 빈 디렉터리 유지, handoff 통합, 글로벌 v4.0, 모델 불일치 유지, 구조 결정",
+    "domains": "architecture, orchestration, agent-systems",
+    "facets": "dynamic-generation, handoff-consolidation, model-policy"
+  },
+  {
+    "id": 1038,
+    "summary": "세션 목표는 Auto Memory 개선, Cross-CLI .ctx 정리, Playwright MCP 활성화다. 메모리 품질과 컨텍스트 정합성, 브라우저 자동화 기반을 동시에 다루는 작업 묶음이다.",
+    "key_concepts": "Auto Memory 개선, Cross-CLI 정리, .ctx 정리, Playwright MCP, 세션 목표, 컨텍스트 정합성",
+    "domains": "knowledge-management, orchestration, browser-automation",
+    "facets": "memory-enhancement, context-cleanup, mcp-enablement"
+  },
+  {
+    "id": 1050,
+    "summary": "AI 워크플로우 섹션의 데이터 구조와 UI, 설명 문서를 함께 손본 작업 요약이다. Timeline 질문 구조 재작성, Evolution 레이아웃 개편, 시스템 설명 맥락 정리와 인터뷰 문서 반영이 포함된다.",
+    "key_concepts": "TimelineItem 타입 변경, 질문 기반 타임라인, Evolution UI 개편, 세로 스택 레이아웃, 시스템 설명 수정, 인터뷰 문서 반영",
+    "domains": "frontend, content-design, documentation",
+    "facets": "data-model, layout-refactor, narrative-editing, doc-sync"
+  },
+  {
+    "id": 1052,
+    "summary": "다음 작업은 Key Decisions 레이아웃 확정, 모바일 반응형 검증, untracked 파일 정리다. 화면 구성과 작업공간 청결도를 동시에 마무리하려는 단기 목표다.",
+    "key_concepts": "Key Decisions 레이아웃, AiWorkflowSection 반영, 모바일 반응형, 375px 검증, untracked 파일 정리, 다음 할 일",
+    "domains": "frontend, repository-hygiene, product-design",
+    "facets": "layout-selection, mobile-validation, workspace-cleanup"
+  },
+  {
+    "id": 1056,
+    "summary": "portfolio의 Obsidian 섹션을 v4.0 기준으로 재작성하며 공개 순서와 메시지 구조를 재편한 작업 기록이다. Evolution 확장, Cross-CLI 그래프 보강, Hook 중심 서사 재배치가 핵심이다.",
+    "key_concepts": "Obsidian 섹션 재작성, v4.0, 역순 공개 구조, Evolution 확장, Cross-CLI 그래프, Hook 중심 재배치",
+    "domains": "content-architecture, documentation, frontend",
+    "facets": "section-rewrite, information-architecture, graph-expansion, content-reframing"
+  },
+  {
+    "id": 1058,
+    "summary": "Auto Memory 관련 스크립트와 훅 파일들의 구현 완료 상태를 정리한 내러티브다. 세션 분석, 종료 훅, 메모리 동기화, 리뷰 자동화 자산이 준비되었음을 보여준다.",
+    "key_concepts": "구현 완료 파일, analyze-session, session-stop, sync-memory, memory-review, 스크립트 자산, 자동화 훅",
+    "domains": "automation, knowledge-management, scripting",
+    "facets": "script-inventory, hook-integration, implementation-status, memory-pipeline"
+  },
+  {
+    "id": 1070,
+    "summary": "Auto Memory의 Phase 2와 Phase 3가 모두 구현되어 실제 운영 중임을 기록한 버전 상태다. sync-memory와 memory-review 흐름이 각각 명령어로 연결되어 정기 검증과 주간 정리를 담당한다.",
+    "key_concepts": "Phase 2 완료, Phase 3 완료, sync-memory, memory-review, MEMORY 검증, 주간 정리, 운영 중",
+    "domains": "knowledge-management, automation, release-tracking",
+    "facets": "phase-completion, command-routing, operational-status"
+  },
+  {
+    "id": 1125,
+    "summary": "vault orchestration 리팩터의 현재 진행 상황을 요약한 상태 기록이다. W1부터 W5까지 핵심 기능이 완료되었고, 다음 단계는 W6의 OpenAI 스타일 레이아웃 전환이다.",
+    "key_concepts": "리팩터 진행 상태, W1~W5 완료, Work 슬롯, TOC, 탭 필터, 스크롤스파이, W6 준비",
+    "domains": "frontend, refactoring, content-platform",
+    "facets": "milestone-tracking, feature-completion, layout-transition"
+  },
+  {
+    "id": 1126,
+    "summary": "최근 프로젝트 결정으로 TechReview 통합 복원과 W5 완료 확인이 기록되어 있다. 통합 상태 복구와 마일스톤 승인에 해당하는 짧은 의사결정 로그다.",
+    "key_concepts": "TechReview 통합 복원, W5 완료 확인, 최근 결정, 마일스톤 승인, 통합 복구",
+    "domains": "project-management, integration, release-tracking",
+    "facets": "integration-restoration, milestone-signoff"
+  },
+  {
+    "id": 1181,
+    "summary": "GitHub PAT를 settings.json에서 제거하고 셸 환경 변수로 이전하는 보안 작업 절차다. 실행 전 사용자에게 기존 토큰 회수와 신규 토큰 발급을 요구해 비밀정보 노출 위험을 줄인다.",
+    "key_concepts": "GitHub PAT 이전, settings.json 제거, ~/.bashrc 설정, 토큰 로테이션, 비밀정보 관리, 보안 태스크",
+    "domains": "security, configuration-management, secrets-management",
+    "facets": "token-rotation, env-migration, secret-removal, prerequisite-check"
+  },
+  {
+    "id": 1201,
+    "summary": "decisions.md 파일 경로를 기존 Claude 경로에서 orchestration 컨텍스트 경로로 교체하는 스크립트성 결정이다. JSON을 다시 써서 참조 위치를 일괄 수정하는 방식이 담겨 있다.",
+    "key_concepts": "decisions.md 경로 교체, 경로 마이그레이션, JSON 재저장, 파일 참조 수정, 스크립트 처리",
+    "domains": "scripting, configuration-management, knowledge-management",
+    "facets": "path-migration, json-editing, reference-normalization"
+  },
+  {
+    "id": 1227,
+    "summary": "compressor 에이전트의 저장 단계에 decisions.md append를 추가하려는 워크플로우다. 기존 3중 저장 구조를 4번째 저장 대상으로 확장해 결정 이력을 더 직접적으로 축적하려 한다.",
+    "key_concepts": "compressor 에이전트, decisions.md append, 저장 섹션 확장, 4번째 저장 대상, 결정 이력 축적",
+    "domains": "agent-systems, knowledge-management, workflow-automation",
+    "facets": "agent-persistence, append-logic, save-expansion"
+  },
+  {
+    "id": 1234,
+    "summary": "meta-orchestrator의 트리거, 입력, 출력, 활성화 규칙을 표로 정리한 에이전트 설계안이다. 세션 상태와 미커밋, Inbox 여부를 바탕으로 어떤 팀을 켤지 판단한다.",
+    "key_concepts": "meta-orchestrator, 세션 시작 트리거, 입력 컨텍스트, 팀 활성화, 판단 로직, 미커밋 기준, Inbox 기반 분기",
+    "domains": "orchestration, agent-systems, workflow-automation",
+    "facets": "state-analysis, team-dispatch, rule-engine, session-routing"
+  },
+  {
+    "id": 1297,
+    "summary": "Meta Orchestrator는 세션 상태를 읽고 활성화할 팀과 작업 지시를 생성하는 상위 조정 에이전트다. 전체 작업 흐름의 진입점에서 라우팅과 지시 생성을 담당한다.",
+    "key_concepts": "Meta Orchestrator, 세션 상태 분석, 팀 활성화 판단, 작업 지시 생성, 상위 조정 에이전트",
+    "domains": "orchestration, agent-systems, workflow-automation",
+    "facets": "coordination, routing, task-generation"
+  },
+  {
+    "id": 1335,
+    "summary": "tech-review 경로, Smart Brevity 구조, KST 시간 기준처럼 문서화되지 않은 운영 암묵지를 정리한 원칙이다. 작업 맥락과 커뮤니케이션 형식을 일관되게 맞추기 위한 기준점 역할을 한다.",
+    "key_concepts": "암묵지, tech-review 경로, Smart Brevity, KST 기준, 운영 관례, 커뮤니케이션 형식",
+    "domains": "communication, knowledge-management, developer-workflow",
+    "facets": "path-convention, brevity-framework, timezone-standard"
+  },
+  {
+    "id": 1358,
+    "summary": "세 개의 팀과 각 팀 내부 에이전트 체인을 정의한 멀티에이전트 팀 구성도다. tech-review, AI 피드백, daily ops를 서로 다른 파이프라인으로 분리해 운영한다.",
+    "key_concepts": "3개 팀 구성, tech-review-ops, ai-feedback-loop, daily-ops, 에이전트 체인, 역할 분리, 파이프라인 구조",
+    "domains": "orchestration, multi-agent-systems, workflow-automation",
+    "facets": "team-topology, pipeline-orchestration, role-chaining"
+  },
+  {
+    "id": 1414,
+    "summary": "코드 리뷰 결과를 구조화해 출력하기 위한 JSON 스키마다. 검토 파일 목록, 이슈의 위치와 심각도, 유형, 설명, 메타 정보를 표준화한다.",
+    "key_concepts": "출력 스키마, 코드 리뷰 결과, files_reviewed, issues 배열, 심각도, 카테고리 분류, 메타데이터",
+    "domains": "code-review, schema-design, developer-tooling",
+    "facets": "json-schema, issue-classification, severity-tracking, review-metadata"
+  }
+]
