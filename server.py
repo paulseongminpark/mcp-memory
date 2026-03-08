@@ -375,5 +375,12 @@ def dashboard() -> dict:
 init_db()
 sync_schema()
 
+# quick verify (search_quality 스킵, <2초)
+try:
+    from scripts.eval.verify import run_all
+    run_all(quick=True)
+except Exception:
+    pass  # 검증 실패가 서버 시작을 막지 않음
+
 if __name__ == "__main__":
     mcp.run(transport="stdio")

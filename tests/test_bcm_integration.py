@@ -113,7 +113,9 @@ def test_post_search_learn_updates_theta_visit_count_and_edge_strength(db_env: P
         (signal_id, pattern_id),
     )
 
-    post_search_learn(_scored_results(signal_id, pattern_id), query="bcm integration")
+    t = post_search_learn(_scored_results(signal_id, pattern_id), query="bcm integration")
+    if t is not None:
+        t.join(timeout=10)
 
     after_signal = _query_one(
         db_env,
@@ -157,10 +159,12 @@ def test_post_search_learn_accumulates_sprt_history_and_sets_promotion_candidate
     )
 
     for idx in range(5):
-        post_search_learn(
+        t = post_search_learn(
             _scored_results(signal_id, pattern_id),
             query=f"sprt integration {idx}",
         )
+        if t is not None:
+            t.join(timeout=10)
 
     row = _query_one(
         db_env,

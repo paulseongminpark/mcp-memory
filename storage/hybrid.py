@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 import json
 import logging
 import math
+import threading
 import time
 
 from config import (
@@ -429,12 +430,17 @@ def hybrid_search(
         seed_ids.append(node_id)
 
     # 4. UCB 그래프 탐색 (B-12, B-16 TTL 캐시)
-    all_edges, graph = _get_graph()
     c = _auto_ucb_c(query, mode=mode)
-    graph_neighbors = (
-        _ucb_traverse(graph, seed_ids, depth=GRAPH_MAX_HOPS, c=c)
-        if seed_ids else set()
-    )
+    if seed_ids:
+        if c <= UCB_C_FOCUS:
+            # focus 모드: SQL CTE로 빠르게 (NetworkX 불필요)
+            graph_neighbors = _traverse_sql(seed_ids, depth=GRAPH_MAX_HOPS)
+        else:
+            # auto/dmn 모드: UCB 필요 → NetworkX 유지 (visit_count 기반 탐험)
+            all_edges, graph = _get_graph()
+            graph_neighbors = _ucb_traverse(graph, seed_ids, depth=GRAPH_MAX_HOPS, c=c)
+    else:
+        graph_neighbors = set()
 
     # 5. Reciprocal Rank Fusion
     scores: dict[int, float] = defaultdict(float)
@@ -474,46 +480,81 @@ def hybrid_search(
     return result
 
 
+# ─── background thread 관리 ──────────────────────────────────────
+
+_bg_threads: list[threading.Thread] = []
+_bg_threads_lock = threading.Lock()
+
+
+def drain_background_jobs(timeout: float = 30.0) -> None:
+    """모든 pending background thread를 완료까지 대기 (테스트/종료 시 사용)."""
+    with _bg_threads_lock:
+        threads = list(_bg_threads)
+        _bg_threads.clear()
+    for t in threads:
+        t.join(timeout=timeout)
+
+
 # ─── post_search_learn() — query/write 분리 ─────────────────────
 
 def post_search_learn(
     results: list[dict],
     query: str,
     session_id: str | None = None,
-):
-    """검색 후 학습: BCM update + SPRT check + action_log.
+) -> threading.Thread | None:
+    """검색 후 학습.
 
-    hybrid_search()에서 분리된 학습 경로.
-    recall()이 최종 결과 확정 후 한 번만 호출.
-    현재 동기 호출, 향후 background job 전환 가능한 구조.
+    - 활성화 이벤트 로깅 (A-12): 동기 실행 (action_log 즉시 기록)
+    - BCM + SPRT: background thread (compute-intensive)
     """
     if not results:
-        return
+        return None
 
-    # 1. BCM 학습 + 재공고화 (B-12 + B-10)
-    all_edges, _ = _get_graph()
-    _bcm_update(
-        [n["id"] for n in results],
-        [n["score"] for n in results],
-        all_edges,
-        query=query,
-    )
-
-    # 2. SPRT 승격 판정 (C-11) — score를 0-1 정규화 후 판정
-    try:
-        with sqlite_store._db() as sprt_conn:
-            max_score = results[0]["score"] if results else 1.0
-            for node in results:
-                if node.get("type") == "Signal":
-                    normalized = node.get("score", 0.0) / max_score if max_score > 0 else 0.0
-                    if _sprt_check(node, normalized, sprt_conn):
-                        sprt_conn.execute(
-                            "UPDATE nodes SET promotion_candidate=1 WHERE id=?",
-                            (node["id"],),
-                        )
-            sprt_conn.commit()
-    except Exception as e:
-        logging.warning("SPRT check failed: %s", e)
-
-    # 3. 활성화 이벤트 로깅 (A-12)
+    # 1. 활성화 이벤트 로깅 — 동기 (즉시 action_log 기록 보장)
     _log_recall_activations(results, query, session_id=session_id)
+
+    # 2. BCM + SPRT — background thread
+    results_copy = [dict(r) for r in results]
+    t = threading.Thread(
+        target=_post_search_learn_impl,
+        args=(results_copy, query),
+        daemon=True,
+    )
+    with _bg_threads_lock:
+        _bg_threads.append(t)
+    t.start()
+    return t
+
+
+def _post_search_learn_impl(
+    results: list[dict],
+    query: str,
+):
+    """BCM + SPRT 학습 로직 (background)."""
+    try:
+        # 1. BCM 학습 + 재공고화 (B-12 + B-10)
+        all_edges, _ = _get_graph()
+        _bcm_update(
+            [n["id"] for n in results],
+            [n["score"] for n in results],
+            all_edges,
+            query=query,
+        )
+
+        # 2. SPRT 승격 판정 (C-11) — score를 0-1 정규화 후 판정
+        try:
+            with sqlite_store._db() as sprt_conn:
+                max_score = results[0]["score"] if results else 1.0
+                for node in results:
+                    if node.get("type") == "Signal":
+                        normalized = node.get("score", 0.0) / max_score if max_score > 0 else 0.0
+                        if _sprt_check(node, normalized, sprt_conn):
+                            sprt_conn.execute(
+                                "UPDATE nodes SET promotion_candidate=1 WHERE id=?",
+                                (node["id"],),
+                            )
+                sprt_conn.commit()
+        except Exception as e:
+            logging.warning("SPRT check failed: %s", e)
+    except Exception as e:
+        logging.warning("Background learn failed: %s", e)

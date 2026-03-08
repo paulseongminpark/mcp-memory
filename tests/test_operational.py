@@ -278,6 +278,10 @@ def test_bcm_theta_m_stays_in_reasonable_range_after_10_recalls(db_env: Path):
             result = server.recall(query="theta alpha", top_k=2)
             assert result["count"] == 2
 
+    # background BCM thread 완료 대기
+    from storage.hybrid import drain_background_jobs
+    drain_background_jobs(timeout=15.0)
+
     theta_m = _query_scalar(
         db_env,
         "SELECT theta_m FROM nodes WHERE id = ?",

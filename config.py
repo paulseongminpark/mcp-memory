@@ -273,3 +273,15 @@ PROMOTE_LAYER = {
     # ── Meta ──────────────────────────────────────────────────
     "Unclassified": None,  # layer 미배정
 }
+
+# ─── 검증 임계값 (v2.1.3) ─────────────────────────────────────
+VERIFY_THRESHOLDS = {
+    "ndcg@5": 0.55,
+    "ndcg@10": 0.55,
+    "hit_rate": 0.70,
+    "null_layer_pct": 0.0,
+    "enrichment_coverage": 0.60,
+    "orphan_pct": 0.10,
+    "content_hash_coverage": 0.95,
+    "duplicate_pct": 0.0,
+}

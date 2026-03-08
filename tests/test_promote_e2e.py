@@ -117,7 +117,9 @@ def _accumulate_sprt_pass(signal_id: int, peer_id: int) -> None:
         ]
         results[0]["score"] = 1.0
         results[1]["score"] = 0.9
-        post_search_learn(results, query=f"sprt pass {idx}")
+        t = post_search_learn(results, query=f"sprt pass {idx}")
+        if t is not None:
+            t.join(timeout=10)
 
 
 @pytest.fixture()

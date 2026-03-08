@@ -84,7 +84,8 @@ def init_db() -> None:
             last_activated TEXT,
             decay_rate REAL DEFAULT 0.005,
             layer_distance INTEGER,
-            layer_penalty REAL
+            layer_penalty REAL,
+            status TEXT DEFAULT 'active'
         );
 
         CREATE TABLE IF NOT EXISTS sessions (
@@ -242,6 +243,21 @@ def init_db() -> None:
             timestamp TEXT DEFAULT CURRENT_TIMESTAMP
         );
 
+        -- v2.1.3: verification_log
+        CREATE TABLE IF NOT EXISTS verification_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            run_id TEXT NOT NULL,
+            check_name TEXT NOT NULL,
+            category TEXT,
+            score REAL,
+            threshold REAL,
+            status TEXT NOT NULL,
+            details TEXT,
+            created_at TEXT DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_vlog_run ON verification_log(run_id);
+        CREATE INDEX IF NOT EXISTS idx_vlog_check ON verification_log(check_name);
+
         -- v2.1: activation_log VIEW (A-12, D-5)
         CREATE VIEW IF NOT EXISTS activation_log AS
         SELECT
@@ -258,6 +274,15 @@ def init_db() -> None:
         FROM action_log al
         WHERE al.action_type = 'node_activated';
     """)
+
+    # 기존 edges 테이블에 status 컬럼 없을 경우 migration (v2.1.3)
+    with _db() as _mig:
+        try:
+            _mig.execute("ALTER TABLE edges ADD COLUMN status TEXT DEFAULT 'active'")
+            _mig.execute("CREATE INDEX IF NOT EXISTS idx_edges_status ON edges(status)")
+            _mig.commit()
+        except Exception:
+            pass  # 이미 존재하면 무시
 
 
 def insert_node(
@@ -429,7 +454,7 @@ def search_fts(query: str, top_k: int = 5) -> list[tuple[int, str, float]]:
         for nid in like_ranked:
             if nid not in seen_ids:
                 cnt = like_match_count[nid]
-                if cnt >= high_thresh:
+                if cnt >= high_thresh and len(high_boost) < 2:  # ← cap 2개
                     high_boost.append((nid, like_content[nid], -float(cnt) * 10))
                 else:
                     low_append.append((nid, like_content[nid], -float(cnt)))
