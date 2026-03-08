@@ -18,6 +18,7 @@ from config import (
     UCB_C_FOCUS, UCB_C_AUTO, UCB_C_DMN,
     GRAPH_MAX_HOPS, LAYER_ETA,
     SPRT_ALPHA, SPRT_BETA, SPRT_P1, SPRT_P0, SPRT_MIN_OBS,
+    TYPE_KEYWORDS, TYPE_BOOST,
 )
 from storage import sqlite_store, vector_store
 from graph.traversal import build_graph  # traverse 제거 — UCB로 교체
@@ -389,6 +390,55 @@ def _log_recall_activations(
         logging.warning("action_log failed: %s", e)  # 로깅 실패가 검색을 중단시키지 않음
 
 
+# ─── Type-aware helpers ──────────────────────────────────────────
+
+def _detect_type_hints(query: str) -> dict[str, float]:
+    """쿼리에서 타입 키워드 감지 → {type: boost}."""
+    hints: dict[str, float] = {}
+    for node_type, keywords in TYPE_KEYWORDS.items():
+        for kw in keywords:
+            if kw in query:
+                hints[node_type] = TYPE_BOOST
+                break
+    return hints
+
+
+def _apply_type_diversity(candidates: list[dict], top_k: int, max_same_type_ratio: float = 0.6) -> list[dict]:
+    """타입 다양성 보장 re-ranking. 한 타입이 top_k의 60% 이상 차지하면 교체."""
+    if len(candidates) <= top_k:
+        return candidates
+
+    top = candidates[:top_k]
+    rest = candidates[top_k:]
+
+    type_counts: dict[str, int] = {}
+    for c in top:
+        t = c.get("type", "Unknown")
+        type_counts[t] = type_counts.get(t, 0) + 1
+
+    max_allowed = max(1, int(top_k * max_same_type_ratio))
+
+    for dominant_type, count in sorted(type_counts.items(), key=lambda x: -x[1]):
+        if count <= max_allowed:
+            continue
+        excess = count - max_allowed
+        for _ in range(excess):
+            # top에서 dominant_type의 최하위 항목 제거
+            for i in range(len(top) - 1, -1, -1):
+                if top[i].get("type") == dominant_type:
+                    removed = top.pop(i)
+                    rest.insert(0, removed)
+                    break
+            # rest에서 다른 타입의 최상위 항목 추가
+            for j, r in enumerate(rest):
+                if r.get("type") != dominant_type:
+                    top.append(rest.pop(j))
+                    break
+
+    top.sort(key=lambda n: n.get("score", 0), reverse=True)
+    return top[:top_k]
+
+
 # ─── hybrid_search() ─────────────────────────────────────────────
 
 def hybrid_search(
@@ -406,6 +456,8 @@ def hybrid_search(
     - Phase 1: traverse() → _ucb_traverse() 교체
     - Phase 1: _hebbian_update() → _bcm_update() 교체
     """
+    _type_hints = _detect_type_hints(query)
+
     # 1. 벡터 유사도 검색 (ChromaDB)
     where = {}
     if type_filter:
@@ -471,11 +523,12 @@ def hybrid_search(
         )
         tier = node.get("tier", 2)
         tier_bonus = {0: 0.15, 1: 0.05, 2: 0.0}.get(tier, 0.0)
-        node["score"] = scores[node_id] + enrichment_bonus + tier_bonus
+        type_boost = _type_hints.get(node.get("type", ""), 0.0)
+        node["score"] = scores[node_id] + enrichment_bonus + tier_bonus + type_boost
         candidates.append(node)
 
     candidates.sort(key=lambda n: n["score"], reverse=True)
-    result = candidates[:top_k]
+    result = _apply_type_diversity(candidates, top_k)
 
     return result
 
