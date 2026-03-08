@@ -1,5 +1,21 @@
 # mcp-memory CHANGELOG
 
+## v2.2.0 (2026-03-08)
+### 3-Layer Type-Aware Search
+- **Layer C**: 타입 태그 재임베딩 — `[Type] summary + key_concepts + content[:200]`로 벡터 공간에서 타입 분리
+- **Layer A**: 키워드 기반 타입 부스트 — 15개 타입 키워드 테이블(TYPE_KEYWORDS), TYPE_BOOST=0.03
+- **Layer D**: 타입 다양성 보장 — max_same_type_ratio=0.6, 한 타입이 결과 60% 이상 차지 시 교체
+
+### Goldset v2.1 교정
+- L1 relevant_ids 순환 참조 제거 (hybrid_search 결과를 정답으로 쓴 문제)
+- type-filtered 벡터 검색 + FTS + hybrid 3방법 병합으로 편향 없는 후보 풀 생성
+- auto_correct_goldset.py, generate_candidates.py, review_candidates.py 신규
+
+### Metrics (corrected goldset 기준)
+- hit_rate: 0.410 → 0.534 (+12.4pp)
+- NDCG@10: 0.443 → 0.467 (+0.024)
+- Tests: 153 → 161 (type_boost 5 + type_diversity 3)
+
 ## v2.1.3 (2026-03-08)
 ### Search Quality
 - LIKE boost cap 2개로 제한 (q004/q008 회귀 수정)
