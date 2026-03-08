@@ -10,7 +10,7 @@ from mcp.server.fastmcp import FastMCP
 
 from config import DB_PATH, OPENAI_API_KEY, PROMOTE_LAYER
 from ontology.validators import validate_node_type, suggest_closest_type
-from storage.sqlite_store import init_db
+from storage.sqlite_store import init_db, sync_schema
 from utils.access_control import check_access, LAYER_PERMISSIONS
 
 if not OPENAI_API_KEY:
@@ -371,8 +371,9 @@ def dashboard() -> dict:
     return {"file": path, "message": f"Dashboard generated: {path}"}
 
 
-# DB 초기화
+# DB 초기화 + 스키마 동기화
 init_db()
+sync_schema()
 
 if __name__ == "__main__":
     mcp.run(transport="stdio")

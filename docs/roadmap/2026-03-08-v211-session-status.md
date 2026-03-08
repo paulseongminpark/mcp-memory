@@ -69,43 +69,89 @@
 
 ## 현재 수치
 
-| 메트릭 | 이전 (v2.1) | 현재 (v2.1.1) |
-|--------|------------|---------------|
-| NDCG@5 | 0.057 | **0.548** |
-| Tests | 117 | **144** (1 known race) |
-| CRITICAL issues | 6 | **0** |
-| NULL layer nodes | 88 | **0** |
-| recall_log rows | 0 | **축적 중** |
-| meta rows | 0 | **축적 중** |
-| 진단 PASS | — | **16/16** |
+| 메트릭 | v2.1 | v2.1.1 (Phase 1) | v2.1.2 (Phase 2) |
+|--------|------|------------------|------------------|
+| NDCG@5 | 0.057 | 0.548 | **0.581** (+6%) |
+| NDCG@10 | — | 0.533 | **0.594** (+11.5%) |
+| Hit rate | — | 0.650 | **0.770** (+18.5%) |
+| Tests | 117 | 144 (1 known) | **153** (0 fail) |
+| CRITICAL issues | 6 | 0 | **0** |
+| NULL layer nodes | 88 | 0 | **0** |
+| type_defs | 0 | 0 | **50 active** |
+| relation_defs | 0 | 0 | **50 active** |
+| 진단 PASS | — | 16/16 | **17/17** |
 
 ---
 
-## 남은 작업 (향후 세션)
+## Phase 2 작업 (이번 세션, 미커밋)
+
+### Opus 1M (오케스트레이터)
+- [x] FTS5 한국어 조사 제거 (`_strip_korean_particles`)
+- [x] FTS5 OR 매칭 (3글자+ 단어)
+- [x] 2글자 한국어 LIKE 보조 검색 (trigram 한계 보완)
+- [x] 후보풀 확장 top_k×2 → top_k×4
+- [x] schema.yaml → type_defs/relation_defs 자동 동기화 (`sync_schema()`)
+- [x] relation_defs description 컬럼 추가
+- [x] content_hash 백필 (2858노드, 449 중복 발견)
+- [x] NDCG 베이스라인 측정 + 0점 쿼리 근본 원인 분석
+- [x] Codex 테스트 schema consistency deprecated 예외 수정
+
+### Pane B (Opus 200K)
+- [x] content_hash UNIQUE 제약 + atomic dedup (concurrent race fix)
+- [x] insert_node() → `int | Literal["duplicate"]` 반환
+- [x] remember.py store() → content_hash 전달 + duplicate 처리
+- [x] hybrid.py 전체 `_connect()` → `_db()` context manager 전환
+
+### Codex
+- [x] test_promote_e2e.py (promote_node E2E 실제 승격 테스트)
+- [x] test_schema_consistency.py (PROMOTE_LAYER ↔ schema.yaml 일관성)
+- [x] test_bcm_integration.py (BCM/UCB/SPRT 통합 테스트)
+
+### Gemini
+- [x] .ctx/gemini-ontology-analysis.md: 50→15코어 매핑, BCM 파라미터, 관계 축소
+
+### Pane A (Sonnet 200K) — 결과 대기 중
+- [ ] FTS5 인덱스 필드 확장 (domains, facets)
+- [ ] 0점 쿼리 enrichment 분석
+- [ ] 중저점 쿼리 개선 방안
+
+---
+
+## 핵심 발견 (Phase 2)
+
+1. **trigram 토크나이저 2글자 한계**: FTS5 trigram은 3글자 미만 매칭 불가. 한국어 2글자 단어(충돌, 설계, 방지) 전멸. LIKE 보조 검색으로 해결.
+2. **0점 쿼리 근본 원인**: q017/q018은 벡터 top-40에도 타깃 없음 (임베딩 의미 매핑 실패). FTS도 어휘 불일치. 해결: enrichment 시 한국어 동의어 추가 필요.
+3. **미사용 타입 19개** (Gemini): Trigger, Context, Evidence, Plan, Ritual 등. 50→15코어 매핑 초안 완성.
+4. **BCM theta_m 수렴**: 최소 20회 recall 필요 (window=20). 현재 visit_count>0 노드 23개 — 아직 초기.
+5. **content 중복 449개**: 백필 시 발견. 기존 데이터 정리 필요.
+
+---
+
+## 남은 작업
 
 ### P0 — NDCG 0.7 달성
-- [ ] FTS5 bigram 토크나이저 도입 (2자 한국어 매칭)
-- [ ] 후보풀 확장 (top_k × 2 → top_k × 4)
-- [ ] 0점 쿼리 vocabulary mismatch 해결 (synonym expansion 또는 query rewriting)
-- [ ] goldset 확장 (25 → 50 쿼리, q026-q050 Paul 직접 작성)
+- [x] FTS5 한국어 조사 제거 + OR 매칭
+- [x] 후보풀 확장 top_k×4
+- [ ] Pane A 결과 통합
+- [ ] enrichment 시 한국어 동의어/관련어 key_concepts에 추가 (0점 쿼리 해결)
+- [ ] goldset 확장 (25 → 50 쿼리)
 
 ### P1 — 안정성
-- [ ] concurrent remember dedup race condition 수정 (test_operational.py 실패)
+- [x] concurrent remember dedup race condition 수정 (content_hash UNIQUE)
 - [ ] enrichment pipeline 수리된 코드로 재실행 (신규 노드 대상)
 - [ ] BCM/UCB 실작동 장기 검증 (recall 누적 → theta_m 변화 추적)
-- [ ] promote_node() E2E 실제 승격 테스트 (Signal → Pattern)
 
 ### P2 — 아키텍처
-- [ ] _post_search_learn()을 background job으로 전환 (asyncio)
-- [ ] NetworkX full rebuild 의존 축소 (SQL traversal 또는 incremental update)
-- [ ] schema.yaml → DB type_defs 자동 동기화 (startup check)
-- [ ] conftest.py 생성 + fixture 통합
+- [x] schema.yaml → DB type_defs 자동 동기화 (sync_schema)
+- [x] hybrid.py _connect() → _db() 전환
+- [ ] _post_search_learn() background job 전환
+- [ ] NetworkX full rebuild 의존 축소
 
 ### P3 — 온톨로지 실험
+- [x] Gemini 분석 완료 (.ctx/gemini-ontology-analysis.md)
 - [ ] 50타입 → 15코어+facet 매핑 실험 (recall 품질 비교)
 - [ ] BCM on/off A/B 테스트
-- [ ] drift threshold 캘리브레이션 (enrichment 100개 실측)
-- [ ] 원본/파생 content 분리 설계
+- [ ] drift threshold 캘리브레이션
 
 ---
 

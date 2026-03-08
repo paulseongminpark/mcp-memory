@@ -87,11 +87,13 @@ def store(
     project: str = "",
     confidence: float = 1.0,
     source: str = "claude",
+    content_hash: str | None = None,
 ) -> dict:
     """SQLite + ChromaDB에 노드 저장.
 
     Returns:
         {"node_id": int, "type": str, "project": str}
+        content_hash 중복 시 "duplicate" 키 포함
         ChromaDB 실패 시 "warning" 키 포함
     """
     # SQLite
@@ -105,7 +107,12 @@ def store(
         source=source,
         layer=cls.layer,
         tier=cls.tier,
+        content_hash=content_hash,
     )
+
+    # content_hash UNIQUE 제약 위반 → duplicate (concurrent race 방어)
+    if isinstance(node_id, tuple) and node_id[0] == "duplicate":
+        return {"status": "duplicate", "node_id": node_id[1]}
 
     # action_log: node_created
     action_log.record(
@@ -264,12 +271,18 @@ def remember(
     # 1. 분류
     cls = classify(content, type=type, metadata=metadata)
 
-    # 2. 저장
+    # 2. 저장 (content_hash로 DB 레벨 dedup 보장)
     store_result = store(
         content, cls,
         tags=tags, project=project,
         confidence=confidence, source=source,
+        content_hash=content_hash,
     )
+
+    # 2-a. DB 레벨 중복 감지 (concurrent race condition 방어)
+    if store_result.get("status") == "duplicate":
+        return {"status": "duplicate", "node_id": store_result.get("node_id")}
+
     node_id = store_result["node_id"]
 
     # 3. ChromaDB 실패 시 edge 생성 스킵

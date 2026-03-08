@@ -1,4 +1,5 @@
 """SQLite storage with FTS5 for keyword search."""
+from __future__ import annotations
 
 import json
 import sqlite3
@@ -63,7 +64,8 @@ def init_db() -> None:
             activity_history TEXT DEFAULT '[]',
             visit_count INTEGER DEFAULT 0,
             score_history TEXT DEFAULT '[]',
-            promotion_candidate INTEGER DEFAULT 0
+            promotion_candidate INTEGER DEFAULT 0,
+            content_hash TEXT
         );
 
         CREATE TABLE IF NOT EXISTS edges (
@@ -109,28 +111,31 @@ def init_db() -> None:
         );
 
         CREATE VIRTUAL TABLE IF NOT EXISTS nodes_fts USING fts5(
-            content, tags, project, summary, key_concepts,
+            content, tags, project, summary, key_concepts, domains, facets,
             content='nodes',
             content_rowid='id',
             tokenize='trigram'
         );
 
         CREATE TRIGGER IF NOT EXISTS nodes_ai AFTER INSERT ON nodes BEGIN
-            INSERT INTO nodes_fts(rowid, content, tags, project, summary, key_concepts)
-            VALUES (new.id, new.content, new.tags, new.project, new.summary, new.key_concepts);
+            INSERT INTO nodes_fts(rowid, content, tags, project, summary, key_concepts, domains, facets)
+            VALUES (new.id, new.content, new.tags, new.project, new.summary, new.key_concepts, new.domains, new.facets);
         END;
 
         CREATE TRIGGER IF NOT EXISTS nodes_ad AFTER DELETE ON nodes BEGIN
-            INSERT INTO nodes_fts(nodes_fts, rowid, content, tags, project, summary, key_concepts)
-            VALUES ('delete', old.id, old.content, old.tags, old.project, old.summary, old.key_concepts);
+            INSERT INTO nodes_fts(nodes_fts, rowid, content, tags, project, summary, key_concepts, domains, facets)
+            VALUES ('delete', old.id, old.content, old.tags, old.project, old.summary, old.key_concepts, old.domains, old.facets);
         END;
 
         CREATE TRIGGER IF NOT EXISTS nodes_au AFTER UPDATE ON nodes BEGIN
-            INSERT INTO nodes_fts(nodes_fts, rowid, content, tags, project, summary, key_concepts)
-            VALUES ('delete', old.id, old.content, old.tags, old.project, old.summary, old.key_concepts);
-            INSERT INTO nodes_fts(rowid, content, tags, project, summary, key_concepts)
-            VALUES (new.id, new.content, new.tags, new.project, new.summary, new.key_concepts);
+            INSERT INTO nodes_fts(nodes_fts, rowid, content, tags, project, summary, key_concepts, domains, facets)
+            VALUES ('delete', old.id, old.content, old.tags, old.project, old.summary, old.key_concepts, old.domains, old.facets);
+            INSERT INTO nodes_fts(rowid, content, tags, project, summary, key_concepts, domains, facets)
+            VALUES (new.id, new.content, new.tags, new.project, new.summary, new.key_concepts, new.domains, new.facets);
         END;
+
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_nodes_content_hash
+            ON nodes(content_hash) WHERE content_hash IS NOT NULL;
 
         CREATE INDEX IF NOT EXISTS idx_nodes_type ON nodes(type);
         CREATE INDEX IF NOT EXISTS idx_nodes_project ON nodes(project);
@@ -191,6 +196,7 @@ def init_db() -> None:
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT UNIQUE NOT NULL,
             category TEXT,
+            description TEXT,
             direction_constraint TEXT,
             layer_constraint TEXT,
             reverse_of TEXT,
@@ -264,19 +270,32 @@ def insert_node(
     source: str = "claude",
     layer: int | None = None,
     tier: int = 2,
-) -> int:
+    content_hash: str | None = None,
+) -> int | tuple[str, int | None]:
+    """노드 삽입. content_hash UNIQUE 제약 위반 시 "duplicate" 반환."""
     # PROMOTE_LAYER fallback: caller가 layer 미전달 시 타입 기반 자동 배정
     if layer is None:
         layer = PROMOTE_LAYER.get(type)  # Unclassified → None (의도적)
     now = datetime.now(timezone.utc).isoformat()
     with _db() as conn:
-        cur = conn.execute(
-            """INSERT INTO nodes (type, content, metadata, project, tags, confidence, source, layer, tier, created_at, updated_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-            (type, content, json.dumps(metadata or {}), project, tags, confidence, source, layer, tier, now, now),
-        )
-        node_id = cur.lastrowid
-        conn.commit()
+        try:
+            cur = conn.execute(
+                """INSERT INTO nodes (type, content, metadata, project, tags, confidence, source, layer, tier, content_hash, created_at, updated_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (type, content, json.dumps(metadata or {}), project, tags, confidence, source, layer, tier, content_hash, now, now),
+            )
+            node_id = cur.lastrowid
+            conn.commit()
+        except sqlite3.IntegrityError:
+            # content_hash UNIQUE 제약 위반 — 기존 노드 ID를 같은 conn에서 조회
+            existing_id = None
+            if content_hash:
+                row = conn.execute(
+                    "SELECT id FROM nodes WHERE content_hash = ?", (content_hash,)
+                ).fetchone()
+                if row:
+                    existing_id = row[0]
+            return ("duplicate", existing_id)
     return node_id
 
 
@@ -309,32 +328,116 @@ def insert_edge(
     return edge_id
 
 
+def _strip_korean_particles(term: str) -> str:
+    """한국어 조사/어미 제거. 어근만 남긴다."""
+    import re
+    # 긴 패턴부터 매칭 (에서, 으로, 하는 등)
+    suffixes = (
+        "에서", "으로", "하는", "해서", "하고", "에게", "처럼", "까지",
+        "부터", "만큼", "라는", "라고", "이라", "에는",
+        "을", "를", "의", "이", "가", "은", "는", "에", "로", "와", "과",
+        "도", "만", "며", "고", "면", "서", "나", "든",
+    )
+    for s in suffixes:
+        if len(term) > len(s) + 1 and term.endswith(s):
+            return term[:-len(s)]
+    return term
+
+
 def _escape_fts_query(query: str) -> str:
-    """Escape special FTS5 characters by wrapping terms in double quotes."""
-    # FTS5 special: AND OR NOT + - * ^ ~ : " ( )
-    # Safest approach: quote each term individually
+    """Escape FTS5 query: 조사 제거 + 3글자+ OR 매칭.
+
+    trigram 토크나이저는 3글자 미만 매칭 불가이므로
+    3글자+ 단어만 FTS5에 보내고, 2글자는 search_fts()의 LIKE 보조에 맡긴다.
+    OR 매칭으로 부분 일치도 허용 (RRF가 최종 랭킹 담당).
+    """
     terms = query.split()
-    return " ".join('"' + t.replace('"', '""') + '"' for t in terms if t)
+    cleaned = []
+    for t in terms:
+        t = t.replace('"', '""')
+        stripped = _strip_korean_particles(t)
+        if stripped and len(stripped) >= 3:  # 3글자+ → FTS5 trigram
+            cleaned.append('"' + stripped + '"')
+    if not cleaned:
+        return ""
+    return " OR ".join(cleaned)
 
 
 def search_fts(query: str, top_k: int = 5) -> list[tuple[int, str, float]]:
+    """FTS5 trigram + 2글자 LIKE 보조 검색.
+
+    trigram 토크나이저는 3글자 미만 매칭 불가 → 한국어 2글자 단어를
+    SQL LIKE로 보조 검색하여 다중 매칭 노드를 상위에 배치한다.
+    """
     escaped = _escape_fts_query(query)
-    if not escaped:
-        return []
-    with _db() as conn:
-        try:
-            rows = conn.execute(
-                """SELECT n.id, n.content, rank
-                   FROM nodes_fts f
-                   JOIN nodes n ON n.id = f.rowid
-                   WHERE nodes_fts MATCH ?
-                   ORDER BY rank
-                   LIMIT ?""",
-                (escaped, top_k),
-            ).fetchall()
-        except Exception:
-            return []
-    return [(r["id"], r["content"], r["rank"]) for r in rows]
+
+    # 1. FTS5 trigram 검색 (3글자+ 단어)
+    fts_results: list[tuple[int, str, float]] = []
+    if escaped:
+        with _db() as conn:
+            try:
+                rows = conn.execute(
+                    """SELECT n.id, n.content, rank
+                       FROM nodes_fts f
+                       JOIN nodes n ON n.id = f.rowid
+                       WHERE nodes_fts MATCH ?
+                       ORDER BY rank
+                       LIMIT ?""",
+                    (escaped, top_k),
+                ).fetchall()
+                fts_results = [(r["id"], r["content"], r["rank"]) for r in rows]
+            except Exception:
+                pass
+
+    # 2. 2글자 한국어 보조 LIKE 검색 (trigram 한계 보완)
+    terms = query.split()
+    short_terms = []
+    for t in terms:
+        stripped = _strip_korean_particles(t)
+        if stripped and len(stripped) == 2:
+            short_terms.append(stripped)
+
+    if short_terms:
+        # 다중 매칭 → 높은 랭크: 3개 용어 매칭 노드가 1개 매칭보다 상위
+        like_match_count: dict[int, int] = {}
+        like_content: dict[int, str] = {}
+        with _db() as conn:
+            for term in short_terms[:5]:
+                try:
+                    rows = conn.execute(
+                        """SELECT id, content FROM nodes
+                           WHERE status = 'active'
+                             AND (content LIKE ? OR summary LIKE ?
+                                  OR key_concepts LIKE ? OR domains LIKE ?
+                                  OR facets LIKE ?)
+                           LIMIT ?""",
+                        (f"%{term}%", f"%{term}%", f"%{term}%", f"%{term}%", f"%{term}%", top_k),
+                    ).fetchall()
+                    for r in rows:
+                        like_match_count[r["id"]] = like_match_count.get(r["id"], 0) + 1
+                        like_content[r["id"]] = r["content"]
+                except Exception:
+                    pass
+
+        # 다중 매칭 상위 → 과반수 이상 매칭 시 BM25 앞에 삽입 (RRF 상위 부스트)
+        # 과반수 미달 → FTS 결과 뒤에 추가 (기존 동작)
+        high_thresh = max(2, len(short_terms) // 2)  # 최소 2개, 50% 이상
+        seen_ids = {r[0] for r in fts_results}
+        like_ranked = sorted(like_match_count, key=like_match_count.get, reverse=True)
+        high_boost: list[tuple[int, str, float]] = []
+        low_append: list[tuple[int, str, float]] = []
+        for nid in like_ranked:
+            if nid not in seen_ids:
+                cnt = like_match_count[nid]
+                if cnt >= high_thresh:
+                    high_boost.append((nid, like_content[nid], -float(cnt) * 10))
+                else:
+                    low_append.append((nid, like_content[nid], -float(cnt)))
+                seen_ids.add(nid)
+        # high_boost 노드: BM25 결과보다 앞에 배치 → RRF 상위 랭크 확보
+        fts_results = high_boost + fts_results + low_append
+
+    return fts_results
 
 
 def get_node(node_id: int) -> dict | None:
@@ -344,14 +447,13 @@ def get_node(node_id: int) -> dict | None:
 
 
 def get_node_by_hash(content_hash: str) -> dict | None:
-    """SHA256 해시로 기존 노드 검색. 중복 저장 방지용."""
-    import hashlib
+    """content_hash 인덱스로 기존 노드 검색. 중복 저장 방지용."""
     with _db() as conn:
-        rows = conn.execute("SELECT * FROM nodes WHERE status = 'active'").fetchall()
-    for row in rows:
-        if hashlib.sha256(row["content"].encode()).hexdigest() == content_hash:
-            return dict(row)
-    return None
+        row = conn.execute(
+            "SELECT * FROM nodes WHERE content_hash = ? AND status = 'active'",
+            (content_hash,),
+        ).fetchone()
+    return dict(row) if row else None
 
 
 def get_recent_nodes(project: str = "", limit: int = 10, type_filter: str = "") -> list[dict]:
@@ -453,3 +555,112 @@ def upsert_meta(key: str, value: str) -> None:
             conn.commit()
     except Exception:
         pass
+
+
+def sync_schema() -> dict:
+    """schema.yaml → type_defs/relation_defs 테이블 동기화.
+
+    서버 시작 시 호출. schema.yaml이 SoT(Single Source of Truth).
+    새 타입/관계는 추가, 제거된 것은 deprecated 처리.
+    """
+    import logging
+    import yaml
+    schema_path = Path(__file__).parent.parent / "ontology" / "schema.yaml"
+    if not schema_path.exists():
+        return {"error": "schema.yaml not found"}
+
+    with open(schema_path, encoding="utf-8") as f:
+        schema = yaml.safe_load(f)
+
+    node_types = schema.get("node_types", {})
+    relation_types = schema.get("relation_types", {})
+    now = datetime.now(timezone.utc).isoformat()
+    result = {"types_synced": 0, "relations_synced": 0, "deprecated": 0}
+
+    with _db() as conn:
+        # 1. node_types → type_defs
+        for name, info in node_types.items():
+            layer = info.get("layer")
+            desc = info.get("description", "")
+            existing = conn.execute(
+                "SELECT id FROM type_defs WHERE name=?", (name,)
+            ).fetchone()
+            if existing:
+                conn.execute(
+                    """UPDATE type_defs SET layer=?, description=?,
+                       status='active', updated_at=? WHERE name=?""",
+                    (layer, desc, now, name),
+                )
+            else:
+                conn.execute(
+                    """INSERT INTO type_defs (name, layer, description, status, created_at, updated_at)
+                       VALUES (?, ?, ?, 'active', ?, ?)""",
+                    (name, layer, desc, now, now),
+                )
+            result["types_synced"] += 1
+
+        # deprecated: type_defs에 있지만 schema.yaml에 없는 것
+        schema_type_names = set(node_types.keys())
+        db_types = conn.execute("SELECT name FROM type_defs WHERE status='active'").fetchall()
+        for row in db_types:
+            if row[0] not in schema_type_names:
+                conn.execute(
+                    "UPDATE type_defs SET status='deprecated', deprecated_at=?, updated_at=? WHERE name=?",
+                    (now, now, row[0]),
+                )
+                result["deprecated"] += 1
+
+        # 2. relation_types → relation_defs
+        # relation_types는 카테고리별로 그룹화됨: {name: {description, inverse, ...}}
+        # config.py의 RELATION_TYPES 카테고리 정보 활용
+        from config import RELATION_TYPES as rel_categories
+        name_to_category = {}
+        for cat, rels in rel_categories.items():
+            for rel in rels:
+                name_to_category[rel] = cat
+
+        for name, info in relation_types.items():
+            desc = info.get("description", "")
+            inverse = info.get("inverse")
+            category = name_to_category.get(name, "")
+            existing = conn.execute(
+                "SELECT id FROM relation_defs WHERE name=?", (name,)
+            ).fetchone()
+            if existing:
+                conn.execute(
+                    """UPDATE relation_defs SET description=?, category=?,
+                       reverse_of=?, status='active', updated_at=? WHERE name=?""",
+                    (desc, category, inverse, now, name),
+                )
+            else:
+                conn.execute(
+                    """INSERT INTO relation_defs (name, category, description, reverse_of, status, created_at, updated_at)
+                       VALUES (?, ?, ?, ?, 'active', ?, ?)""",
+                    (name, category, desc, inverse, now, now),
+                )
+            result["relations_synced"] += 1
+
+        # deprecated: relation_defs에 있지만 schema.yaml에 없는 것
+        schema_rel_names = set(relation_types.keys())
+        db_rels = conn.execute("SELECT name FROM relation_defs WHERE status='active'").fetchall()
+        for row in db_rels:
+            if row[0] not in schema_rel_names:
+                conn.execute(
+                    "UPDATE relation_defs SET status='deprecated', deprecated_at=?, updated_at=? WHERE name=?",
+                    (now, now, row[0]),
+                )
+                result["deprecated"] += 1
+
+        # 3. 스냅샷 저장
+        version = schema.get("version", "unknown")
+        conn.execute(
+            """INSERT OR IGNORE INTO ontology_snapshots (version_tag, type_defs_json, relation_defs_json, change_summary, created_at)
+               VALUES (?, ?, ?, ?, ?)""",
+            (f"sync-{version}-{now[:10]}", json.dumps(list(node_types.keys())),
+             json.dumps(list(relation_types.keys())), f"auto-sync {result}", now),
+        )
+
+        conn.commit()
+
+    logging.info("schema sync: %s", result)
+    return result

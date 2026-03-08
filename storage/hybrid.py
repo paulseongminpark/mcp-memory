@@ -44,13 +44,12 @@ def _get_graph() -> tuple[list, object]:
         try:
             node_ids = list(graph.nodes())
             if node_ids:
-                conn = sqlite_store._connect()
-                ph = ",".join("?" * len(node_ids))
-                rows = conn.execute(
-                    f"SELECT id, visit_count FROM nodes WHERE id IN ({ph})",
-                    node_ids,
-                ).fetchall()
-                conn.close()
+                with sqlite_store._db() as conn:
+                    ph = ",".join("?" * len(node_ids))
+                    rows = conn.execute(
+                        f"SELECT id, visit_count FROM nodes WHERE id IN ({ph})",
+                        node_ids,
+                    ).fetchall()
                 for nid, vc in rows:
                     if nid in graph:
                         graph.nodes[nid]["visit_count"] = vc or 1
@@ -95,16 +94,12 @@ def _traverse_sql(seed_ids: list[int], depth: int = 2) -> set[int]:
     """
     params = seed_ids + seed_ids + [depth - 1, depth - 1] + seed_ids
 
-    conn = None
     try:
-        conn = sqlite_store._connect()
-        rows = conn.execute(sql, params).fetchall()
-        return {row[0] for row in rows}
+        with sqlite_store._db() as conn:
+            rows = conn.execute(sql, params).fetchall()
+            return {row[0] for row in rows}
     except Exception:
         return set()  # CTE 실패 시 그래프 보너스 없이 계속
-    finally:
-        if conn:
-            conn.close()
 
 
 # ─── _ucb_traverse() — B-12 ──────────────────────────────────────
@@ -214,86 +209,81 @@ def _bcm_update(
         if e.get("source_id") in id_set and e.get("target_id") in id_set
     ]
 
-    conn = None
     try:
-        conn = sqlite_store._connect()
+        with sqlite_store._db() as conn:
+            # 1. BCM edge 강도 갱신 + θ_m 업데이트 + 재공고화
+            for edge in activated_edges:
+                eid = edge["id"]
+                src = edge["source_id"]
+                tgt = edge["target_id"]
+                v_i = score_map.get(src, 0.0)
+                v_j = score_map.get(tgt, 0.0)
 
-        # 1. BCM edge 강도 갱신 + θ_m 업데이트 + 재공고화
-        for edge in activated_edges:
-            eid = edge["id"]
-            src = edge["source_id"]
-            tgt = edge["target_id"]
-            v_i = score_map.get(src, 0.0)
-            v_j = score_map.get(tgt, 0.0)
+                # 소스 노드 메타 로드 (레이어별 η, θ_m, activity_history)
+                row = conn.execute(
+                    "SELECT layer, theta_m, activity_history FROM nodes WHERE id=?",
+                    (src,),
+                ).fetchone()
+                if not row:
+                    continue
+                layer, theta_m, hist_raw = row
+                theta_m = theta_m if theta_m is not None else 0.5
+                eta = LAYER_ETA.get(layer or 2, 0.010)
 
-            # 소스 노드 메타 로드 (레이어별 η, θ_m, activity_history)
-            row = conn.execute(
-                "SELECT layer, theta_m, activity_history FROM nodes WHERE id=?",
-                (src,),
-            ).fetchone()
-            if not row:
-                continue
-            layer, theta_m, hist_raw = row
-            theta_m = theta_m if theta_m is not None else 0.5
-            eta = LAYER_ETA.get(layer or 2, 0.010)
-
-            try:
-                history = json.loads(hist_raw) if hist_raw else []
-                if not isinstance(history, list):
-                    history = []
-            except (json.JSONDecodeError, ValueError):
-                history = []
-
-            # BCM delta_w: 양수면 강화, 음수면 약화
-            delta_w = eta * v_i * (v_i - theta_m) * v_j
-            new_strength = max(0.01, min(2.0, (edge.get("strength") or 1.0) + delta_w))
-            new_freq = max(0.0, (edge.get("frequency") or 0) + delta_w * 10)
-
-            # θ_m: 슬라이딩 제곱평균 갱신
-            history = (history + [v_i])[-BCM_HISTORY_WINDOW:]
-            new_theta = sum(h ** 2 for h in history) / len(history)
-
-            conn.execute(
-                "UPDATE edges SET frequency=?, strength=?, last_activated=? WHERE id=?",
-                (new_freq, new_strength, now, eid),
-            )
-            conn.execute(
-                "UPDATE nodes SET theta_m=?, activity_history=? WHERE id=?",
-                (new_theta, json.dumps(history), src),
-            )
-
-            # B-5 재공고화: edge.description에 맥락 JSON 추가
-            if query:
-                raw = edge.get("description") or ""
                 try:
-                    ctx_log = json.loads(raw) if raw else []
-                    if not isinstance(ctx_log, list):
-                        ctx_log = []
+                    history = json.loads(hist_raw) if hist_raw else []
+                    if not isinstance(history, list):
+                        history = []
                 except (json.JSONDecodeError, ValueError):
-                    ctx_log = []
-                ctx_log.append({"q": query[:80], "t": now})
-                ctx_log = ctx_log[-CONTEXT_HISTORY_LIMIT:]
+                    history = []
+
+                # BCM delta_w: 양수면 강화, 음수면 약화
+                delta_w = eta * v_i * (v_i - theta_m) * v_j
+                new_strength = max(0.01, min(2.0, (edge.get("strength") or 1.0) + delta_w))
+                new_freq = max(0.0, (edge.get("frequency") or 0) + delta_w * 10)
+
+                # θ_m: 슬라이딩 제곱평균 갱신
+                history = (history + [v_i])[-BCM_HISTORY_WINDOW:]
+                new_theta = sum(h ** 2 for h in history) / len(history)
+
                 conn.execute(
-                    "UPDATE edges SET description=? WHERE id=?",
-                    (json.dumps(ctx_log, ensure_ascii=False), eid),
+                    "UPDATE edges SET frequency=?, strength=?, last_activated=? WHERE id=?",
+                    (new_freq, new_strength, now, eid),
+                )
+                conn.execute(
+                    "UPDATE nodes SET theta_m=?, activity_history=? WHERE id=?",
+                    (new_theta, json.dumps(history), src),
                 )
 
-        # 2. visit_count + last_activated 갱신 (결과 노드 전부)
-        for rid in result_ids:
-            conn.execute(
-                "UPDATE nodes SET "
-                "visit_count = COALESCE(visit_count, 0) + 1, "
-                "last_activated = ? "
-                "WHERE id=?",
-                (now, rid),
-            )
+                # B-5 재공고화: edge.description에 맥락 JSON 추가
+                if query:
+                    raw = edge.get("description") or ""
+                    try:
+                        ctx_log = json.loads(raw) if raw else []
+                        if not isinstance(ctx_log, list):
+                            ctx_log = []
+                    except (json.JSONDecodeError, ValueError):
+                        ctx_log = []
+                    ctx_log.append({"q": query[:80], "t": now})
+                    ctx_log = ctx_log[-CONTEXT_HISTORY_LIMIT:]
+                    conn.execute(
+                        "UPDATE edges SET description=? WHERE id=?",
+                        (json.dumps(ctx_log, ensure_ascii=False), eid),
+                    )
 
-        conn.commit()
+            # 2. visit_count + last_activated 갱신 (결과 노드 전부)
+            for rid in result_ids:
+                conn.execute(
+                    "UPDATE nodes SET "
+                    "visit_count = COALESCE(visit_count, 0) + 1, "
+                    "last_activated = ? "
+                    "WHERE id=?",
+                    (now, rid),
+                )
+
+            conn.commit()
     except Exception as e:
         logging.warning("BCM update failed: %s", e)  # BCM 실패가 검색을 중단시키지 않음
-    finally:
-        if conn:
-            conn.close()
 
 
 # ─── _sprt_check() — C-11 SPRT 승격 판정 ─────────────────────────
@@ -423,13 +413,13 @@ def hybrid_search(
         where["project"] = project
     try:
         vec_results = vector_store.search(
-            query, top_k=top_k * 2, where=where if where else None
+            query, top_k=top_k * 4, where=where if where else None
         )
     except Exception:
         vec_results = []
 
     # 2. FTS5 키워드 검색 (SQLite)
-    fts_results = sqlite_store.search_fts(query, top_k=top_k * 2)
+    fts_results = sqlite_store.search_fts(query, top_k=top_k * 4)
 
     # 3. seed_ids 수집 (벡터/FTS 상위 결과)
     seed_ids = []
@@ -458,7 +448,7 @@ def hybrid_search(
     # 6. 필터 + enrichment 가중치 + 정렬
     sorted_ids = sorted(scores, key=lambda x: scores[x], reverse=True)
     candidates = []
-    for node_id in sorted_ids[:top_k * 2]:
+    for node_id in sorted_ids[:top_k * 4]:
         node = sqlite_store.get_node(node_id)
         if not node:
             continue
@@ -511,24 +501,19 @@ def post_search_learn(
 
     # 2. SPRT 승격 판정 (C-11) — score를 0-1 정규화 후 판정
     try:
-        sprt_conn = sqlite_store._connect()
-        max_score = results[0]["score"] if results else 1.0
-        for node in results:
-            if node.get("type") == "Signal":
-                normalized = node.get("score", 0.0) / max_score if max_score > 0 else 0.0
-                if _sprt_check(node, normalized, sprt_conn):
-                    sprt_conn.execute(
-                        "UPDATE nodes SET promotion_candidate=1 WHERE id=?",
-                        (node["id"],),
-                    )
-        sprt_conn.commit()
+        with sqlite_store._db() as sprt_conn:
+            max_score = results[0]["score"] if results else 1.0
+            for node in results:
+                if node.get("type") == "Signal":
+                    normalized = node.get("score", 0.0) / max_score if max_score > 0 else 0.0
+                    if _sprt_check(node, normalized, sprt_conn):
+                        sprt_conn.execute(
+                            "UPDATE nodes SET promotion_candidate=1 WHERE id=?",
+                            (node["id"],),
+                        )
+            sprt_conn.commit()
     except Exception as e:
         logging.warning("SPRT check failed: %s", e)
-    finally:
-        try:
-            sprt_conn.close()
-        except Exception:
-            pass
 
     # 3. 활성화 이벤트 로깅 (A-12)
     _log_recall_activations(results, query, session_id=session_id)
