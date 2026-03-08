@@ -286,6 +286,18 @@ VERIFY_THRESHOLDS = {
     "duplicate_pct": 0.0,
 }
 
+# ── Composite Scoring (Phase 2, 2026-03-08) ──────────────────
+COMPOSITE_WEIGHT_RRF = 0.5
+COMPOSITE_WEIGHT_DECAY = 0.3
+COMPOSITE_WEIGHT_IMPORTANCE = 0.2
+DECAY_LAMBDA = 0.01           # half-life ~69 days
+PROMOTED_MULTIPLIER = 1.5     # reviewed-item boost (promotion_candidate=1)
+LAYER_IMPORTANCE = {
+    5: 1.0, 4: 0.8, 3: 0.6,
+    2: 0.4, 1: 0.2, 0: 0.1,
+    None: 0.1,  # Unclassified
+}
+
 # ── Type-aware search ────────────────────────────────────────
 TYPE_CHANNEL_WEIGHT = 0.5   # typed vector RRF 채널 가중치 (1.0 = 일반 채널과 동일)
 MAX_TYPE_HINTS = 2          # 쿼리당 최대 type hint 수 (API 호출 제한)
