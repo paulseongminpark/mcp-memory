@@ -65,7 +65,8 @@ def init_db() -> None:
             visit_count INTEGER DEFAULT 0,
             score_history TEXT DEFAULT '[]',
             promotion_candidate INTEGER DEFAULT 0,
-            content_hash TEXT
+            content_hash TEXT,
+            last_accessed_at TEXT
         );
 
         CREATE TABLE IF NOT EXISTS edges (
@@ -280,6 +281,15 @@ def init_db() -> None:
         try:
             _mig.execute("ALTER TABLE edges ADD COLUMN status TEXT DEFAULT 'active'")
             _mig.execute("CREATE INDEX IF NOT EXISTS idx_edges_status ON edges(status)")
+            _mig.commit()
+        except Exception:
+            pass  # 이미 존재하면 무시
+
+    # nodes 테이블에 last_accessed_at 컬럼 추가 (Phase 2, composite scoring)
+    with _db() as _mig:
+        try:
+            _mig.execute("ALTER TABLE nodes ADD COLUMN last_accessed_at TEXT")
+            _mig.execute("UPDATE nodes SET last_accessed_at = updated_at WHERE last_accessed_at IS NULL")
             _mig.commit()
         except Exception:
             pass  # 이미 존재하면 무시
