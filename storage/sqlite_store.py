@@ -218,6 +218,24 @@ def init_db() -> None:
         CREATE INDEX IF NOT EXISTS idx_relation_defs_status ON relation_defs(status);
         CREATE INDEX IF NOT EXISTS idx_relation_defs_category ON relation_defs(category);
 
+        -- v2.1: meta key-value store (recall counter, SPRT stats)
+        CREATE TABLE IF NOT EXISTS meta (
+            key TEXT PRIMARY KEY,
+            value TEXT,
+            updated_at TEXT
+        );
+
+        -- v2.1: recall_log (Gate 1 SWR input)
+        CREATE TABLE IF NOT EXISTS recall_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            query TEXT,
+            node_id TEXT,
+            rank INTEGER,
+            score REAL,
+            mode TEXT,
+            timestamp TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+
         -- v2.1: activation_log VIEW (A-12, D-5)
         CREATE VIEW IF NOT EXISTS activation_log AS
         SELECT
