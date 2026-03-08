@@ -555,19 +555,14 @@ def hybrid_search(
     if not candidates:
         return []
 
-    # normalize RRF to [0, 1]
-    max_rrf = max(n["_base_rrf"] for n in candidates)
-    if max_rrf <= 0:
-        max_rrf = 1.0
-
     for node in candidates:
-        rrf_norm = node["_base_rrf"] / max_rrf
+        base = node["_base_rrf"]
 
         # importance from layer
         layer = node.get("layer")
         importance = LAYER_IMPORTANCE.get(layer, 0.1)
 
-        # decay from last access
+        # decay from last access (recency bonus)
         last_access_str = node.get("last_accessed_at") or node.get("updated_at")
         if last_access_str:
             try:
@@ -581,16 +576,16 @@ def hybrid_search(
             days = 365
         decay = importance * math.exp(-DECAY_LAMBDA * days)
 
-        # composite
-        composite = (COMPOSITE_WEIGHT_RRF * rrf_norm +
-                     COMPOSITE_WEIGHT_DECAY * decay +
-                     COMPOSITE_WEIGHT_IMPORTANCE * importance)
+        # additive composite: base + small bonuses
+        score = (base +
+                 COMPOSITE_WEIGHT_DECAY * decay +
+                 COMPOSITE_WEIGHT_IMPORTANCE * importance)
 
         # promoted multiplier (promotion_candidate 플래그)
         if node.get("promotion_candidate"):
-            composite *= PROMOTED_MULTIPLIER
+            score *= PROMOTED_MULTIPLIER
 
-        node["score"] = composite
+        node["score"] = score
         del node["_base_rrf"]
 
     candidates.sort(key=lambda n: n["score"], reverse=True)

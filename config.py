@@ -288,9 +288,9 @@ VERIFY_THRESHOLDS = {
 }
 
 # ── Composite Scoring (Phase 2, 2026-03-08) ──────────────────
-COMPOSITE_WEIGHT_RRF = 0.5
-COMPOSITE_WEIGHT_DECAY = 0.3
-COMPOSITE_WEIGHT_IMPORTANCE = 0.2
+COMPOSITE_WEIGHT_RRF = 1.0       # base RRF 유지 (additive 모드)
+COMPOSITE_WEIGHT_DECAY = 0.001   # recency bonus (tiebreaker)
+COMPOSITE_WEIGHT_IMPORTANCE = 0.001  # layer bonus (tiebreaker)
 DECAY_LAMBDA = 0.01           # half-life ~69 days
 PROMOTED_MULTIPLIER = 1.5     # reviewed-item boost (promotion_candidate=1)
 LAYER_IMPORTANCE = {
