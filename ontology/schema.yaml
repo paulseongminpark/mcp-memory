@@ -218,6 +218,11 @@ node_types:
     layer: 3
     required_fields: []
     optional_fields: [target, period, motivation]
+  Correction:
+    description: "사용자 교정 — recall 시 최우선 (Phase 2, 2026-03-08)"
+    layer: 3
+    required_fields: []
+    optional_fields: [corrects, context]
 
   # === Layer 4 — 세계관 (4) ===
   Belief:

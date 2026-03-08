@@ -263,9 +263,10 @@ PROMOTE_LAYER = {
     # ── Layer 2 (7) ───────────────────────────────────────────
     "Pattern": 2, "Insight": 2, "Framework": 2, "Trade-off": 2,
     "Tension": 2, "Metaphor": 2, "Connection": 2,
-    # ── Layer 3 (6) ───────────────────────────────────────────
+    # ── Layer 3 (7) ───────────────────────────────────────────
     "Principle": 3, "Identity": 3, "Boundary": 3,
     "Vision": 3, "Paradox": 3, "Commitment": 3,
+    "Correction": 3,  # 사용자 교정 — recall 시 최우선 (Phase 2, 2026-03-08)
     # ── Layer 4 (4) ───────────────────────────────────────────
     "Belief": 4, "Philosophy": 4, "Mental Model": 4, "Lens": 4,
     # ── Layer 5 (4) ───────────────────────────────────────────
