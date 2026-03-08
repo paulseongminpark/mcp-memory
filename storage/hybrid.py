@@ -19,6 +19,8 @@ from config import (
     GRAPH_MAX_HOPS, LAYER_ETA,
     SPRT_ALPHA, SPRT_BETA, SPRT_P1, SPRT_P0, SPRT_MIN_OBS,
     TYPE_KEYWORDS, TYPE_CHANNEL_WEIGHT, MAX_TYPE_HINTS,
+    COMPOSITE_WEIGHT_RRF, COMPOSITE_WEIGHT_DECAY, COMPOSITE_WEIGHT_IMPORTANCE,
+    DECAY_LAMBDA, PROMOTED_MULTIPLIER, LAYER_IMPORTANCE,
 )
 from storage import sqlite_store, vector_store
 from graph.traversal import build_graph  # traverse 제거 — UCB로 교체
@@ -273,12 +275,12 @@ def _bcm_update(
                         (json.dumps(ctx_log, ensure_ascii=False), eid),
                     )
 
-            # 2. visit_count + last_activated 갱신 (결과 노드 전부)
+            # 2. visit_count + last_accessed_at 갱신 (결과 노드 전부)
             for rid in result_ids:
                 conn.execute(
                     "UPDATE nodes SET "
                     "visit_count = COALESCE(visit_count, 0) + 1, "
-                    "last_activated = ? "
+                    "last_accessed_at = ? "
                     "WHERE id=?",
                     (now, rid),
                 )
@@ -525,8 +527,9 @@ def hybrid_search(
         for rank, (node_id, distance, _) in enumerate(t_results, 1):
             scores[node_id] += TYPE_CHANNEL_WEIGHT / (RRF_K + rank)
 
-    # 6. 필터 + enrichment 가중치 + 정렬
+    # 6. 필터 + composite scoring (Phase 2: RRF + decay + importance)
     sorted_ids = sorted(scores, key=lambda x: scores[x], reverse=True)
+    now_utc = datetime.now(timezone.utc)
     candidates = []
     for node_id in sorted_ids[:top_k * 10]:
         node = sqlite_store.get_node(node_id)
@@ -538,6 +541,7 @@ def hybrid_search(
             continue
         if excluded_project and node["project"] == excluded_project:
             continue  # B-4: 포화된 패치 제외
+        # base RRF score (enrichment + tier 포함)
         qs = node.get("quality_score") or 0.0
         tr = node.get("temporal_relevance") or 0.0
         enrichment_bonus = (
@@ -545,8 +549,49 @@ def hybrid_search(
         )
         tier = node.get("tier", 2)
         tier_bonus = {0: 0.15, 1: 0.05, 2: 0.0}.get(tier, 0.0)
-        node["score"] = scores[node_id] + enrichment_bonus + tier_bonus
+        node["_base_rrf"] = scores[node_id] + enrichment_bonus + tier_bonus
         candidates.append(node)
+
+    if not candidates:
+        return []
+
+    # normalize RRF to [0, 1]
+    max_rrf = max(n["_base_rrf"] for n in candidates)
+    if max_rrf <= 0:
+        max_rrf = 1.0
+
+    for node in candidates:
+        rrf_norm = node["_base_rrf"] / max_rrf
+
+        # importance from layer
+        layer = node.get("layer")
+        importance = LAYER_IMPORTANCE.get(layer, 0.1)
+
+        # decay from last access
+        last_access_str = node.get("last_accessed_at") or node.get("updated_at")
+        if last_access_str:
+            try:
+                dt = datetime.fromisoformat(last_access_str)
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=timezone.utc)
+                days = max(0, (now_utc - dt).days)
+            except (ValueError, TypeError):
+                days = 365
+        else:
+            days = 365
+        decay = importance * math.exp(-DECAY_LAMBDA * days)
+
+        # composite
+        composite = (COMPOSITE_WEIGHT_RRF * rrf_norm +
+                     COMPOSITE_WEIGHT_DECAY * decay +
+                     COMPOSITE_WEIGHT_IMPORTANCE * importance)
+
+        # promoted multiplier (promotion_candidate 플래그)
+        if node.get("promotion_candidate"):
+            composite *= PROMOTED_MULTIPLIER
+
+        node["score"] = composite
+        del node["_base_rrf"]
 
     candidates.sort(key=lambda n: n["score"], reverse=True)
     result = _apply_type_diversity(candidates, top_k)

@@ -34,6 +34,7 @@ def _create_test_db():
             activity_history TEXT DEFAULT '[]',
             visit_count INTEGER DEFAULT 0,
             last_activated TEXT,
+            last_accessed_at TEXT,
             summary TEXT DEFAULT '',
             key_concepts TEXT DEFAULT '',
             facets TEXT DEFAULT '',
