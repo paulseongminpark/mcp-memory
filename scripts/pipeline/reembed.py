@@ -15,8 +15,12 @@ BATCH_SIZE = 100  # OpenAI embedding batch limit
 
 
 def build_embed_text(node: dict) -> str:
-    """노드에서 임베딩용 텍스트 생성."""
+    """노드에서 임베딩용 텍스트 생성. 타입 태그 포함."""
     parts = []
+    # 타입 태그를 첫 줄에 추가
+    node_type = node.get("type", "")
+    if node_type:
+        parts.append(f"[{node_type}]")
     if node.get("summary"):
         parts.append(node["summary"])
     if node.get("key_concepts"):
