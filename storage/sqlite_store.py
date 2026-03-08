@@ -6,7 +6,7 @@ from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 
-from config import ALL_RELATIONS, DB_PATH
+from config import ALL_RELATIONS, DB_PATH, PROMOTE_LAYER
 
 
 def _connect() -> sqlite3.Connection:
@@ -265,6 +265,9 @@ def insert_node(
     layer: int | None = None,
     tier: int = 2,
 ) -> int:
+    # PROMOTE_LAYER fallback: caller가 layer 미전달 시 타입 기반 자동 배정
+    if layer is None:
+        layer = PROMOTE_LAYER.get(type)  # Unclassified → None (의도적)
     now = datetime.now(timezone.utc).isoformat()
     with _db() as conn:
         cur = conn.execute(

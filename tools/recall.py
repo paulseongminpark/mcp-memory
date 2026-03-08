@@ -3,7 +3,7 @@
 Phase 1: mode 파라미터 (B-12), 패치 전환 (B-4), total_recall_count 갱신.
 """
 
-from storage.hybrid import hybrid_search
+from storage.hybrid import hybrid_search, post_search_learn
 from storage import sqlite_store
 from config import DEFAULT_TOP_K, PATCH_SATURATION_THRESHOLD
 
@@ -49,8 +49,14 @@ def recall(
         results = results[:top_k // 2] + alt[:top_k - top_k // 2]
         results.sort(key=lambda r: r["score"], reverse=True)
 
+    # 학습 경로: BCM + SPRT + action_log (검색과 분리)
+    post_search_learn(results, query)
+
     # total_recall_count 갱신 (통계/UCB 정규화용)
     _increment_recall_count()
+
+    # recall_log 기록 (Gate 1 SWR input)
+    _log_recall_results(query, results, mode)
 
     # 포매팅 (기존 로직 유지)
     formatted = []
@@ -119,3 +125,23 @@ def _increment_recall_count():
             conn.commit()
     except Exception:
         pass  # meta 테이블 미생성 시 graceful skip
+
+
+def _log_recall_results(query: str, results: list[dict], mode: str) -> None:
+    """recall_log 테이블에 검색 결과 기록 (Gate 1 SWR input).
+
+    실패해도 graceful skip.
+    """
+    try:
+        with sqlite_store._db() as conn:
+            conn.executemany(
+                """INSERT INTO recall_log (query, node_id, rank, score, mode)
+                   VALUES (?, ?, ?, ?, ?)""",
+                [
+                    (query, str(r["id"]), rank, r["score"], mode)
+                    for rank, r in enumerate(results, start=1)
+                ],
+            )
+            conn.commit()
+    except Exception:
+        pass  # recall_log 미생성 시 graceful skip

@@ -115,11 +115,12 @@ def main():
     # PATH 7: validators
     print("\n=== PATH 7: validators ===")
     try:
-        from ontology.validators import validate_node_type, validate_relation_type
+        from ontology.validators import validate_node_type, validate_relation
         v1 = validate_node_type("Principle")
         v2 = validate_node_type("NonexistentXYZ")
+        v3 = validate_relation("supports")
         results["validators"] = "OK"
-        print(f"  Principle={v1}, NonexistentXYZ={v2}")
+        print(f"  Principle={v1}, NonexistentXYZ={v2}, supports={v3}")
     except Exception as e:
         results["validators"] = f"FAIL: {e}"
         print(f"  FAIL: {e}")
@@ -145,20 +146,23 @@ def main():
     # PATH 9: schema consistency
     print("\n=== PATH 9: schema consistency ===")
     try:
-        from config import NODE_TYPES, RELATION_TYPES, PROMOTE_LAYER
+        from config import ALL_RELATIONS, PROMOTE_LAYER
         import yaml
         with open(ROOT / "ontology" / "schema.yaml", encoding="utf-8") as f:
             schema = yaml.safe_load(f)
-        s_types = {t["name"] for t in schema.get("node_types", [])}
-        s_rels = {r["name"] for r in schema.get("relation_types", [])}
-        diff1 = set(NODE_TYPES) - s_types
-        diff2 = s_types - set(NODE_TYPES)
-        results["schema_sync"] = "OK" if not diff1 and not diff2 else f"MISMATCH config-schema={diff1} schema-config={diff2}"
-        results["promote_coverage"] = f"OK ({len(PROMOTE_LAYER)}/{len(NODE_TYPES)})"
-        print(f"  NODE_TYPES: config={len(NODE_TYPES)}, schema={len(s_types)}")
-        print(f"  PROMOTE_LAYER: {len(PROMOTE_LAYER)}/{len(NODE_TYPES)}")
-        if diff1: print(f"  In config not schema: {diff1}")
-        if diff2: print(f"  In schema not config: {diff2}")
+        raw_types = schema.get("node_types", {})
+        raw_rels = schema.get("relation_types", {})
+        s_types = set(raw_types.keys()) if isinstance(raw_types, dict) else {t["name"] for t in raw_types}
+        s_rels = set(raw_rels.keys()) if isinstance(raw_rels, dict) else {r["name"] for r in raw_rels}
+        promote_types = set(PROMOTE_LAYER.keys())
+        diff1 = promote_types - s_types
+        diff2 = s_types - promote_types
+        results["schema_sync"] = "OK" if not diff1 else f"MISMATCH promote-schema={diff1}"
+        results["promote_coverage"] = f"OK ({len(PROMOTE_LAYER)}/{len(s_types)})"
+        print(f"  PROMOTE_LAYER: {len(PROMOTE_LAYER)}, schema types: {len(s_types)}")
+        print(f"  ALL_RELATIONS: {len(ALL_RELATIONS)}, schema rels: {len(s_rels)}")
+        if diff1: print(f"  In PROMOTE not schema: {diff1}")
+        if diff2: print(f"  In schema not PROMOTE: {diff2}")
     except Exception as e:
         results["schema"] = f"FAIL: {e}"
         print(f"  FAIL: {e}")
@@ -168,7 +172,10 @@ def main():
     try:
         with store._db() as conn:
             dist = conn.execute("SELECT layer, COUNT(*) FROM nodes GROUP BY layer ORDER BY layer").fetchall()
-            null_count = conn.execute("SELECT COUNT(*) FROM nodes WHERE layer IS NULL").fetchone()[0]
+            # Unclassified는 layer=None이 의도적 설계 → 제외
+            null_count = conn.execute(
+                "SELECT COUNT(*) FROM nodes WHERE layer IS NULL AND type != 'Unclassified'"
+            ).fetchone()[0]
         results["null_layers"] = "OK (0)" if null_count == 0 else f"FAIL ({null_count} NULL)"
         for layer, count in dist:
             print(f"  L{layer}: {count}")

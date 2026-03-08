@@ -481,19 +481,39 @@ def hybrid_search(
     candidates.sort(key=lambda n: n["score"], reverse=True)
     result = candidates[:top_k]
 
-    # 7. BCM 학습 + 재공고화 (B-12 + B-10)
+    return result
+
+
+# ─── post_search_learn() — query/write 분리 ─────────────────────
+
+def post_search_learn(
+    results: list[dict],
+    query: str,
+    session_id: str | None = None,
+):
+    """검색 후 학습: BCM update + SPRT check + action_log.
+
+    hybrid_search()에서 분리된 학습 경로.
+    recall()이 최종 결과 확정 후 한 번만 호출.
+    현재 동기 호출, 향후 background job 전환 가능한 구조.
+    """
+    if not results:
+        return
+
+    # 1. BCM 학습 + 재공고화 (B-12 + B-10)
+    all_edges, _ = _get_graph()
     _bcm_update(
-        [n["id"] for n in result],
-        [n["score"] for n in result],
+        [n["id"] for n in results],
+        [n["score"] for n in results],
         all_edges,
         query=query,
     )
 
-    # 8. SPRT 승격 판정 (C-11) — score를 0-1 정규화 후 판정
+    # 2. SPRT 승격 판정 (C-11) — score를 0-1 정규화 후 판정
     try:
         sprt_conn = sqlite_store._connect()
-        max_score = result[0]["score"] if result else 1.0
-        for node in result:
+        max_score = results[0]["score"] if results else 1.0
+        for node in results:
             if node.get("type") == "Signal":
                 normalized = node.get("score", 0.0) / max_score if max_score > 0 else 0.0
                 if _sprt_check(node, normalized, sprt_conn):
@@ -503,14 +523,12 @@ def hybrid_search(
                     )
         sprt_conn.commit()
     except Exception as e:
-        logging.warning("SPRT check failed: %s", e)  # SPRT 실패가 검색을 중단시키지 않음
+        logging.warning("SPRT check failed: %s", e)
     finally:
         try:
             sprt_conn.close()
         except Exception:
             pass
 
-    # 9. 활성화 이벤트 로깅 (A-12)
-    _log_recall_activations(result, query)
-
-    return result
+    # 3. 활성화 이벤트 로깅 (A-12)
+    _log_recall_activations(results, query, session_id=session_id)

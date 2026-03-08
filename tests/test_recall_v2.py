@@ -77,9 +77,10 @@ class TestRecall:
         assert "No memories found" in result["message"]
 
     @patch("tools.recall._increment_recall_count")
+    @patch("tools.recall.post_search_learn")
     @patch("tools.recall.sqlite_store")
     @patch("tools.recall.hybrid_search")
-    def test_basic_format(self, mock_hs, mock_sqls, mock_inc):
+    def test_basic_format(self, mock_hs, mock_sqls, mock_psl, mock_inc):
         """기본 반환 형태 확인."""
         mock_hs.return_value = [{
             "id": 1, "type": "Observation", "content": "테스트 내용",
@@ -126,9 +127,10 @@ class TestRecall:
         assert kwargs.get("mode") == "dmn"
 
     @patch("tools.recall._increment_recall_count")
+    @patch("tools.recall.post_search_learn")
     @patch("tools.recall.sqlite_store")
     @patch("tools.recall.hybrid_search")
-    def test_no_patch_when_project_specified(self, mock_hs, mock_sqls, mock_inc):
+    def test_no_patch_when_project_specified(self, mock_hs, mock_sqls, mock_psl, mock_inc):
         """project 명시 시 패치 전환 없음 → hybrid_search 1회만 호출."""
         pf_results = _make_results(["pf", "pf", "pf", "pf", "pf"])
         mock_hs.return_value = pf_results
@@ -139,9 +141,10 @@ class TestRecall:
         assert mock_hs.call_count == 1  # 패치 전환 없음
 
     @patch("tools.recall._increment_recall_count")
+    @patch("tools.recall.post_search_learn")
     @patch("tools.recall.sqlite_store")
     @patch("tools.recall.hybrid_search")
-    def test_patch_switch_on_saturation(self, mock_hs, mock_sqls, mock_inc):
+    def test_patch_switch_on_saturation(self, mock_hs, mock_sqls, mock_psl, mock_inc):
         """100% 포화 → hybrid_search 2회 호출 (2차 패치)."""
         saturated = _make_results(["pf"] * 5)
         alt = _make_results(["orch", "mcp", "tr"])
@@ -156,9 +159,10 @@ class TestRecall:
         assert kwargs2.get("excluded_project") == "pf"
 
     @patch("tools.recall._increment_recall_count")
+    @patch("tools.recall.post_search_learn")
     @patch("tools.recall.sqlite_store")
     @patch("tools.recall.hybrid_search")
-    def test_patch_no_switch_top_k_2(self, mock_hs, mock_sqls, mock_inc):
+    def test_patch_no_switch_top_k_2(self, mock_hs, mock_sqls, mock_psl, mock_inc):
         """top_k=2 → 결과 < 3 → 포화 판단 불가 → 전환 없음."""
         results = _make_results(["pf", "pf"])
         mock_hs.return_value = results
@@ -169,9 +173,10 @@ class TestRecall:
         assert mock_hs.call_count == 1
 
     @patch("tools.recall._increment_recall_count")
+    @patch("tools.recall.post_search_learn")
     @patch("tools.recall.sqlite_store")
     @patch("tools.recall.hybrid_search")
-    def test_increment_recall_called(self, mock_hs, mock_sqls, mock_inc):
+    def test_increment_recall_called(self, mock_hs, mock_sqls, mock_psl, mock_inc):
         """_increment_recall_count() 매 recall 호출마다 실행."""
         mock_hs.return_value = _make_results(["pf"])
         mock_sqls.get_edges.return_value = []
@@ -181,9 +186,10 @@ class TestRecall:
         mock_inc.assert_called_once()
 
     @patch("tools.recall._increment_recall_count")
+    @patch("tools.recall.post_search_learn")
     @patch("tools.recall.sqlite_store")
     @patch("tools.recall.hybrid_search")
-    def test_content_truncated_200(self, mock_hs, mock_sqls, mock_inc):
+    def test_content_truncated_200(self, mock_hs, mock_sqls, mock_psl, mock_inc):
         """content 200자 초과 시 잘림."""
         long_content = "x" * 300
         mock_hs.return_value = [{
@@ -197,9 +203,10 @@ class TestRecall:
         assert len(result["results"][0]["content"]) == 200
 
     @patch("tools.recall._increment_recall_count")
+    @patch("tools.recall.post_search_learn")
     @patch("tools.recall.sqlite_store")
     @patch("tools.recall.hybrid_search")
-    def test_related_edges_max_3(self, mock_hs, mock_sqls, mock_inc):
+    def test_related_edges_max_3(self, mock_hs, mock_sqls, mock_psl, mock_inc):
         """related는 최대 3개."""
         mock_hs.return_value = [{
             "id": 1, "type": "Observation", "content": "c",
