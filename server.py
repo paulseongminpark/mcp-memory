@@ -258,6 +258,7 @@ def promote_node(
     target_type: str,
     reason: str = "",
     related_ids: list[int] | None = None,
+    skip_gates: bool = False,
     actor: str = "system",
 ) -> dict:
     """Promote a node to a higher-layer type (e.g. Signal → Pattern).
@@ -271,6 +272,7 @@ def promote_node(
         target_type: Target type name
         reason: Why this promotion is justified
         related_ids: Other node IDs in the same cluster (creates realized_as edges)
+        skip_gates: Skip 3-gate validation (SWR/Bayesian/MDL) for manual promotion
     """
     # ── [접근 제어] promote 대상 노드 write 권한 확인 ────────────────────
     if not check_access(node_id, "write", actor):
@@ -279,12 +281,15 @@ def promote_node(
             "message": f"check_access denied 'write' on node #{node_id} for actor='{actor}'",
         }
 
+    # skip_gates는 paul/claude만 허용 (보안 가드)
+    effective_skip = skip_gates and actor in ("paul", "claude")
+
     return _promote_node(
         node_id=node_id,
         target_type=target_type,
         reason=reason,
         related_ids=related_ids,
-        skip_gates=False,
+        skip_gates=effective_skip,
     )
 
 
