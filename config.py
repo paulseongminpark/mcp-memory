@@ -23,6 +23,15 @@ RRF_K = 18  # Reciprocal Rank Fusion 상수 (tuned 2026-03-08: 60→18, NDCG+12.
 GRAPH_BONUS = 0.005  # 그래프 이웃 보너스 (tuned 2026-03-08: 0.015→0.005, vector rank 우선)
 ENRICHMENT_QUALITY_WEIGHT = 0.2   # recall() quality_score 가중치
 ENRICHMENT_TEMPORAL_WEIGHT = 0.1  # recall() temporal_relevance 가중치
+
+# unenriched 노드의 레이어별 기본 quality_score (enrichment 미완료 패널티 완화)
+UNENRICHED_DEFAULT_QS: dict[int, float] = {
+    0: 0.4,   # L0: Observation (원시 데이터)
+    1: 0.55,  # L1: Decision/Failure/Workflow (경험 기록)
+    2: 0.65,  # L2: Pattern/Framework (추상화)
+    3: 0.75,  # L3: Principle/Value (핵심 원칙)
+}
+
 EXPLORATION_RATE = 0.1  # 그래프 탐색 시 약한 edge 탐험 확률
 
 # ─── BCM + UCB (v2.1, B-14) ──────────────────────────────
