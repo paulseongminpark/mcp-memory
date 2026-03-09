@@ -560,12 +560,12 @@ queries:
   notes: Skill L1 — 메모 동기화 자동화. Paul 검증 2026-03-08
 - id: q057
   difficulty: easy
-  query: orchestration 프로젝트 구조와 핵심 경로를 정리한 프로젝트 개요는 뭐였지?
+  query: 오케스트레이션 프로젝트 구조와 핵심 경로를 정리한 프로젝트 개요는 뭐였지?
   relevant_ids:
   - 15
   - 102
   also_relevant: []
-  notes: Project L1 — 프로젝트 구조와 경로 정리. Paul 검증 2026-03-08
+  notes: Project L1 — 프로젝트 구조와 경로 정리. Paul 검증 2026-03-08. 쿼리 정규화 2026-03-09 (orchestration→오케스트레이션)
 - id: q058
   difficulty: medium
   query: 사용 중인 AI 도구를 역할과 접근 방식까지 나눠서 정리한 내용은 어디 있었지?
@@ -588,13 +588,13 @@ queries:
   notes: Pattern L2 — 컨텍스트 관리 패턴. Paul 검증 2026-03-08
 - id: q060
   difficulty: medium
-  query: dev 볼트 구조를 계층적으로 설명한 프레임워크 문서는 뭐였지?
+  query: Obsidian dev 볼트 구조를 계층적으로 설명한 프레임워크 문서는 뭐였지?
   relevant_ids:
   - 36
   - 37
   - 120
   also_relevant: []
-  notes: Framework L2 — 볼트 구조 프레임워크. Paul 검증 2026-03-08
+  notes: Framework L2 — 볼트 구조 프레임워크. Paul 검증 2026-03-08. 쿼리 정규화 2026-03-09 (dev→Obsidian dev)
 - id: q061
   difficulty: medium
   query: portfolio에서 Obsidian 섹션 v4.0을 재작성하며 Hook, Architecture, Problem, Evolution,
@@ -635,9 +635,10 @@ queries:
   difficulty: easy
   query: E14 전체 배치가 100% 실패했던 직접 원인과 거기서 얻은 교훈은 뭐였지?
   relevant_ids:
-  - 4243
-  also_relevant: []
-  notes: Failure L1 — 배치 실패 원인 분석. Paul 검증 2026-03-08
+  - 4173
+  also_relevant:
+  - 4132
+  notes: Insight L1 — E14 미실행 근본원인. 수정 2026-03-09 (4243→4173, 내용 불일치 수정)
 - id: q066
   difficulty: easy
   query: auto-compact 이후 자동 재실행이 안 된다는 실패 사례에서 확인한 한계는 뭐였지?
@@ -669,9 +670,11 @@ queries:
   difficulty: medium
   query: Subagent-Driven Development로 UI Lab 07부터 10까지 구현한 실험 기록은 뭐였지?
   relevant_ids:
-  - 189
-  also_relevant: []
-  notes: Experiment L1 — 서브에이전트 개발 실험. Paul 검증 2026-03-08
+  - 942
+  - 3481
+  also_relevant:
+  - 3398
+  notes: Experiment/Decision L1 — 서브에이전트 UI 실험. 수정 2026-03-09 (189→942,3481, 내용 불일치 수정)
 - id: q070
   difficulty: medium
   query: 에이전트 수가 23에서 24로 바뀌고 스킬 수가 13에서 11로 조정된 진화 기록을 찾고 싶다
@@ -710,10 +713,11 @@ queries:
   difficulty: easy
   query: Auto Memory 개선과 Cross-CLI .ctx 정리, Playwright MCP 활성화를 목표로 한 세션 목표는 뭐였지?
   relevant_ids:
-  - 4045
-  - 4231
-  also_relevant: []
-  notes: Goal L1 — 세션 목표 설정. Paul 검증 2026-03-08
+  - 1040
+  also_relevant:
+  - 1039
+  - 175
+  notes: Decision/Workflow L1 — Cross-CLI 정리 결정. 수정 2026-03-09 (4045,4231→1040, 내용 불일치 수정)
 - id: q075
   difficulty: medium
   query: 반복 작업이 보이면 바로 단축키나 스크립트로 바꾸려는 습관이 관찰된 신호는 뭐였지?
@@ -722,4 +726,4 @@ queries:
   also_relevant:
   - 3728
   notes: Principle L3 — 환경+규칙 설계로 자동화. Paul 검증 2026-03-08
-correction_note: q026-q075 Paul 수동 검증 완료 2026-03-08
+correction_note: q026-q075 Paul 수동 검증 완료 2026-03-08. q057,q060 쿼리 정규화 + q065,q069,q074 relevant_ids 수정 2026-03-09.

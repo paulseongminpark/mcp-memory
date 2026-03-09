@@ -18,7 +18,7 @@ from config import (
     UCB_C_FOCUS, UCB_C_AUTO, UCB_C_DMN,
     GRAPH_MAX_HOPS, LAYER_ETA,
     SPRT_ALPHA, SPRT_BETA, SPRT_P1, SPRT_P0, SPRT_MIN_OBS,
-    TYPE_KEYWORDS, TYPE_CHANNEL_WEIGHT, MAX_TYPE_HINTS,
+    TYPE_KEYWORDS, TYPE_CHANNEL_WEIGHT, TYPE_CHANNEL_WEIGHTS, MAX_TYPE_HINTS,
     COMPOSITE_WEIGHT_RRF, COMPOSITE_WEIGHT_DECAY, COMPOSITE_WEIGHT_IMPORTANCE,
     DECAY_LAMBDA, PROMOTED_MULTIPLIER, LAYER_IMPORTANCE,
 )
@@ -522,10 +522,11 @@ def hybrid_search(
     for node_id in graph_neighbors:
         scores[node_id] += GRAPH_BONUS
 
-    # 5b. Layer A: typed vector RRF 채널 (타입별 독립 랭킹)
+    # 5b. Layer A: typed vector RRF 채널 (타입별 동적 가중치)
     for hint_type, t_results in typed_vec_by_type.items():
+        w = TYPE_CHANNEL_WEIGHTS.get(hint_type, TYPE_CHANNEL_WEIGHT)
         for rank, (node_id, distance, _) in enumerate(t_results, 1):
-            scores[node_id] += TYPE_CHANNEL_WEIGHT / (RRF_K + rank)
+            scores[node_id] += w / (RRF_K + rank)
 
     # 6. 필터 + composite scoring (Phase 2: RRF + decay + importance)
     sorted_ids = sorted(scores, key=lambda x: scores[x], reverse=True)

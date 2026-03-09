@@ -300,8 +300,27 @@ LAYER_IMPORTANCE = {
 }
 
 # ── Type-aware search ────────────────────────────────────────
-TYPE_CHANNEL_WEIGHT = 0.5   # typed vector RRF 채널 가중치 (1.0 = 일반 채널과 동일)
+TYPE_CHANNEL_WEIGHT = 0.5   # typed vector RRF 채널 기본 가중치 (fallback)
 MAX_TYPE_HINTS = 2          # 쿼리당 최대 type hint 수 (API 호출 제한)
+
+# 타입별 동적 가중치: 소수 타입은 강하게, 다수 타입(Principle 등)은 기본 검색에서 이미 우세
+TYPE_CHANNEL_WEIGHTS: dict[str, float] = {
+    "Pattern": 1.0,
+    "Decision": 1.0,
+    "Signal": 0.8,
+    "Failure": 0.8,
+    "Experiment": 0.8,
+    "Connection": 0.8,
+    "Narrative": 0.8,
+    "Goal": 0.8,
+    "Evolution": 0.7,
+    "Project": 0.7,
+    "Workflow": 0.6,
+    "Framework": 0.6,
+    "Tool": 0.5,
+    "Agent": 0.5,
+    "Skill": 0.5,
+}
 
 TYPE_KEYWORDS: dict[str, list[str]] = {
     "Workflow": ["워크플로우", "절차", "단계", "파이프라인", "프로세스", "체인", "실행 순서"],
