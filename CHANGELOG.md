@@ -1,5 +1,40 @@
 # mcp-memory CHANGELOG
 
+## v3.0.0-rc (2026-03-11) — Ontology v3 Phase 5
+### Breaking: Type System Overhaul (51→15)
+- **Tier1 핵심 (7)**: Observation, Signal, Pattern, Insight, Principle, Framework, Identity
+- **Tier2 맥락 (5)**: Decision, Failure, Experiment, Goal, Tool
+- **Tier3 전환 (3)**: Correction, Narrative, Project
+- + Unclassified (미분류 대기)
+
+### DB Migration
+- 전타입 마이그레이션: merge=506, edge=46, Workflow LLM재분류=532 (61 archived)
+- type_defs deprecated 처리 (34개 타입), leaked=0 검증
+- sync_schema() C1 fix: deprecated 타입을 active로 되돌리지 않도록
+
+### retrieval_hints (Step 2)
+- gpt-5-mini 배치 20/호출, 148 API 호출, 2927/2947 성공 (99.3%)
+- when_needed + related_queries + context_keys 3필드
+- server→remember→store→insert_node plumbing 완료
+
+### Search Improvements
+- type_filter canonicalization: deprecated→replaced_by 자동 변환 (H1)
+- recall_id: uuid.hex[:8] 세션 식별 (H2)
+- PROMOTE_LAYER v3: L0(3), L1(7), L2(3), L3(2)
+- RELATION_RULES: 25→17개, VALID_PROMOTIONS v3
+
+### New Scripts
+- scripts/migrate_v3.py: 전타입 마이그레이션
+- scripts/migrate_workflow.py: Workflow LLM 재분류
+- scripts/enrich/hints_generator.py: retrieval_hints 배치 생성
+- scripts/enrich/co_retrieval.py: co-retrieval 계산 (Step 3 준비)
+
+### Tests
+- 163→169 (+6), 전체 PASS
+
+### Remaining (Phase 5 잔여)
+- err 20 hints 재생성, re-embed(2.5), co-retrieval(3), dispatch(4), NDCG(6)
+
 ## v2.2.1 (2026-03-08)
 ### Layer A Refactor: Typed Vector Channel
 - TYPE_BOOST additive(0.03) → TYPE_CHANNEL_WEIGHT(0.5) RRF 채널 교체

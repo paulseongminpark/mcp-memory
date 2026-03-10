@@ -1,24 +1,35 @@
 # mcp-memory — STATE
-_Updated: 2026-03-08_
+_Updated: 2026-03-11_
 
 ## Current
-- **Version**: v2.2.1
+- **Version**: v3.0.0-rc (Phase 5 Step 0~2 완료, Step 2.5~4 잔여)
 - **Branch**: main
-- **NDCG@5**: 0.460 (Paul 검증 goldset v2.2) — q026-q075 수동 검증 완료
-- **NDCG@10**: 0.488 (Paul 검증 goldset v2.2)
-- **hit_rate**: 0.627 (Paul 검증 goldset v2.2)
-- **Tests**: 163/163 PASS
-- **Verification**: 41 PASS / 0 WARN / 0 FAIL
-- **Active Nodes**: 2,869 (449 duplicates soft-deleted)
-- **Enrichment**: 100% (0 pending)
+- **NDCG@5**: 측정 예정 (Phase 6에서 재측정, 목표 0.9)
+- **Tests**: 169/169 PASS
+- **Active Nodes**: ~2,947 (마이그레이션 후)
+- **Ontology**: 15 active types (Tier1:7 + Tier2:5 + Tier3:3) + Unclassified
+- **retrieval_hints**: 2927/2947 완료 (99.3%)
 - **Content Hash**: 100%
 
 ## Architecture
-- 13 MCP tools, 6 layers (L0-L5+Unclassified), 50 node types, 48 relation types
+- 13 MCP tools, 4 layers (L0-L3+Unclassified), 15 node types, 48 relation types
 - Hybrid search: Vector (ChromaDB) + FTS5 (SQLite) + Graph (UCB/BCM)
 - Embedding: text-embedding-3-large, [Type]+summary+key_concepts+content[:200]
 - RRF_K=18, GRAPH_BONUS=0.005, candidate cutoff=top_k×10
 - 3-Layer type-aware search: C(타입 태그 임베딩) + A(typed vector RRF 채널) + D(다양성 보장)
+
+## v3.0.0-rc Changes (2026-03-11, Phase 5 진행 중)
+- **Ontology v3**: 타입 51→15 축소 (Tier1:7핵심 + Tier2:5맥락 + Tier3:3전환)
+- **DB 마이그레이션**: merge=506, edge=46, Workflow LLM재분류=532 (61 archived), leaked=0
+- **classifier.py**: 15개 active 타입 프롬프트 전면 교체
+- **retrieval_hints**: gpt-5-mini 배치(20/호출) 2927/2947 완료 (99.3%)
+- **type_filter canonicalization**: deprecated→replaced_by 자동 변환 (H1)
+- **recall_id**: uuid.hex[:8] 세션 식별 (H2)
+- **hints plumbing**: server→remember→store→insert_node 체인 (H4)
+- **PROMOTE_LAYER v3**: L0(3), L1(7), L2(3), L3(2) + Unclassified
+- **RELATION_RULES**: 25→17개 (deprecated 타입 제거)
+- Tests: 163→169 (+6)
+- **잔여**: err 20 재생성, re-embed(2.5), co-retrieval(3), dispatch(4), NDCG검증(6)
 
 ## v2.2.1 Changes (2026-03-08)
 - **Layer A 리팩터**: TYPE_BOOST additive → Type-Aware Vector Channel (4번째 RRF 채널)
@@ -54,7 +65,10 @@ _Updated: 2026-03-08_
 - q049 쿼리 범위 확장: "GPT 지침" → "멀티AI 맞춤 지침 (CLI+구독형 분기)"
 - q051-q075 NDCG@5=0.244 — gold ID 1개로 축소 후 검색 상위 매칭 어려움
 
-## Next
-- q051-q075 검색 정밀도 개선 (NDCG@5=0.244 → 0.4+)
-- TYPE_CHANNEL_WEIGHT 튜닝 (0.5 → 실험)
-- 온톨로지 축소 실험 (50→15 코어 타입)
+## Next (Phase 5 잔여 → Phase 6)
+- [ ] err 20개 hints 재생성 (retrieval_hints IS NULL)
+- [ ] Step 2.5: ChromaDB re-embed (hints 반영)
+- [ ] Step 3: co-retrieval 실행 + edges boost 컬럼
+- [ ] Step 4: dispatch + L3 자율성 규칙
+- [ ] Phase 6: NDCG 0.9 검증 (goldset 75개)
+- [ ] schema.yaml v3 업데이트 (deprecated 타입 제거)
