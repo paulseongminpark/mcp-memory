@@ -159,6 +159,7 @@ ALL_RELATIONS = [r for group in RELATION_TYPES.values() for r in group]
 # (source_type, target_type) → relation
 # remember() auto_link + retroactive reclassification에서 사용
 RELATION_RULES: dict[tuple[str, str], str] = {
+    # v3: 15 active 타입 기준
     # 승격 경로 (layer 상승)
     ("Observation", "Signal"): "triggered_by",
     ("Signal", "Pattern"): "realized_as",
@@ -166,11 +167,6 @@ RELATION_RULES: dict[tuple[str, str], str] = {
     ("Pattern", "Principle"): "crystallized_into",
     ("Insight", "Principle"): "crystallized_into",
     ("Pattern", "Framework"): "crystallized_into",
-    ("Pattern", "Heuristic"): "crystallized_into",
-    ("Insight", "Concept"): "crystallized_into",
-    ("Principle", "Belief"): "crystallized_into",
-    ("Principle", "Philosophy"): "crystallized_into",
-    ("Principle", "Value"): "crystallized_into",
     # 인과
     ("Decision", "Pattern"): "led_to",
     ("Decision", "Insight"): "led_to",
@@ -181,25 +177,15 @@ RELATION_RULES: dict[tuple[str, str], str] = {
     ("Question", "Decision"): "resolved_by",
     ("Experiment", "Insight"): "led_to",
     ("Experiment", "Failure"): "resulted_in",
-    ("Experiment", "Breakthrough"): "led_to",
     # 구조
-    ("Tool", "Workflow"): "part_of",
-    ("Skill", "Workflow"): "part_of",
-    ("Agent", "Workflow"): "part_of",
-    ("Workflow", "Framework"): "instantiated_as",
-    ("Workflow", "Project"): "part_of",
+    ("Tool", "Framework"): "part_of",
+    ("Tool", "Project"): "part_of",
     ("Project", "Goal"): "governed_by",
     ("Framework", "Principle"): "governed_by",
     # 의미
     ("Narrative", "Insight"): "exemplifies",
     ("Insight", "Narrative"): "expressed_as",
-    ("Insight", "Breakthrough"): "led_to",
-    ("Breakthrough", "Insight"): "led_to",
     ("Identity", "Principle"): "governed_by",
-    ("Identity", "Value"): "governed_by",
-    # 시스템
-    ("SystemVersion", "Workflow"): "extends",
-    ("SystemVersion", "Tool"): "contains",
 }
 
 
@@ -249,37 +235,26 @@ def infer_relation(src_type: str, src_layer: int | None,
     return "connects_with"
 
 
-# 유효한 승격 경로
+# 유효한 승격 경로 — v3: 15 active 타입 기준
 VALID_PROMOTIONS = {
-    "Observation": ["Signal", "Evidence"],
+    "Observation": ["Signal"],
     "Signal": ["Pattern", "Insight"],
-    "Pattern": ["Principle", "Framework", "Heuristic"],
-    "Insight": ["Principle", "Concept"],
-    "Principle": ["Belief", "Philosophy", "Value"],
+    "Pattern": ["Principle", "Framework"],
+    "Insight": ["Principle"],
 }
 
-# Promotion 관련 layer 매핑 — 47 active 타입 (deprecated 3개 제외: Evidence, Heuristic, Concept)
+# Promotion 관련 layer 매핑 — v3: 15 active 타입 + Workflow(Step 2 대기) + Unclassified
 PROMOTE_LAYER = {
-    # ── Layer 0 (7) ───────────────────────────────────────────
-    "Observation": 0, "Trigger": 0, "Context": 0,
-    "Conversation": 0, "Narrative": 0, "Question": 0, "Preference": 0,
-    # ── Layer 1 (18) ──────────────────────────────────────────
-    "Decision": 1, "Plan": 1, "Workflow": 1, "Experiment": 1,
-    "Failure": 1, "Breakthrough": 1, "Evolution": 1, "Signal": 1,
-    "Goal": 1, "Ritual": 1, "Tool": 1, "Skill": 1,
-    "AntiPattern": 1, "Constraint": 1, "Assumption": 1,
-    "SystemVersion": 1, "Agent": 1, "Project": 1,
-    # ── Layer 2 (7) ───────────────────────────────────────────
-    "Pattern": 2, "Insight": 2, "Framework": 2, "Trade-off": 2,
-    "Tension": 2, "Metaphor": 2, "Connection": 2,
-    # ── Layer 3 (7) ───────────────────────────────────────────
-    "Principle": 3, "Identity": 3, "Boundary": 3,
-    "Vision": 3, "Paradox": 3, "Commitment": 3,
-    "Correction": 3,  # 사용자 교정 — recall 시 최우선 (Phase 2, 2026-03-08)
-    # ── Layer 4 (4) ───────────────────────────────────────────
-    "Belief": 4, "Philosophy": 4, "Mental Model": 4, "Lens": 4,
-    # ── Layer 5 (4) ───────────────────────────────────────────
-    "Axiom": 5, "Value": 5, "Wonder": 5, "Aporia": 5,
+    # ── Layer 0 (3) ── surface ────────────────────────────────
+    "Observation": 0, "Narrative": 0, "Question": 0,
+    # ── Layer 1 (7) ── operational ────────────────────────────
+    "Decision": 1, "Experiment": 1, "Failure": 1, "Signal": 1,
+    "Goal": 1, "Tool": 1, "Project": 1,
+    # ── Layer 2 (3) ── structural ─────────────────────────────
+    "Pattern": 2, "Insight": 2, "Framework": 2,
+    # ── Layer 3 (2) ── core ───────────────────────────────────
+    "Principle": 3, "Identity": 3,
+    # Workflow: v3에서 deprecated (LLM 재분류 → Pattern/Framework/Tool/Goal/Experiment)
     # ── Meta ──────────────────────────────────────────────────
     "Unclassified": None,  # layer 미배정
 }

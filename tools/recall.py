@@ -7,6 +7,29 @@ from storage.hybrid import hybrid_search, post_search_learn
 from storage import sqlite_store
 from config import DEFAULT_TOP_K, PATCH_SATURATION_THRESHOLD
 
+# H1: deprecated 타입 → replaced_by 캐시
+_TYPE_CANON_CACHE: dict[str, str] | None = None
+
+
+def _canonicalize_type_filter(type_filter: str) -> str:
+    """H1: deprecated 타입을 v3 타입으로 자동 변환."""
+    global _TYPE_CANON_CACHE
+    if not type_filter:
+        return type_filter
+
+    if _TYPE_CANON_CACHE is None:
+        try:
+            conn = sqlite_store._connect()
+            rows = conn.execute(
+                "SELECT name, replaced_by FROM type_defs WHERE status='deprecated' AND replaced_by IS NOT NULL"
+            ).fetchall()
+            _TYPE_CANON_CACHE = {r[0]: r[1] for r in rows}
+            conn.close()
+        except Exception:
+            _TYPE_CANON_CACHE = {}
+
+    return _TYPE_CANON_CACHE.get(type_filter, type_filter)
+
 
 def recall(
     query: str,
@@ -22,6 +45,9 @@ def recall(
       "focus" — 강한 연결 우선 (UCB_C_FOCUS=0.3), 집중 검색
       "dmn"   — 미탐색 연결 우선 (UCB_C_DMN=2.5), 연상 검색
     """
+    # H1: deprecated type_filter canonicalization
+    type_filter = _canonicalize_type_filter(type_filter)
+
     # 1차 검색
     results = hybrid_search(
         query,
@@ -142,15 +168,19 @@ def _increment_recall_count():
 def _log_recall_results(query: str, results: list[dict], mode: str) -> None:
     """recall_log 테이블에 검색 결과 기록 (Gate 1 SWR input).
 
+    v3: recall_id로 세션 식별 (H2).
     실패해도 graceful skip.
     """
+    import uuid
+
+    recall_id = uuid.uuid4().hex[:8]
     try:
         with sqlite_store._db() as conn:
             conn.executemany(
-                """INSERT INTO recall_log (query, node_id, rank, score, mode)
-                   VALUES (?, ?, ?, ?, ?)""",
+                """INSERT INTO recall_log (query, node_id, rank, score, mode, recall_id)
+                   VALUES (?, ?, ?, ?, ?, ?)""",
                 [
-                    (query, str(r["id"]), rank, r["score"], mode)
+                    (query, str(r["id"]), rank, r["score"], mode, recall_id)
                     for rank, r in enumerate(results, start=1)
                 ],
             )

@@ -3,6 +3,25 @@
 from __future__ import annotations
 
 
+def get_valid_node_types() -> list[str]:
+    """type_defs 테이블에서 active 타입 목록 반환. fallback: schema.yaml."""
+    from storage import sqlite_store
+
+    try:
+        conn = sqlite_store._connect()
+        rows = conn.execute(
+            "SELECT name FROM type_defs WHERE status='active' ORDER BY name"
+        ).fetchall()
+        conn.close()
+        if rows:
+            return [r["name"] for r in rows]
+    except Exception:
+        pass
+
+    # fallback: schema.yaml
+    return sorted(_get_types_from_schema())
+
+
 def validate_node_type(type_name: str) -> tuple[bool, str | None]:
     """
     type_defs 테이블 기반 노드 타입 검증.

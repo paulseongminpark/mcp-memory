@@ -52,11 +52,10 @@ class TestClassify:
         assert cls.original_type == "pattern"
 
     @patch("tools.remember.validate_node_type", return_value=(True, None))
-    def test_classify_value_layer5_tier0(self, _mock):
-        """Value → layer=5, tier=0 (core)."""
-        cls = classify("핵심 가치", type="Value")
-        assert cls.layer == 5
-        assert cls.tier == 0
+    def test_classify_principle_layer3(self, _mock):
+        """v3: Principle → layer=3."""
+        cls = classify("핵심 원칙", type="Principle")
+        assert cls.layer == 3
 
     @patch("tools.remember.validate_node_type", return_value=(True, None))
     def test_classify_observation_tier2(self, _mock):

@@ -47,6 +47,7 @@ def remember(
     confidence: float = 1.0,
     source: str = "claude",
     actor: str = "system",
+    retrieval_hints: dict | None = None,
 ) -> dict:
     """Store a memory node with automatic embedding and relationship detection.
 
@@ -61,6 +62,7 @@ def remember(
         metadata: Additional key-value metadata
         confidence: Confidence level 0.0-1.0 (default 1.0)
         source: Source of memory — claude, user, hook, obsidian (default claude)
+        retrieval_hints: Retrieval context hints (when_needed, related_queries, context_keys)
     """
     # ── [A-13 통합] 타입 검증 블록 ─────────────────────────────────────────
     deprecated_warning: str | None = None
@@ -120,6 +122,7 @@ def remember(
         metadata=metadata,
         confidence=confidence,
         source=source,
+        retrieval_hints=retrieval_hints,
     )
 
     # Deprecated 타입 사용 시 경고 추가

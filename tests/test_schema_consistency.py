@@ -13,7 +13,22 @@ sys.path.insert(0, str(ROOT))
 from config import ALL_RELATIONS, PROMOTE_LAYER, RELATION_RULES, VALID_PROMOTIONS
 
 SCHEMA_PATH = ROOT / "ontology" / "schema.yaml"
-DEPRECATED_EXCEPTIONS = {"Evidence", "Heuristic", "Concept"}
+# v3: merge/edge 전환으로 deprecated된 타입 전체
+DEPRECATED_EXCEPTIONS = {
+    # 기존 3개
+    "Evidence", "Heuristic", "Concept",
+    # v3 merge 12개
+    "Skill", "Agent", "SystemVersion", "Breakthrough", "Conversation",
+    "Tension", "AntiPattern", "Preference", "Philosophy", "Value", "Belief", "Axiom",
+    # v3 edge 전환 2개
+    "Evolution", "Connection",
+    # v3 LLM 재분류
+    "Workflow",
+    # v3 C3 누락 20개 (기존 3개 제외)
+    "Aporia", "Assumption", "Boundary", "Commitment", "Constraint",
+    "Context", "Correction", "Lens", "Mental Model", "Metaphor",
+    "Paradox", "Plan", "Ritual", "Trade-off", "Trigger", "Vision", "Wonder",
+}
 
 
 def _load_schema() -> dict:

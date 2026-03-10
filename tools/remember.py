@@ -88,6 +88,7 @@ def store(
     confidence: float = 1.0,
     source: str = "claude",
     content_hash: str | None = None,
+    retrieval_hints: dict | None = None,
 ) -> dict:
     """SQLite + ChromaDB에 노드 저장.
 
@@ -108,6 +109,7 @@ def store(
         layer=cls.layer,
         tier=cls.tier,
         content_hash=content_hash,
+        retrieval_hints=retrieval_hints,
     )
 
     # content_hash UNIQUE 제약 위반 → duplicate (concurrent race 방어)
@@ -245,6 +247,7 @@ def remember(
     metadata: dict | None = None,
     confidence: float = 1.0,
     source: str = "claude",
+    retrieval_hints: dict | None = None,
 ) -> dict:
     """기억을 저장하고 자동으로 관계를 생성한다.
 
@@ -277,6 +280,7 @@ def remember(
         tags=tags, project=project,
         confidence=confidence, source=source,
         content_hash=content_hash,
+        retrieval_hints=retrieval_hints,
     )
 
     # 2-a. DB 레벨 중복 감지 (concurrent race condition 방어)

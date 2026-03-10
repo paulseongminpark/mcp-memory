@@ -563,9 +563,9 @@ queries:
   query: 오케스트레이션 프로젝트 구조와 핵심 경로를 정리한 프로젝트 개요는 뭐였지?
   relevant_ids:
   - 15
-  - 102
+  - 40
   also_relevant: []
-  notes: Project L1 — 프로젝트 구조와 경로 정리. Paul 검증 2026-03-08. 쿼리 정규화 2026-03-09 (orchestration→오케스트레이션)
+  notes: Project L1 — 프로젝트 구조와 경로 정리. Paul 검증 2026-03-08. 쿼리 정규화 2026-03-09. #102 deleted→#40 대체 2026-03-10
 - id: q058
   difficulty: medium
   query: 사용 중인 AI 도구를 역할과 접근 방식까지 나눠서 정리한 내용은 어디 있었지?
@@ -600,10 +600,10 @@ queries:
   query: portfolio에서 Obsidian 섹션 v4.0을 재작성하며 Hook, Architecture, Problem, Evolution,
     Lessons 구조로 바꾼 세션 서사는 뭐였지?
   relevant_ids:
-  - 98
+  - 1056
   - 27
   also_relevant: []
-  notes: Narrative L0 — 작업 맥락과 전개를 담은 세션 서사. Paul 검증 2026-03-08
+  notes: Narrative L0 — 작업 맥락과 전개를 담은 세션 서사. Paul 검증 2026-03-08. #98 deleted→#1056 대체 2026-03-10
 - id: q062
   difficulty: hard
   query: 해마와 신피질, 기억 공고화를 온톨로지 레이어와 승격 흐름에 대응시킨 연결은 어떻게 설명됐지?

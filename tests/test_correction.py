@@ -13,10 +13,10 @@ import pytest
 
 
 def test_correction_in_promote_layer():
-    """PROMOTE_LAYER에 Correction이 Layer 3으로 등록."""
+    """v3: Correction → Failure로 merge. Failure는 layer 1."""
     from config import PROMOTE_LAYER
-    assert "Correction" in PROMOTE_LAYER
-    assert PROMOTE_LAYER["Correction"] == 3
+    assert "Failure" in PROMOTE_LAYER
+    assert PROMOTE_LAYER["Failure"] == 1
 
 
 def test_correction_in_schema():

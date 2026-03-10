@@ -66,7 +66,8 @@ def init_db() -> None:
             score_history TEXT DEFAULT '[]',
             promotion_candidate INTEGER DEFAULT 0,
             content_hash TEXT,
-            last_accessed_at TEXT
+            last_accessed_at TEXT,
+            retrieval_hints TEXT DEFAULT NULL
         );
 
         CREATE TABLE IF NOT EXISTS edges (
@@ -294,6 +295,39 @@ def init_db() -> None:
         except Exception:
             pass  # 이미 존재하면 무시
 
+    # v3 Step 0: nodes.retrieval_hints (V3-05)
+    with _db() as _mig:
+        try:
+            _mig.execute("ALTER TABLE nodes ADD COLUMN retrieval_hints TEXT DEFAULT NULL")
+            _mig.commit()
+        except Exception:
+            pass
+
+    # v3 Step 0: recall_log.recall_id (H2)
+    with _db() as _mig:
+        try:
+            _mig.execute("ALTER TABLE recall_log ADD COLUMN recall_id TEXT DEFAULT NULL")
+            _mig.commit()
+        except Exception:
+            pass
+
+    # v3 Step 0: recall_log 인덱스 (M3)
+    with _db() as _mig:
+        try:
+            _mig.execute("CREATE INDEX IF NOT EXISTS idx_recall_log_recall_id ON recall_log(recall_id)")
+            _mig.execute("CREATE INDEX IF NOT EXISTS idx_recall_log_query_ts ON recall_log(query, timestamp)")
+            _mig.commit()
+        except Exception:
+            pass
+
+    # v3 Step 0: edges 복합 인덱스 (H3)
+    with _db() as _mig:
+        try:
+            _mig.execute("CREATE INDEX IF NOT EXISTS idx_edges_source_target ON edges(source_id, target_id)")
+            _mig.commit()
+        except Exception:
+            pass
+
 
 def insert_node(
     type: str,
@@ -306,18 +340,28 @@ def insert_node(
     layer: int | None = None,
     tier: int = 2,
     content_hash: str | None = None,
+    retrieval_hints: dict | None = None,
 ) -> int | tuple[str, int | None]:
-    """노드 삽입. content_hash UNIQUE 제약 위반 시 "duplicate" 반환."""
+    """노드 삽입. content_hash UNIQUE 제약 위반 시 "duplicate" 반환.
+
+    v3: retrieval_hints (H4) — {"when_needed", "related_queries", "context_keys"}
+    """
     # PROMOTE_LAYER fallback: caller가 layer 미전달 시 타입 기반 자동 배정
     if layer is None:
         layer = PROMOTE_LAYER.get(type)  # Unclassified → None (의도적)
     now = datetime.now(timezone.utc).isoformat()
+
+    # H4: retrieval_hints JSON 직렬화
+    hints_json = None
+    if retrieval_hints and isinstance(retrieval_hints, dict):
+        hints_json = json.dumps(retrieval_hints, ensure_ascii=False)
+
     with _db() as conn:
         try:
             cur = conn.execute(
-                """INSERT INTO nodes (type, content, metadata, project, tags, confidence, source, layer, tier, content_hash, created_at, updated_at)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                (type, content, json.dumps(metadata or {}), project, tags, confidence, source, layer, tier, content_hash, now, now),
+                """INSERT INTO nodes (type, content, metadata, project, tags, confidence, source, layer, tier, content_hash, retrieval_hints, created_at, updated_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (type, content, json.dumps(metadata or {}), project, tags, confidence, source, layer, tier, content_hash, hints_json, now, now),
             )
             node_id = cur.lastrowid
             conn.commit()
@@ -618,12 +662,15 @@ def sync_schema() -> dict:
             layer = info.get("layer")
             desc = info.get("description", "")
             existing = conn.execute(
-                "SELECT id FROM type_defs WHERE name=?", (name,)
+                "SELECT id, status FROM type_defs WHERE name=?", (name,)
             ).fetchone()
             if existing:
+                # C1 fix: deprecated 타입은 건드리지 않음 — active로 되돌리지 않는다
+                if existing["status"] == "deprecated":
+                    continue
                 conn.execute(
                     """UPDATE type_defs SET layer=?, description=?,
-                       status='active', updated_at=? WHERE name=?""",
+                       updated_at=? WHERE name=? AND status='active'""",
                     (layer, desc, now, name),
                 )
             else:
