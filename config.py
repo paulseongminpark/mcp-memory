@@ -186,6 +186,10 @@ RELATION_RULES: dict[tuple[str, str], str] = {
     ("Narrative", "Insight"): "exemplifies",
     ("Insight", "Narrative"): "expressed_as",
     ("Identity", "Principle"): "governed_by",
+    # v3.1: save_session() 세션→노드 그래프 통합
+    ("Narrative", "Decision"): "contains",
+    ("Narrative", "Question"): "contains",
+    ("Decision", "Question"): "led_to",
 }
 
 
