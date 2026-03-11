@@ -98,7 +98,8 @@ def init_db() -> None:
             unresolved TEXT DEFAULT '[]',
             project TEXT DEFAULT '',
             started_at TEXT NOT NULL,
-            ended_at TEXT
+            ended_at TEXT,
+            active_pipeline TEXT DEFAULT ''
         );
 
         CREATE TABLE IF NOT EXISTS correction_log (

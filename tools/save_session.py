@@ -13,6 +13,7 @@ def save_session(
     decisions: list[str] | None = None,
     unresolved: list[str] | None = None,
     project: str = "",
+    active_pipeline: str = "",
 ) -> dict:
     if not session_id:
         session_id = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
@@ -21,12 +22,13 @@ def save_session(
     with sqlite_store._db() as conn:
         # UPSERT: 이미 있으면 업데이트
         conn.execute(
-            """INSERT INTO sessions (session_id, summary, decisions, unresolved, project, started_at)
-               VALUES (?, ?, ?, ?, ?, ?)
+            """INSERT INTO sessions (session_id, summary, decisions, unresolved, project, started_at, active_pipeline)
+               VALUES (?, ?, ?, ?, ?, ?, ?)
                ON CONFLICT(session_id) DO UPDATE SET
                  summary = excluded.summary,
                  decisions = excluded.decisions,
                  unresolved = excluded.unresolved,
+                 active_pipeline = excluded.active_pipeline,
                  ended_at = ?""",
             (
                 session_id,
@@ -35,6 +37,7 @@ def save_session(
                 json.dumps(unresolved or [], ensure_ascii=False),
                 project,
                 now,
+                active_pipeline,
                 now,
             ),
         )

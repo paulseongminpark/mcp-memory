@@ -4,6 +4,18 @@ from storage import sqlite_store
 
 
 def get_context(project: str = "") -> dict:
+    # 0. 최근 세션의 active_pipeline
+    active_pipeline = ""
+    try:
+        with sqlite_store._db() as conn:
+            row = conn.execute(
+                "SELECT active_pipeline FROM sessions WHERE active_pipeline != '' ORDER BY id DESC LIMIT 1"
+            ).fetchone()
+            if row:
+                active_pipeline = row[0]
+    except Exception:
+        pass
+
     # 1. 최근 결정 3개
     decisions = sqlite_store.get_recent_nodes(project=project, limit=3, type_filter="Decision")
 
@@ -32,7 +44,10 @@ def get_context(project: str = "") -> dict:
     if not sections:
         return {"context": "No memories stored yet.", "project": project}
 
-    return {
+    result = {
         "project": project or "all",
         **sections,
     }
+    if active_pipeline:
+        result["active_pipeline"] = active_pipeline
+    return result

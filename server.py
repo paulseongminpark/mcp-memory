@@ -184,6 +184,7 @@ def save_session(
     decisions: list[str] | None = None,
     unresolved: list[str] | None = None,
     project: str = "",
+    active_pipeline: str = "",
 ) -> dict:
     """Save structured session data (summary, decisions, unresolved items).
 
@@ -193,6 +194,7 @@ def save_session(
         decisions: List of decisions made in this session
         unresolved: List of unresolved items/questions
         project: Project name
+        active_pipeline: Active pipeline folder path (e.g. '01_ideation/2026-03-11-task/')
     """
     return _save_session(
         session_id=session_id,
@@ -200,6 +202,7 @@ def save_session(
         decisions=decisions,
         unresolved=unresolved,
         project=project,
+        active_pipeline=active_pipeline,
     )
 
 
