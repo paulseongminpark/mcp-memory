@@ -46,7 +46,7 @@ LAYER_ETA = {0: 0.020, 1: 0.015, 2: 0.010, 3: 0.005, 4: 0.001, 5: 0.0001}
 PATCH_SATURATION_THRESHOLD = 0.75  # 패치 포화 판정 비율
 
 # ─── Promotion (v2.1, C-11, C-12) ────────────────────────
-PROMOTION_SWR_THRESHOLD = 0.55   # SWR Gate 통과 기준
+PROMOTION_SWR_THRESHOLD = 0.25   # SWR Gate 통과 기준 (v3: 0.55→0.25, cross_ratio만으로 통과 가능하게)
 SPRT_ALPHA = 0.05                # 오승격 확률 상한
 SPRT_BETA = 0.2                  # 놓침 확률 상한
 SPRT_P1 = 0.7                    # 진짜 Signal 판정 기준
@@ -159,36 +159,69 @@ ALL_RELATIONS = [r for group in RELATION_TYPES.values() for r in group]
 # (source_type, target_type) → relation
 # remember() auto_link + retroactive reclassification에서 사용
 RELATION_RULES: dict[tuple[str, str], str] = {
-    # v3: 15 active 타입 기준
-    # 승격 경로 (layer 상승)
+    # v3.1: 15 active 타입 기준, 40+ 규칙
+    #
+    # ── 승격 경로 (layer 상승) ──────────────────────────
     ("Observation", "Signal"): "triggered_by",
     ("Signal", "Pattern"): "realized_as",
     ("Signal", "Insight"): "realized_as",
     ("Pattern", "Principle"): "crystallized_into",
     ("Insight", "Principle"): "crystallized_into",
     ("Pattern", "Framework"): "crystallized_into",
-    # 인과
+    ("Insight", "Framework"): "crystallized_into",
+    #
+    # ── 인과 (원인→결과) ────────────────────────────────
     ("Decision", "Pattern"): "led_to",
     ("Decision", "Insight"): "led_to",
     ("Decision", "Failure"): "resulted_in",
     ("Failure", "Decision"): "resolved_by",
     ("Failure", "Insight"): "led_to",
+    ("Failure", "Pattern"): "led_to",
+    ("Failure", "Question"): "led_to",
     ("Question", "Insight"): "resolved_by",
     ("Question", "Decision"): "resolved_by",
+    ("Question", "Experiment"): "led_to",
+    ("Question", "Goal"): "led_to",
     ("Experiment", "Insight"): "led_to",
     ("Experiment", "Failure"): "resulted_in",
-    # 구조
+    ("Experiment", "Pattern"): "led_to",
+    ("Experiment", "Decision"): "led_to",
+    ("Goal", "Experiment"): "led_to",
+    ("Goal", "Decision"): "led_to",
+    ("Goal", "Project"): "led_to",
+    ("Insight", "Decision"): "led_to",
+    #
+    # ── 구조 (포함/소속) ────────────────────────────────
     ("Tool", "Framework"): "part_of",
     ("Tool", "Project"): "part_of",
     ("Project", "Goal"): "governed_by",
+    ("Project", "Framework"): "governed_by",
+    ("Project", "Decision"): "contains",
     ("Framework", "Principle"): "governed_by",
-    # 의미
-    ("Narrative", "Insight"): "exemplifies",
-    ("Insight", "Narrative"): "expressed_as",
+    ("Framework", "Tool"): "contains",
+    #
+    # ── 가이드 (상위→하위 통제) ─────────────────────────
+    ("Pattern", "Decision"): "governs",
+    ("Principle", "Decision"): "governs",
+    ("Identity", "Goal"): "governs",
+    ("Identity", "Decision"): "governs",
     ("Identity", "Principle"): "governed_by",
-    # v3.1: save_session() 세션→노드 그래프 통합
+    #
+    # ── 의미/예시 ───────────────────────────────────────
+    ("Narrative", "Insight"): "exemplifies",
+    ("Narrative", "Pattern"): "exemplifies",
+    ("Narrative", "Failure"): "exemplifies",
     ("Narrative", "Decision"): "contains",
     ("Narrative", "Question"): "contains",
+    ("Insight", "Narrative"): "expressed_as",
+    #
+    # ── Signal 경로 ─────────────────────────────────────
+    ("Observation", "Question"): "led_to",
+    ("Observation", "Experiment"): "triggered_by",
+    ("Signal", "Experiment"): "led_to",
+    ("Signal", "Decision"): "led_to",
+    #
+    # ── 기타 ────────────────────────────────────────────
     ("Decision", "Question"): "led_to",
 }
 
@@ -227,16 +260,21 @@ def infer_relation(src_type: str, src_layer: int | None,
         if src_layer > tgt_layer:
             return "expressed_as"      # 높은→낮은: 추상이 구체로 표현
 
-    # 3. 같은 레이어
+    # 3. Cross-project 관계 (v3.1: 프로젝트 간 의미 있는 관계 생성)
+    is_cross_project = (src_project and tgt_project and src_project != tgt_project)
+
+    # 4. 같은 레이어
     if src_layer is not None and src_layer == tgt_layer:
         if src_type == tgt_type:
-            return "supports"
+            return "mirrors" if is_cross_project else "supports"
+        if is_cross_project:
+            return "influenced_by"
         if src_project and tgt_project and src_project == tgt_project:
             return "part_of"
         return "parallel_with"
 
-    # 4. 최종 fallback
-    return "connects_with"
+    # 5. 최종 fallback
+    return "transfers_to" if is_cross_project else "connects_with"
 
 
 # 유효한 승격 경로 — v3: 15 active 타입 기준
@@ -281,9 +319,9 @@ COMPOSITE_WEIGHT_DECAY = 0.001   # recency bonus (tiebreaker)
 COMPOSITE_WEIGHT_IMPORTANCE = 0.001  # layer bonus (tiebreaker)
 DECAY_LAMBDA = 0.01           # half-life ~69 days
 PROMOTED_MULTIPLIER = 1.5     # reviewed-item boost (promotion_candidate=1)
+# v3: max layer = 3
 LAYER_IMPORTANCE = {
-    5: 1.0, 4: 0.8, 3: 0.6,
-    2: 0.4, 1: 0.2, 0: 0.1,
+    3: 0.6, 2: 0.4, 1: 0.2, 0: 0.1,
     None: 0.1,  # Unclassified
 }
 
@@ -292,38 +330,40 @@ TYPE_CHANNEL_WEIGHT = 0.5   # typed vector RRF 채널 기본 가중치 (fallback
 MAX_TYPE_HINTS = 2          # 쿼리당 최대 type hint 수 (API 호출 제한)
 
 # 타입별 동적 가중치: 소수 타입은 강하게, 다수 타입(Principle 등)은 기본 검색에서 이미 우세
+# v3: 15 active 타입 기준
 TYPE_CHANNEL_WEIGHTS: dict[str, float] = {
     "Pattern": 1.0,
     "Decision": 1.0,
     "Signal": 0.8,
     "Failure": 0.8,
     "Experiment": 0.8,
-    "Connection": 0.8,
     "Narrative": 0.8,
     "Goal": 0.8,
-    "Evolution": 0.7,
+    "Observation": 0.8,
+    "Question": 0.7,
     "Project": 0.7,
-    "Workflow": 0.6,
+    "Identity": 0.7,
+    "Insight": 0.6,
     "Framework": 0.6,
+    "Principle": 0.5,
     "Tool": 0.5,
-    "Agent": 0.5,
-    "Skill": 0.5,
 }
 
+# v3: 15 active 타입 기준
 TYPE_KEYWORDS: dict[str, list[str]] = {
-    "Workflow": ["워크플로우", "절차", "단계", "파이프라인", "프로세스", "체인", "실행 순서"],
-    "Tool": ["도구", "툴", "CLI", "스크립트", "명령어", "플러그인"],
-    "Agent": ["에이전트", "팀", "역할", "봇", "자동화 에이전트"],
-    "Skill": ["스킬", "명령", "/", "슬래시"],
-    "Failure": ["실패", "에러", "버그", "오류", "장애", "문제"],
+    "Tool": ["도구", "툴", "CLI", "스크립트", "명령어", "플러그인", "에이전트", "스킬"],
+    "Failure": ["실패", "에러", "버그", "오류", "장애", "문제", "실수"],
     "Experiment": ["실험", "테스트", "검증", "비교", "시도"],
     "Decision": ["결정", "선택", "결단", "판단", "확정"],
-    "Evolution": ["진화", "변경", "업데이트", "버전", "발전", "개선"],
-    "Signal": ["신호", "관찰", "습관", "패턴 관찰", "징후"],
+    "Signal": ["신호", "징후", "조짐", "반복 관찰"],
     "Goal": ["목표", "계획", "방향", "비전"],
-    "Pattern": ["패턴", "반복", "규칙", "관례"],
-    "Framework": ["프레임워크", "구조", "아키텍처", "설계", "스키마"],
-    "Project": ["프로젝트", "레포", "저장소"],
-    "Connection": ["연결", "관계", "대응", "매핑"],
-    "Narrative": ["서사", "맥락", "이야기", "세션 기록"],
+    "Pattern": ["패턴", "반복", "규칙", "관례", "워크플로우", "절차", "프로세스"],
+    "Framework": ["프레임워크", "구조", "아키텍처", "설계", "스키마", "멘탈 모델"],
+    "Project": ["프로젝트", "레포", "저장소", "버전"],
+    "Narrative": ["서사", "맥락", "이야기", "세션 기록", "비유"],
+    "Insight": ["통찰", "발견", "깨달음", "이해", "연결"],
+    "Principle": ["원칙", "철학", "가치관", "기준", "믿음"],
+    "Identity": ["정체성", "스타일", "습관", "선호", "성향"],
+    "Observation": ["관찰", "기록", "증거", "데이터", "로그"],
+    "Question": ["질문", "궁금", "미해결", "역설", "모순"],
 }

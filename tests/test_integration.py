@@ -68,7 +68,7 @@ def _memory_stack(
     server_module,
     *,
     swr: tuple[bool, float] | None = None,
-    bayesian: float | None = None,
+    frequency: tuple[bool, int] | None = None,
     mdl: tuple[bool, str] | None = None,
 ):
     stack = ExitStack()
@@ -78,8 +78,8 @@ def _memory_stack(
     stack.enter_context(patch("storage.vector_store.search", return_value=[]))
     if swr is not None:
         stack.enter_context(patch("tools.promote_node.swr_readiness", return_value=swr))
-    if bayesian is not None:
-        stack.enter_context(patch("tools.promote_node.promotion_probability", return_value=bayesian))
+    if frequency is not None:
+        stack.enter_context(patch("tools.promote_node.promotion_frequency_check", return_value=frequency))
     if mdl is not None:
         stack.enter_context(patch("tools.promote_node._mdl_gate", return_value=mdl))
     return stack
@@ -112,7 +112,7 @@ def db_env():
 def test_e2e_init_remember_recall_promote_flow(db_env: Path):
     server = _import_server()
 
-    with _memory_stack(server, swr=(True, 0.91), bayesian=0.94):
+    with _memory_stack(server, swr=(True, 0.91), frequency=(True, 15)):
         stored = server.remember(
             content="alpha beta gamma memory",
             type="Observation",
@@ -257,7 +257,7 @@ def test_server_recall_preserves_small_top_k(db_env: Path):
 def test_e2e_promote_with_related_ids_creates_realized_as_edge(db_env: Path):
     server = _import_server()
 
-    with _memory_stack(server, swr=(True, 0.9), bayesian=0.88, mdl=(True, "high_similarity=0.890")):
+    with _memory_stack(server, swr=(True, 0.9), frequency=(True, 20), mdl=(True, "high_similarity=0.890")):
         primary = server.remember(content="cluster signal primary", type="Signal", actor="system")
         related = server.remember(content="cluster signal related", type="Signal", actor="system")
         recalled = server.recall(query="cluster", top_k=5)

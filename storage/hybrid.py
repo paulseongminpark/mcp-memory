@@ -513,20 +513,25 @@ def hybrid_search(
     else:
         graph_neighbors = set()
 
-    # 5. Reciprocal Rank Fusion
+    # 5. Reciprocal Rank Fusion + source tracking
     scores: dict[int, float] = defaultdict(float)
+    source_map: dict[int, set] = defaultdict(set)
     for rank, (node_id, distance, _) in enumerate(vec_results, 1):
         scores[node_id] += 1.0 / (RRF_K + rank)
+        source_map[node_id].add("vector")
     for rank, (node_id, _, _) in enumerate(fts_results, 1):
         scores[node_id] += 1.0 / (RRF_K + rank)
+        source_map[node_id].add("fts5")
     for node_id in graph_neighbors:
         scores[node_id] += GRAPH_BONUS
+        source_map[node_id].add("graph")
 
     # 5b. Layer A: typed vector RRF 채널 (타입별 동적 가중치)
     for hint_type, t_results in typed_vec_by_type.items():
         w = TYPE_CHANNEL_WEIGHTS.get(hint_type, TYPE_CHANNEL_WEIGHT)
         for rank, (node_id, distance, _) in enumerate(t_results, 1):
             scores[node_id] += w / (RRF_K + rank)
+            source_map[node_id].add("typed_vector")
 
     # 6. 필터 + composite scoring (Phase 2: RRF + decay + importance)
     sorted_ids = sorted(scores, key=lambda x: scores[x], reverse=True)
@@ -551,6 +556,7 @@ def hybrid_search(
         tier = node.get("tier", 2)
         tier_bonus = {0: 0.15, 1: 0.05, 2: 0.0}.get(tier, 0.0)
         node["_base_rrf"] = scores[node_id] + enrichment_bonus + tier_bonus
+        node["_sources"] = sorted(source_map.get(node_id, set()))
         candidates.append(node)
 
     if not candidates:

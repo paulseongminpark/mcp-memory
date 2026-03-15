@@ -37,16 +37,15 @@ def swr_readiness(node_id: int) -> tuple[bool, float]:
         (ready: bool, readiness_score: float)
     """
     with sqlite_store._db() as conn:
-        # vec_ratio: recall_log 소스 분포 (테이블 없으면 0.0 fallback)
+        # vec_ratio: recall_log sources JSON에서 vector/fts5 비율
         try:
             rows = conn.execute(
-                "SELECT source, COUNT(*) FROM recall_log WHERE node_id=? GROUP BY source",
+                "SELECT sources FROM recall_log WHERE node_id=? AND sources IS NOT NULL AND sources != '[]'",
                 (node_id,),
             ).fetchall()
-            counts = {row[0]: row[1] for row in rows}
-            fts5_hits = counts.get("fts5", 0)
-            vec_hits = counts.get("vector", 0)
-            total = fts5_hits + vec_hits
+            vec_hits = sum(1 for r in rows if '"vector"' in (r[0] or ""))
+            fts_hits = sum(1 for r in rows if '"fts5"' in (r[0] or ""))
+            total = vec_hits + fts_hits
             vec_ratio = (vec_hits / total) if total > 0 else 0.0
         except Exception:
             vec_ratio = 0.0  # recall_log 테이블 미존재 시 fallback
@@ -80,31 +79,21 @@ def swr_readiness(node_id: int) -> tuple[bool, float]:
 # Gate 2: Bayesian P(real pattern)
 # ─────────────────────────────────────────────
 
-def _get_total_recall_count() -> int:
-    """meta 테이블에서 글로벌 recall 횟수 조회. 없으면 0."""
-    val = sqlite_store.get_meta("total_recall_count")
-    try:
-        return int(val) if val is not None else 0
-    except (ValueError, TypeError):
-        return 0
+PROMOTION_VISIT_THRESHOLD = 10  # visit_count >= 이 값이면 Gate 2 통과
 
 
-def promotion_probability(node: dict, total_queries: int) -> float:
-    """단일 노드의 Bayesian P(real pattern).
+def promotion_frequency_check(node: dict) -> tuple[bool, int]:
+    """Gate 2: 노드의 recall 빈도 검증.
 
-    Prior: Beta(1, 10) — 회의적 사전 분포
-    Posterior: Beta(1 + k, 10 + n - k)
-    k = node frequency (recall 횟수)
-    n = total_queries (전체 recall 횟수)
+    v3: Bayesian Beta(1,10)에서 visit_count 직접 threshold로 교체.
+    사유: Beta(1,10) prior는 total_queries=401 규모에서 수학적으로 통과 불가.
+    visit_count는 post_search_learn()에서 recall마다 +1 갱신됨.
 
     Returns:
-        float: 사후 분포 평균 = (1+k) / (11+n)
+        (passed: bool, visit_count: int)
     """
-    k = node.get("frequency") or 0
-    n = max(total_queries, k)
-    alpha_post = 1 + k
-    beta_post = 10 + (n - k)
-    return alpha_post / (alpha_post + beta_post)
+    vc = node.get("visit_count") or 0
+    return vc >= PROMOTION_VISIT_THRESHOLD, vc
 
 
 # ─────────────────────────────────────────────
@@ -201,22 +190,20 @@ def promote_node(
             }
         gates_passed.append("swr")
 
-    # ── Gate 2: Bayesian P(real) ───────────────
+    # ── Gate 2: Recall frequency ───────────────
     if not skip_gates:
-        total_queries = _get_total_recall_count()
-        p_real = promotion_probability(node, total_queries)
-        if p_real < 0.5:
+        freq_ok, visit_count = promotion_frequency_check(node)
+        if not freq_ok:
             return {
                 "status": "insufficient_evidence",
-                "p_real": round(p_real, 4),
-                "frequency": node.get("frequency") or 0,
-                "total_queries": total_queries,
+                "visit_count": visit_count,
+                "threshold": PROMOTION_VISIT_THRESHOLD,
                 "message": (
-                    f"Bayesian P(real)={p_real:.4f} < 0.5. "
-                    "Need more recall frequency relative to total queries."
+                    f"visit_count={visit_count} < {PROMOTION_VISIT_THRESHOLD}. "
+                    "Need more recall frequency."
                 ),
             }
-        gates_passed.append("bayesian")
+        gates_passed.append("frequency")
 
     # ── Gate 3: MDL ────────────────────────────
     if not skip_gates and related_ids:

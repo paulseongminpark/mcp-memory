@@ -94,18 +94,16 @@ def _insert_node(
 
 def _seed_gate_readiness(candidate_id: int) -> None:
     with sqlite_store._db() as conn:
-        conn.execute("UPDATE nodes SET frequency = 10 WHERE id = ?", (candidate_id,))
+        conn.execute("UPDATE nodes SET visit_count = 15 WHERE id = ?", (candidate_id,))
         for rank in range(5):
             conn.execute(
                 """
-                INSERT INTO recall_log (query, node_id, rank, score, mode, source)
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT INTO recall_log (query, node_id, rank, score, mode)
+                VALUES (?, ?, ?, ?, ?)
                 """,
-                ("promotion gate seed", candidate_id, rank + 1, 0.9, "focus", "vector"),
+                ("promotion gate seed", candidate_id, rank + 1, 0.9, "focus"),
             )
         conn.commit()
-
-    sqlite_store.upsert_meta("total_recall_count", "10")
 
 
 def _accumulate_sprt_pass(signal_id: int, peer_id: int) -> None:
@@ -203,7 +201,7 @@ def test_signal_passes_sprt_and_promotes_to_pattern_e2e(db_env: Path):
     assert result["previous_type"] == "Signal"
     assert result["new_type"] == "Pattern"
     assert result["new_layer"] == PROMOTE_LAYER["Pattern"]
-    assert result["gates_passed"] == ["swr", "bayesian", "mdl"]
+    assert result["gates_passed"] == ["swr", "frequency", "mdl"]
     assert after["type"] == "Pattern"
     assert after["layer"] == PROMOTE_LAYER["Pattern"]
     assert after_metadata["note"] == "preserve"
@@ -229,7 +227,7 @@ def test_promote_node_skip_gates_bypasses_all_gate_helpers(db_env: Path):
     )
 
     with patch("tools.promote_node.swr_readiness") as mock_swr, \
-         patch("tools.promote_node.promotion_probability") as mock_probability, \
+         patch("tools.promote_node.promotion_frequency_check") as mock_frequency_check, \
          patch("tools.promote_node._mdl_gate") as mock_mdl:
         result = promote_node(
             node_id=candidate_id,
@@ -265,5 +263,5 @@ def test_promote_node_skip_gates_bypasses_all_gate_helpers(db_env: Path):
         (related_id, candidate_id, "realized_as")
     ]
     mock_swr.assert_not_called()
-    mock_probability.assert_not_called()
+    mock_frequency_check.assert_not_called()
     mock_mdl.assert_not_called()

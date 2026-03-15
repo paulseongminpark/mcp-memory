@@ -104,6 +104,7 @@ def suggest_closest_type(content: str) -> str:
     출력: 추천 타입명 (str)
     """
     content_lower = content.lower()
+    # v3: 15 active 타입 기준
     hints: dict[str, list[str]] = {
         "Decision":    ["결정", "decided", "decision", "chose", "선택", "확정"],
         "Failure":     ["실패", "fail", "error", "버그", "mistake", "실수", "오류"],
@@ -111,12 +112,13 @@ def suggest_closest_type(content: str) -> str:
         "Insight":     ["통찰", "insight", "발견", "깨달음", "이해", "알게"],
         "Principle":   ["원칙", "principle", "기준", "철학", "approach", "방침"],
         "Framework":   ["프레임워크", "framework", "구조", "체계", "설계"],
-        "Workflow":    ["워크플로우", "workflow", "프로세스", "절차", "흐름"],
         "Goal":        ["목표", "goal", "달성", "aim", "objective"],
-        "Signal":      ["신호", "signal", "관찰", "느낌", "조짐", "경향"],
-        "AntiPattern": ["안티패턴", "antipattern", "피해야", "하지 말", "문제"],
+        "Signal":      ["신호", "signal", "조짐", "경향", "징후"],
         "Experiment":  ["실험", "experiment", "테스트", "시도", "검증"],
-        "Observation": ["관찰", "observation", "발견", "noticed", "봤다"],
+        "Observation": ["관찰", "observation", "noticed", "봤다", "기록"],
+        "Identity":    ["정체성", "identity", "스타일", "선호", "습관"],
+        "Narrative":   ["서사", "narrative", "이야기", "맥락", "비유"],
+        "Question":    ["질문", "question", "궁금", "미해결", "역설"],
     }
     for type_name, keywords in hints.items():
         if any(kw in content_lower for kw in keywords):

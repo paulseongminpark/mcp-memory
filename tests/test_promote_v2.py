@@ -99,7 +99,7 @@ def test_promote_node_swr_failure_returns_not_ready_and_short_circuits(db_env: P
     node_id = _insert_node(node_type="Signal", content="gate one fail")
 
     with patch("tools.promote_node.swr_readiness", return_value=(False, 0.21)), \
-         patch("tools.promote_node.promotion_probability") as mock_probability, \
+         patch("tools.promote_node.promotion_frequency_check") as mock_frequency_check, \
          patch("tools.promote_node._mdl_gate") as mock_mdl:
         result = promote_node(node_id=node_id, target_type="Pattern", reason="swr fail")
 
@@ -107,21 +107,21 @@ def test_promote_node_swr_failure_returns_not_ready_and_short_circuits(db_env: P
     assert result["status"] == "not_ready"
     assert result["swr_score"] == 0.21
     assert node["type"] == "Signal"
-    mock_probability.assert_not_called()
+    mock_frequency_check.assert_not_called()
     mock_mdl.assert_not_called()
 
 
-def test_promote_node_bayesian_failure_returns_insufficient_evidence(db_env: Path):
+def test_promote_node_frequency_failure_returns_insufficient_evidence(db_env: Path):
     node_id = _insert_node(node_type="Signal", content="gate two fail")
 
     with patch("tools.promote_node.swr_readiness", return_value=(True, 0.91)), \
-         patch("tools.promote_node.promotion_probability", return_value=0.24), \
+         patch("tools.promote_node.promotion_frequency_check", return_value=(False, 3)), \
          patch("tools.promote_node._mdl_gate") as mock_mdl:
-        result = promote_node(node_id=node_id, target_type="Pattern", reason="bayesian fail")
+        result = promote_node(node_id=node_id, target_type="Pattern", reason="frequency fail")
 
     node = sqlite_store.get_node(node_id)
     assert result["status"] == "insufficient_evidence"
-    assert result["p_real"] == 0.24
+    assert result["visit_count"] == 3
     assert node["type"] == "Signal"
     mock_mdl.assert_not_called()
 
@@ -131,7 +131,7 @@ def test_promote_node_mdl_failure_returns_mdl_failed(db_env: Path):
     related_id = _insert_node(node_type="Signal", content="mdl fail related")
 
     with patch("tools.promote_node.swr_readiness", return_value=(True, 0.92)), \
-         patch("tools.promote_node.promotion_probability", return_value=0.88), \
+         patch("tools.promote_node.promotion_frequency_check", return_value=(True, 15)), \
          patch("tools.promote_node._mdl_gate", return_value=(False, "low_similarity=0.420_mdl_failed")):
         result = promote_node(
             node_id=node_id,
@@ -151,7 +151,7 @@ def test_promote_node_skip_gates_true_bypasses_gate_helpers(db_env: Path):
     related_id = _insert_node(node_type="Signal", content="skip gates related")
 
     with patch("tools.promote_node.swr_readiness") as mock_swr, \
-         patch("tools.promote_node.promotion_probability") as mock_probability, \
+         patch("tools.promote_node.promotion_frequency_check") as mock_frequency_check, \
          patch("tools.promote_node._mdl_gate") as mock_mdl:
         result = promote_node(
             node_id=node_id,
@@ -164,7 +164,7 @@ def test_promote_node_skip_gates_true_bypasses_gate_helpers(db_env: Path):
     assert result["new_type"] == "Pattern"
     assert result["gates_passed"] == []
     mock_swr.assert_not_called()
-    mock_probability.assert_not_called()
+    mock_frequency_check.assert_not_called()
     mock_mdl.assert_not_called()
 
 
@@ -173,7 +173,7 @@ def test_promote_node_skip_gates_false_records_all_passed_gates(db_env: Path):
     related_id = _insert_node(node_type="Signal", content="all gates related")
 
     with patch("tools.promote_node.swr_readiness", return_value=(True, 0.9)), \
-         patch("tools.promote_node.promotion_probability", return_value=0.83), \
+         patch("tools.promote_node.promotion_frequency_check", return_value=(True, 20)), \
          patch("tools.promote_node._mdl_gate", return_value=(True, "high_similarity=0.910")):
         result = promote_node(
             node_id=node_id,
@@ -182,7 +182,7 @@ def test_promote_node_skip_gates_false_records_all_passed_gates(db_env: Path):
             related_ids=[related_id],
         )
 
-    assert result["gates_passed"] == ["swr", "bayesian", "mdl"]
+    assert result["gates_passed"] == ["swr", "frequency", "mdl"]
     assert result["new_layer"] == 2
 
 
@@ -194,7 +194,7 @@ def test_promote_node_updates_type_layer_and_history(db_env: Path):
     )
 
     with patch("tools.promote_node.swr_readiness", return_value=(True, 0.9)), \
-         patch("tools.promote_node.promotion_probability", return_value=0.78):
+         patch("tools.promote_node.promotion_frequency_check", return_value=(True, 12)):
         result = promote_node(node_id=node_id, target_type="Pattern", reason="state update")
 
     row = _fetch_one(
@@ -222,7 +222,7 @@ def test_promote_node_creates_realized_as_edges_for_related_ids(db_env: Path):
     related_b = _insert_node(node_type="Signal", content="edge related b")
 
     with patch("tools.promote_node.swr_readiness", return_value=(True, 0.9)), \
-         patch("tools.promote_node.promotion_probability", return_value=0.8), \
+         patch("tools.promote_node.promotion_frequency_check", return_value=(True, 18)), \
          patch("tools.promote_node._mdl_gate", return_value=(True, "high_similarity=0.880")):
         result = promote_node(
             node_id=node_id,
@@ -248,7 +248,7 @@ def test_promote_node_calls_action_log_record_with_expected_payload(db_env: Path
     related_id = _insert_node(node_type="Signal", content="log related")
 
     with patch("tools.promote_node.swr_readiness", return_value=(True, 0.95)), \
-         patch("tools.promote_node.promotion_probability", return_value=0.87), \
+         patch("tools.promote_node.promotion_frequency_check", return_value=(True, 25)), \
          patch("tools.promote_node._mdl_gate", return_value=(True, "high_similarity=0.900")), \
          patch("storage.action_log.record", return_value=123) as mock_log:
         result = promote_node(
@@ -268,7 +268,7 @@ def test_promote_node_calls_action_log_record_with_expected_payload(db_env: Path
     assert params["from_type"] == "Signal"
     assert params["to_type"] == "Pattern"
     assert params["skip_gates"] is False
-    assert params["gates_passed"] == ["swr", "bayesian", "mdl"]
+    assert params["gates_passed"] == ["swr", "frequency", "mdl"]
     assert record_result["new_layer"] == PROMOTE_LAYER["Pattern"]
     assert len(record_result["realized_as_edges"]) == 1
 
@@ -277,10 +277,10 @@ def test_promote_node_without_related_ids_skips_mdl_gate(db_env: Path):
     node_id = _insert_node(node_type="Signal", content="no related ids")
 
     with patch("tools.promote_node.swr_readiness", return_value=(True, 0.85)), \
-         patch("tools.promote_node.promotion_probability", return_value=0.8), \
+         patch("tools.promote_node.promotion_frequency_check", return_value=(True, 18)), \
          patch("tools.promote_node._mdl_gate") as mock_mdl:
         result = promote_node(node_id=node_id, target_type="Pattern", reason="no mdl input")
 
     assert result["new_type"] == "Pattern"
-    assert result["gates_passed"] == ["swr", "bayesian"]
+    assert result["gates_passed"] == ["swr", "frequency"]
     mock_mdl.assert_not_called()

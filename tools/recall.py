@@ -169,18 +169,28 @@ def _log_recall_results(query: str, results: list[dict], mode: str) -> None:
     """recall_log 테이블에 검색 결과 기록 (Gate 1 SWR input).
 
     v3: recall_id로 세션 식별 (H2).
+    v3.1: sources 컬럼 추가 (Gate 1 source 태깅).
     실패해도 graceful skip.
     """
+    import json
     import uuid
 
     recall_id = uuid.uuid4().hex[:8]
     try:
         with sqlite_store._db() as conn:
+            # sources 컬럼 존재 확인 + 없으면 추가 (migration)
+            cols = {row[1] for row in conn.execute("PRAGMA table_info(recall_log)").fetchall()}
+            if "sources" not in cols:
+                conn.execute("ALTER TABLE recall_log ADD COLUMN sources TEXT DEFAULT NULL")
+
             conn.executemany(
-                """INSERT INTO recall_log (query, node_id, rank, score, mode, recall_id)
-                   VALUES (?, ?, ?, ?, ?, ?)""",
+                """INSERT INTO recall_log (query, node_id, rank, score, mode, recall_id, sources)
+                   VALUES (?, ?, ?, ?, ?, ?, ?)""",
                 [
-                    (query, str(r["id"]), rank, r["score"], mode, recall_id)
+                    (
+                        query, str(r["id"]), rank, r["score"], mode, recall_id,
+                        json.dumps(r.get("_sources", []))
+                    )
                     for rank, r in enumerate(results, start=1)
                 ],
             )

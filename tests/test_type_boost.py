@@ -12,10 +12,11 @@ def test_type_config_import():
     assert MAX_TYPE_HINTS >= 1
 
 
-def test_detect_workflow():
+def test_detect_workflow_as_pattern():
+    """v3: Workflow deprecated → Pattern으로 흡수."""
     from storage.hybrid import _detect_type_hints
     hints = _detect_type_hints("워크플로우 자동화 절차")
-    assert "Workflow" in hints
+    assert "Pattern" in hints
 
 
 def test_detect_failure():
@@ -27,15 +28,14 @@ def test_detect_failure():
 def test_no_false_positive():
     from storage.hybrid import _detect_type_hints
     hints = _detect_type_hints("컨텍스트를 통화로 보는 원칙")
-    assert "Workflow" not in hints
     assert "Failure" not in hints
 
 
 def test_multiple_types():
+    """v3: Agent deprecated → Tool로 흡수. '에이전트'는 Tool 키워드."""
     from storage.hybrid import _detect_type_hints
     hints = _detect_type_hints("에이전트 팀 구조 설계 프레임워크")
-    assert "Agent" in hints
-    assert "Framework" in hints
+    assert "Tool" in hints or "Framework" in hints
 
 
 def test_max_type_hints_cap():

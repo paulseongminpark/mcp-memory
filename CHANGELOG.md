@@ -1,5 +1,28 @@
 # mcp-memory CHANGELOG
 
+## v3.1.0-dev (2026-03-16) — 온톨로지 강화
+### Promotion Pipeline 해제
+- Gate 2: Bayesian Beta(1,10) → visit_count ≥ 10 직접 threshold (수학적 불가 해소)
+- Gate 1: SWR threshold 0.55→0.25 (cross_ratio만으로 통과 가능)
+- swr_readiness: recall_log.sources JSON 파싱으로 vec_ratio 계산
+
+### Source Infrastructure
+- hybrid_search: source_map 추적 (vector/fts5/graph/typed_vector)
+- recall_log: sources TEXT 컬럼 자동 마이그레이션 + JSON 기록
+- 기존 2,899행은 sources=NULL → 점진적 축적
+
+### Relation Quality
+- RELATION_RULES: 17→49개 (7.6%→37.3% type pair coverage)
+- Cross-project 로직: mirrors (같은타입), influenced_by (다른타입), transfers_to (fallback)
+- infer_relation: cross-project 판별 후 의미 있는 관계 타입 선택
+
+### Deprecated Cleanup
+- TYPE_CHANNEL_WEIGHTS: v3 15타입 기준 (deprecated 5개 제거, 누락 5개 추가)
+- TYPE_KEYWORDS: v3 15타입 기준 (deprecated 5개 제거, 누락 5개 추가)
+- LAYER_IMPORTANCE: layer 4,5 제거 (v3 최대 layer=3)
+- suggest_closest_type: v3 타입 기준 (deprecated 제거, 누락 추가)
+- Tests: Workflow/Agent/Skill 참조 v3 기준 갱신
+
 ## v3.0.0-rc (2026-03-11) — Ontology v3 Phase 5
 ### Breaking: Type System Overhaul (51→15)
 - **Tier1 핵심 (7)**: Observation, Signal, Pattern, Insight, Principle, Framework, Identity

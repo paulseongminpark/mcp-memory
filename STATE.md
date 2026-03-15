@@ -1,15 +1,17 @@
 # mcp-memory — STATE
-_Updated: 2026-03-11_
+_Updated: 2026-03-16_
 
 ## Current
-- **Version**: v3.0.0-rc (Phase 5 Step 0~2 완료, Step 2.5~4 잔여)
+- **Version**: v3.1.0-dev (온톨로지 강화 — 승격 해제 + 관계 품질)
 - **Branch**: main
 - **NDCG@5**: 측정 예정 (Phase 6에서 재측정, 목표 0.9)
 - **Tests**: 169/169 PASS
-- **Active Nodes**: ~2,947 (마이그레이션 후)
+- **Active Nodes**: ~3,637
 - **Ontology**: 15 active types (Tier1:7 + Tier2:5 + Tier3:3) + Unclassified
+- **RELATION_RULES**: 49개 (37.3% type pair 커버리지)
 - **retrieval_hints**: 2927/2947 완료 (99.3%)
 - **Content Hash**: 100%
+- **Pipeline**: 01_ontology-enhancement_0315 (impl-r1 완료)
 
 ## Architecture
 - 13 MCP tools, 4 layers (L0-L3+Unclassified), 15 node types, 48 relation types
@@ -17,6 +19,17 @@ _Updated: 2026-03-11_
 - Embedding: text-embedding-3-large, [Type]+summary+key_concepts+content[:200]
 - RRF_K=18, GRAPH_BONUS=0.005, candidate cutoff=top_k×10
 - 3-Layer type-aware search: C(타입 태그 임베딩) + A(typed vector RRF 채널) + D(다양성 보장)
+- Source tracking: recall_log.sources JSON (vector/fts5/graph/typed_vector)
+
+## v3.1.0-dev Changes (2026-03-16, 온톨로지 강화)
+- **Gate 2 재캘리브**: Bayesian Beta(1,10) → visit_count ≥ 10 직접 threshold
+- **Gate 1 완화**: SWR threshold 0.55→0.25 (cross_ratio만으로 통과 가능)
+- **Source 인프라**: hybrid_search source 태깅 → recall_log.sources JSON 기록
+- **RELATION_RULES 확장**: 17→49개 (7.6%→37.3% type pair 커버리지)
+- **Cross-project 관계**: mirrors/influenced_by/transfers_to (기존: parallel_with/connects_with)
+- **Deprecated 정리**: TYPE_CHANNEL_WEIGHTS/TYPE_KEYWORDS v3 15타입 기준, LAYER_IMPORTANCE L4/L5 제거
+- **swr_readiness 수정**: recall_log.sources JSON 파싱으로 vec_ratio 계산
+- Tests: 169/169 PASS (테스트도 v3 기준으로 갱신)
 
 ## v3.0.0-rc Changes (2026-03-11, Phase 5 진행 중)
 - **Ontology v3**: 타입 51→15 축소 (Tier1:7핵심 + Tier2:5맥락 + Tier3:3전환)
