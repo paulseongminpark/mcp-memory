@@ -154,3 +154,4 @@
 - 13 MCP tools, 6 layers, 50 node types, 48 relation types
 - migrate_v2.py 완료
 - enrichment pipeline (1,973/3,171 → 62%)
+

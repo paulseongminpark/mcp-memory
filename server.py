@@ -10,7 +10,11 @@ from mcp.server.fastmcp import FastMCP
 
 from config import DB_PATH, OPENAI_API_KEY, PROMOTE_LAYER
 from ontology.validators import validate_node_type, suggest_closest_type
-from storage.sqlite_store import init_db, sync_schema
+from storage.sqlite_store import (
+    init_db, sync_schema,
+    insert_session_event, query_session_events, resolve_session_event,
+    export_ontology as _export_ontology,
+)
 from utils.access_control import check_access, LAYER_PERMISSIONS
 
 if not OPENAI_API_KEY:
@@ -380,6 +384,89 @@ def dashboard() -> dict:
     """
     path = _generate_dashboard()
     return {"file": path, "message": f"Dashboard generated: {path}"}
+
+
+# ── v6.0 Session Events + Export ──────────────────────────
+
+
+@mcp.tool()
+def emit_event(
+    event_id: str,
+    session_id: str,
+    event_type: str,
+    summary: str,
+    project: str = "",
+    metadata: dict | None = None,
+) -> dict:
+    """Emit a session event (idempotent — duplicate event_id ignored).
+
+    Event types: FILE_CONFLICT, DECISION_MADE, PIPELINE_ADVANCE,
+    TASK_COMPLETE, HEALTH_ALERT
+
+    Args:
+        event_id: Deterministic hash for idempotency
+        session_id: Source session identifier
+        event_type: Event category
+        summary: Human-readable description
+        project: Project name
+        metadata: Additional context (JSON)
+    """
+    valid_types = {"FILE_CONFLICT", "DECISION_MADE", "PIPELINE_ADVANCE",
+                   "TASK_COMPLETE", "HEALTH_ALERT"}
+    if event_type not in valid_types:
+        return {"error": f"Invalid event_type: {event_type}. Valid: {valid_types}"}
+    return insert_session_event(event_id, session_id, event_type, summary, project, metadata)
+
+
+@mcp.tool()
+def poll_events(
+    exclude_session: str = "",
+    since: str = "",
+    status: str = "ACTIVE",
+    limit: int = 20,
+) -> dict:
+    """Poll session events from other sessions (cross-session awareness).
+
+    Args:
+        exclude_session: Skip events from this session (typically your own)
+        since: ISO timestamp cursor — only events after this time
+        status: Filter by status (ACTIVE/RESOLVED/EXPIRED)
+        limit: Max results
+    """
+    events = query_session_events(exclude_session, since, status, limit)
+    return {"events": events, "count": len(events)}
+
+
+@mcp.tool()
+def resolve_event(event_id: str) -> dict:
+    """Mark a session event as resolved.
+
+    Args:
+        event_id: The event to resolve
+    """
+    ok = resolve_session_event(event_id)
+    return {"resolved": ok, "event_id": event_id}
+
+
+@mcp.tool()
+def export_ontology(
+    types: list[str] | None = None,
+    project: str = "",
+    since: str = "",
+    changed_only: bool = False,
+) -> dict:
+    """Export full ontology (nodes + edges) as JSON for AI analysis.
+
+    Used by weekly 3-way ontology scan (Claude + Codex + Gemini).
+    ~500K tokens at current scale (4,200+ nodes).
+
+    Args:
+        types: Filter by node types (e.g. ["Decision", "Pattern"])
+        project: Filter by project name
+        since: ISO timestamp — nodes created/updated after this date
+        changed_only: If True with 'since', use updated_at instead of created_at
+    """
+    return _export_ontology(types, project, since, changed_only)
 
 
 # DB 초기화 + 스키마 동기화

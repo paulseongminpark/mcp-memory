@@ -89,3 +89,4 @@ _Updated: 2026-03-16_
 - [ ] Step 4: dispatch + L3 자율성 규칙
 - [ ] Phase 6: NDCG 0.9 검증 (goldset 75개)
 - [ ] schema.yaml v3 업데이트 (deprecated 타입 제거)
+

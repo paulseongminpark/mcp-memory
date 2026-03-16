@@ -329,6 +329,31 @@ def init_db() -> None:
         except Exception:
             pass
 
+    # v6.0: session_events 테이블 (Event Journal)
+    with _db() as _mig:
+        try:
+            _mig.execute("""
+                CREATE TABLE IF NOT EXISTS session_events (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    event_id TEXT UNIQUE NOT NULL,
+                    session_id TEXT NOT NULL,
+                    project TEXT DEFAULT '',
+                    event_type TEXT NOT NULL,
+                    summary TEXT NOT NULL,
+                    status TEXT DEFAULT 'ACTIVE',
+                    created_at TEXT NOT NULL,
+                    resolved_at TEXT,
+                    metadata TEXT DEFAULT '{}'
+                )
+            """)
+            _mig.execute("CREATE INDEX IF NOT EXISTS idx_sevt_session ON session_events(session_id)")
+            _mig.execute("CREATE INDEX IF NOT EXISTS idx_sevt_status ON session_events(status)")
+            _mig.execute("CREATE INDEX IF NOT EXISTS idx_sevt_created ON session_events(created_at)")
+            _mig.execute("CREATE INDEX IF NOT EXISTS idx_sevt_type ON session_events(event_type)")
+            _mig.commit()
+        except Exception:
+            pass
+
 
 def insert_node(
     type: str,
@@ -747,3 +772,124 @@ def sync_schema() -> dict:
 
     logging.info("schema sync: %s", result)
     return result
+
+
+# ── v6.0 Session Events (Event Journal) ──────────────────────────
+
+
+def insert_session_event(
+    event_id: str,
+    session_id: str,
+    event_type: str,
+    summary: str,
+    project: str = "",
+    metadata: dict | None = None,
+) -> dict:
+    """Idempotent upsert — 동일 event_id는 무시."""
+    now = datetime.now(timezone.utc).isoformat()
+    with _db() as conn:
+        try:
+            conn.execute(
+                """INSERT OR IGNORE INTO session_events
+                   (event_id, session_id, project, event_type, summary, status, created_at, metadata)
+                   VALUES (?, ?, ?, ?, ?, 'ACTIVE', ?, ?)""",
+                (event_id, session_id, project, event_type, summary, now,
+                 json.dumps(metadata or {})),
+            )
+            conn.commit()
+            # check if actually inserted (vs ignored)
+            row = conn.execute(
+                "SELECT id FROM session_events WHERE event_id = ?", (event_id,)
+            ).fetchone()
+            return {"event_id": event_id, "id": row["id"] if row else None, "status": "created"}
+        except Exception:
+            return {"event_id": event_id, "status": "duplicate"}
+
+
+def query_session_events(
+    exclude_session: str = "",
+    since: str = "",
+    status: str = "ACTIVE",
+    limit: int = 50,
+) -> list[dict]:
+    """다른 세션의 이벤트 조회 (polling용)."""
+    with _db() as conn:
+        conditions = ["status = ?"]
+        params: list = [status]
+        if exclude_session:
+            conditions.append("session_id != ?")
+            params.append(exclude_session)
+        if since:
+            conditions.append("created_at > ?")
+            params.append(since)
+        params.append(limit)
+        rows = conn.execute(
+            f"SELECT * FROM session_events WHERE {' AND '.join(conditions)} ORDER BY created_at DESC LIMIT ?",
+            params,
+        ).fetchall()
+        return [dict(r) for r in rows]
+
+
+def resolve_session_event(event_id: str) -> bool:
+    """이벤트를 RESOLVED로 전환."""
+    now = datetime.now(timezone.utc).isoformat()
+    with _db() as conn:
+        cur = conn.execute(
+            "UPDATE session_events SET status = 'RESOLVED', resolved_at = ? WHERE event_id = ? AND status = 'ACTIVE'",
+            (now, event_id),
+        )
+        conn.commit()
+        return cur.rowcount > 0
+
+
+def export_ontology(
+    types: list[str] | None = None,
+    project: str = "",
+    since: str = "",
+    changed_only: bool = False,
+) -> dict:
+    """전체 온톨로지 export (노드+엣지 JSON). 주간 3-way 풀스캔용."""
+    with _db() as conn:
+        # nodes
+        node_conditions = ["status = 'active'"]
+        node_params: list = []
+        if types:
+            placeholders = ",".join("?" * len(types))
+            node_conditions.append(f"type IN ({placeholders})")
+            node_params.extend(types)
+        if project:
+            node_conditions.append("project = ?")
+            node_params.append(project)
+        if since:
+            col = "updated_at" if changed_only else "created_at"
+            node_conditions.append(f"{col} > ?")
+            node_params.append(since)
+
+        nodes = conn.execute(
+            f"SELECT id, type, content, project, tags, confidence, source, created_at, updated_at, layer, score_history "
+            f"FROM nodes WHERE {' AND '.join(node_conditions)}",
+            node_params,
+        ).fetchall()
+
+        node_ids = {r["id"] for r in nodes}
+
+        # edges (양쪽 노드가 결과에 포함된 것만)
+        edges = conn.execute(
+            "SELECT id, source_id, target_id, relation, strength, created_at "
+            "FROM edges WHERE status = 'active'"
+        ).fetchall()
+        filtered_edges = [
+            dict(e) for e in edges
+            if e["source_id"] in node_ids and e["target_id"] in node_ids
+        ]
+
+        return {
+            "meta": {
+                "exported": datetime.now(timezone.utc).isoformat(),
+                "nodes": len(nodes),
+                "edges": len(filtered_edges),
+                "filters": {"types": types, "project": project, "since": since, "changed_only": changed_only},
+            },
+            "nodes": [dict(n) for n in nodes],
+            "edges": filtered_edges,
+        }
