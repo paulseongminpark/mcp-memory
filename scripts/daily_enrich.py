@@ -389,7 +389,8 @@ def _run_edge_pruning(conn: sqlite3.Connection, dry_run: bool) -> dict:
 
         if not dry_run:
             if decision == "delete":
-                conn.execute("DELETE FROM edges WHERE id=?", (edge_id,))
+                # v3.1: hard DELETE → soft-delete (Phase 6 pruning 사고 방지)
+                conn.execute("UPDATE edges SET status='deleted' WHERE id=?", (edge_id,))
 
         stats[decision] += 1
 
