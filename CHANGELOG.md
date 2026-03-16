@@ -1,5 +1,14 @@
 # mcp-memory CHANGELOG
 
+## v3.1.0-dev (2026-03-16) — 온톨로지 강화 + PDR
+
+### PDR (Pipeline DONE Retrospective)
+- /pdr 스킬 신규: 8차원 전수 스캔, 20-25개 Observation(L0) + tags
+- G6 DONE gate 하드블록: phase-rules.json + validate_output.py
+- 차원: thinking-style, preference, emotional, decision-style, language, work-rhythm, metacognition, connection
+- 첫 실행: 23건 저장 (#5195-#5217), 4 auto-edge
+- Pipeline 02_interaction-capture_0316 DONE
+
 ## v3.1.0-dev (2026-03-16) — 온톨로지 강화
 ### Promotion Pipeline 해제
 - Gate 2: Bayesian Beta(1,10) → visit_count ≥ 10 직접 threshold (수학적 불가 해소)

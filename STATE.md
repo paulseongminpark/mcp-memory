@@ -6,7 +6,7 @@ _Updated: 2026-03-16_
 - **Branch**: main
 - **NDCG@5**: 측정 예정 (Phase 6에서 재측정, 목표 0.9)
 - **Tests**: 169/169 PASS
-- **Active Nodes**: ~3,637
+- **Active Nodes**: ~3,719 (+23 PDR Observations)
 - **Ontology**: 15 active types (Tier1:7 + Tier2:5 + Tier3:3) + Unclassified
 - **RELATION_RULES**: 49개 (37.3% type pair 커버리지)
 - **retrieval_hints**: 2927/2947 완료 (99.3%)
@@ -14,7 +14,8 @@ _Updated: 2026-03-16_
 - **Enrichment**: 3,696/3,696 (100%), Phase 1-6 완료
 - **Orphans**: 0/3,696 (0%)
 - **NDCG@5**: 0.249 (goldset 75개, K=30) — baseline
-- **Pipeline**: 01_ontology-enhancement_0315 DONE
+- **Pipeline**: 02_interaction-capture_0316 DONE (PDR 스킬 + G6 gate)
+- **PDR**: /pdr 스킬 활성, G6 DONE gate 하드블록, 첫 실행 23건 저장
 
 ## Architecture
 - 13 MCP tools, 4 layers (L0-L3+Unclassified), 15 node types, 48 relation types
