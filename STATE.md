@@ -11,7 +11,10 @@ _Updated: 2026-03-16_
 - **RELATION_RULES**: 49개 (37.3% type pair 커버리지)
 - **retrieval_hints**: 2927/2947 완료 (99.3%)
 - **Content Hash**: 100%
-- **Pipeline**: 01_ontology-enhancement_0315 (impl-r1 완료)
+- **Enrichment**: 3,696/3,696 (100%), Phase 1-6 완료
+- **Orphans**: 0/3,696 (0%)
+- **NDCG@5**: 0.249 (goldset 75개, K=30) — baseline
+- **Pipeline**: 01_ontology-enhancement_0315 DONE
 
 ## Architecture
 - 13 MCP tools, 4 layers (L0-L3+Unclassified), 15 node types, 48 relation types
@@ -42,7 +45,7 @@ _Updated: 2026-03-16_
 - **PROMOTE_LAYER v3**: L0(3), L1(7), L2(3), L3(2) + Unclassified
 - **RELATION_RULES**: 25→17개 (deprecated 타입 제거)
 - Tests: 163→169 (+6)
-- **잔여**: err 20 재생성, re-embed(2.5), co-retrieval(3), dispatch(4), NDCG검증(6)
+- **잔여**: ~~re-embed(2.5)~~ ~~co-retrieval(3)~~ dispatch(4), NDCG 0.9 목표(6)
 
 ## v2.2.1 Changes (2026-03-08)
 - **Layer A 리팩터**: TYPE_BOOST additive → Type-Aware Vector Channel (4번째 RRF 채널)
