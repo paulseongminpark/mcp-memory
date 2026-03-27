@@ -83,10 +83,12 @@ _Updated: 2026-03-16_
 - q051-q075 NDCG@5=0.244 — gold ID 1개로 축소 후 검색 상위 매칭 어려움
 
 ## Next (Phase 5 잔여 → Phase 6)
-- [ ] err 20개 hints 재생성 (retrieval_hints IS NULL)
-- [ ] Step 2.5: ChromaDB re-embed (hints 반영)
-- [ ] Step 3: co-retrieval 실행 + edges boost 컬럼
-- [ ] Step 4: dispatch + L3 자율성 규칙
-- [ ] Phase 6: NDCG 0.9 검증 (goldset 75개)
+- [ ] hints 295건 재생성 (retrieval_hints IS NULL — 스크립트 ready: hints_generator.py)
+- [ ] Step 2.5: ChromaDB re-embed (스크립트 ready: reembed.py)
+- [ ] Step 3: co-retrieval 실행 (스크립트 ready: co_retrieval.py)
+- [ ] Step 4: L3 자율성 규칙 구현 (dispatch routing만 존재, 규칙 엔진 미구현)
+- [ ] Phase 6: NDCG 측정 스크립트 작성 + goldset 75개 완성 + 0.9 검증
+- [ ] ingest cleanup: 56노드 정리 (계획: 00_pending/ingest-cleanup-0311.md)
+- [ ] Identity dedup: 5노드 (#3773/3575/2712/3641/3707)
 - [ ] schema.yaml v3 업데이트 (deprecated 타입 제거)
 
