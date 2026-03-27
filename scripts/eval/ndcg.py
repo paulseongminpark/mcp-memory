@@ -11,7 +11,19 @@ import os
 import sys
 import yaml
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
+PROJECT_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
+sys.path.insert(0, PROJECT_ROOT)
+os.chdir(PROJECT_ROOT)
+
+# .env 로드 (OPENAI_API_KEY 필요)
+env_file = os.path.join(PROJECT_ROOT, ".env")
+if os.path.exists(env_file):
+    with open(env_file) as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                k, v = line.split("=", 1)
+                os.environ.setdefault(k.strip(), v.strip())
 
 from tools.recall import recall
 
@@ -74,7 +86,7 @@ def run_eval(k_values: list[int] = None, verbose: bool = False) -> dict:
         # recall 실행
         try:
             recall_result = recall(query=query_text, top_k=max(k_values))
-            retrieved_ids = [n["id"] for n in recall_result.get("nodes", [])]
+            retrieved_ids = [n["id"] for n in recall_result.get("results", [])]
         except Exception as e:
             if verbose:
                 print(f"  {qid}: ERROR — {e}")
@@ -82,7 +94,7 @@ def run_eval(k_values: list[int] = None, verbose: bool = False) -> dict:
 
         # hit rate
         all_relevant = set(relevant) | set(also or [])
-        if any(rid in all_relevant for rid in retrieved_ids[:k_values[0]]):
+        if any(rid in all_relevant for rid in retrieved_ids[:max(k_values)]):
             hit_count += 1
 
         for k in k_values:
