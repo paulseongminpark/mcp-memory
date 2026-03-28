@@ -1,6 +1,7 @@
 """MCP Memory Server — 3중 하이브리드 검색 외부 메모리."""
 
 import sys
+import threading
 from pathlib import Path
 
 # 프로젝트 루트를 sys.path에 추가
@@ -8,37 +9,122 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from mcp.server.fastmcp import FastMCP
 
-from config import DB_PATH, OPENAI_API_KEY, PROMOTE_LAYER
-from ontology.validators import validate_node_type, suggest_closest_type
-from storage.sqlite_store import (
-    init_db, sync_schema,
-    insert_session_event, query_session_events, resolve_session_event,
-    export_ontology as _export_ontology,
-)
-from utils.access_control import check_access, LAYER_PERMISSIONS
-
-if not OPENAI_API_KEY:
-    import warnings
-    warnings.warn("OPENAI_API_KEY not set — embedding features will fail")
-from tools.remember import remember as _remember
-from tools.recall import recall as _recall
-from tools.get_context import get_context as _get_context
-from tools.save_session import save_session as _save_session
-from tools.suggest_type import suggest_type as _suggest_type
-from tools.visualize import visualize as _visualize
-from tools.analyze_signals import analyze_signals as _analyze_signals
-from tools.promote_node import promote_node as _promote_node
-from tools.get_becoming import get_becoming as _get_becoming
-from tools.inspect_node import inspect_node as _inspect_node
-from ingestion.obsidian import ingest_vault as _ingest_vault
-from scripts.ontology_review import run_review as _ontology_review
-from scripts.dashboard import generate_dashboard as _generate_dashboard
-
 mcp = FastMCP(
     "memory",
     instructions="External memory system with hybrid search (Vector + FTS5 + Graph). "
     "Use remember() to store, recall() to search, get_context() for session summary.",
 )
+
+# ── Lazy initialization ──────────────────────────────────────────
+# 무거운 import + DB init + verify를 백그라운드 스레드로 실행.
+# mcp.run()이 즉시 시작되어 stdio handshake가 타임아웃 없이 완료된다.
+# 도구 호출 시 _ready.wait()로 init 완료를 보장.
+_ready = threading.Event()
+
+# 모듈 레벨 플레이스홀더 — _init_worker()에서 할당
+PROMOTE_LAYER = None
+validate_node_type = None
+suggest_closest_type = None
+check_access = None
+LAYER_PERMISSIONS = None
+_remember = None
+_recall = None
+_get_context = None
+_save_session = None
+_suggest_type = None
+_visualize = None
+_analyze_signals = None
+_promote_node = None
+_get_becoming = None
+_inspect_node = None
+_ingest_vault = None
+_ontology_review = None
+_generate_dashboard = None
+insert_session_event = None
+query_session_events = None
+resolve_session_event = None
+_export_ontology = None
+
+
+def _init_worker():
+    """백그라운드 초기화: import, DB init, schema sync, verification."""
+    global PROMOTE_LAYER, validate_node_type, suggest_closest_type
+    global check_access, LAYER_PERMISSIONS
+    global _remember, _recall, _get_context, _save_session
+    global _suggest_type, _visualize, _analyze_signals
+    global _promote_node, _get_becoming, _inspect_node
+    global _ingest_vault, _ontology_review, _generate_dashboard
+    global insert_session_event, query_session_events
+    global resolve_session_event, _export_ontology
+
+    from config import OPENAI_API_KEY, PROMOTE_LAYER as _PL
+    PROMOTE_LAYER = _PL
+
+    from ontology.validators import validate_node_type as _vnt, suggest_closest_type as _sct
+    validate_node_type = _vnt
+    suggest_closest_type = _sct
+
+    from storage.sqlite_store import (
+        init_db, sync_schema,
+        insert_session_event as _ise, query_session_events as _qse,
+        resolve_session_event as _rse, export_ontology as _eo,
+    )
+    insert_session_event = _ise
+    query_session_events = _qse
+    resolve_session_event = _rse
+    _export_ontology = _eo
+
+    from utils.access_control import check_access as _ca, LAYER_PERMISSIONS as _lp
+    check_access = _ca
+    LAYER_PERMISSIONS = _lp
+
+    if not OPENAI_API_KEY:
+        import warnings
+        warnings.warn("OPENAI_API_KEY not set — embedding features will fail")
+
+    from tools.remember import remember as r
+    from tools.recall import recall as rc
+    from tools.get_context import get_context as gc
+    from tools.save_session import save_session as ss
+    from tools.suggest_type import suggest_type as st
+    from tools.visualize import visualize as vz
+    from tools.analyze_signals import analyze_signals as az
+    from tools.promote_node import promote_node as pn
+    from tools.get_becoming import get_becoming as gb
+    from tools.inspect_node import inspect_node as ins
+    from ingestion.obsidian import ingest_vault as iv
+    from scripts.ontology_review import run_review as orv
+    from scripts.dashboard import generate_dashboard as gd
+
+    _remember = r
+    _recall = rc
+    _get_context = gc
+    _save_session = ss
+    _suggest_type = st
+    _visualize = vz
+    _analyze_signals = az
+    _promote_node = pn
+    _get_becoming = gb
+    _inspect_node = ins
+    _ingest_vault = iv
+    _ontology_review = orv
+    _generate_dashboard = gd
+
+    # DB 초기화 + 스키마 동기화
+    init_db()
+    sync_schema()
+
+    # quick verify (실패해도 서버 정상 작동)
+    try:
+        from scripts.eval.verify import run_all
+        run_all(quick=True)
+    except Exception:
+        pass
+
+    _ready.set()
+
+
+threading.Thread(target=_init_worker, daemon=True).start()
 
 
 @mcp.tool()
@@ -68,6 +154,7 @@ def remember(
         source: Source of memory — claude, user, hook, obsidian (default claude)
         retrieval_hints: Retrieval context hints (when_needed, related_queries, context_keys)
     """
+    _ready.wait()
     # ── [A-13 통합] 타입 검증 블록 ─────────────────────────────────────────
     deprecated_warning: str | None = None
 
@@ -159,6 +246,7 @@ def recall(
         top_k: Number of results to return (default 5, max 50)
         mode: Search mode — "auto" (default), "focus" (strong connections), "dmn" (exploratory)
     """
+    _ready.wait()
     top_k = min(top_k, MAX_TOP_K)
     return _recall(
         query=query,
@@ -178,6 +266,7 @@ def get_context(project: str = "") -> dict:
     Args:
         project: Filter by project name (empty = all projects)
     """
+    _ready.wait()
     return _get_context(project=project)
 
 
@@ -200,6 +289,7 @@ def save_session(
         project: Project name
         active_pipeline: Active pipeline folder path (e.g. '01_ideation/2026-03-11-task/')
     """
+    _ready.wait()
     return _save_session(
         session_id=session_id,
         summary=summary,
@@ -230,6 +320,7 @@ def suggest_type(
         tags: Comma-separated tags
         project: Project name
     """
+    _ready.wait()
     return _suggest_type(
         content=content,
         reason=reason,
@@ -255,6 +346,7 @@ def analyze_signals(
         min_cluster_size: Minimum signals in a cluster (default 2)
         top_k: Maximum clusters to return (default 5)
     """
+    _ready.wait()
     return _analyze_signals(
         domain=domain,
         min_cluster_size=min_cluster_size,
@@ -284,6 +376,7 @@ def promote_node(
         related_ids: Other node IDs in the same cluster (creates realized_as edges)
         skip_gates: Skip 3-gate validation (SWR/Bayesian/MDL) for manual promotion
     """
+    _ready.wait()
     # ── [접근 제어] promote 대상 노드 write 권한 확인 ────────────────────
     if not check_access(node_id, "write", actor):
         return {
@@ -317,6 +410,7 @@ def get_becoming(
         domain: Filter by domain
         top_k: Maximum nodes to return (default 10)
     """
+    _ready.wait()
     return _get_becoming(domain=domain, top_k=top_k)
 
 
@@ -327,6 +421,7 @@ def inspect(node_id: int) -> dict:
     Args:
         node_id: The node ID to inspect
     """
+    _ready.wait()
     return _inspect_node(node_id=node_id)
 
 
@@ -346,6 +441,7 @@ def ingest_obsidian(
         force: Re-process already ingested files
         max_files: Limit number of files (0 = all)
     """
+    _ready.wait()
     return _ingest_vault(vault_path=vault_path, force=force, max_files=max_files)
 
 
@@ -364,6 +460,7 @@ def visualize(
         depth: Graph traversal depth from center (default 2)
         max_nodes: Maximum nodes to display (default 100)
     """
+    _ready.wait()
     return _visualize(center=center, depth=depth, max_nodes=max_nodes)
 
 
@@ -373,6 +470,7 @@ def ontology_review() -> str:
 
     Returns a markdown report and saves to data/ontology-review.md.
     """
+    _ready.wait()
     return _ontology_review()
 
 
@@ -382,6 +480,7 @@ def dashboard() -> dict:
 
     Returns the file path. Open in browser to view.
     """
+    _ready.wait()
     path = _generate_dashboard()
     return {"file": path, "message": f"Dashboard generated: {path}"}
 
@@ -413,6 +512,7 @@ def emit_event(
     """
     valid_types = {"FILE_CONFLICT", "DECISION_MADE", "PIPELINE_ADVANCE",
                    "TASK_COMPLETE", "HEALTH_ALERT"}
+    _ready.wait()
     if event_type not in valid_types:
         return {"error": f"Invalid event_type: {event_type}. Valid: {valid_types}"}
     return insert_session_event(event_id, session_id, event_type, summary, project, metadata)
@@ -433,6 +533,7 @@ def poll_events(
         status: Filter by status (ACTIVE/RESOLVED/EXPIRED)
         limit: Max results
     """
+    _ready.wait()
     events = query_session_events(exclude_session, since, status, limit)
     return {"events": events, "count": len(events)}
 
@@ -444,6 +545,7 @@ def resolve_event(event_id: str) -> dict:
     Args:
         event_id: The event to resolve
     """
+    _ready.wait()
     ok = resolve_session_event(event_id)
     return {"resolved": ok, "event_id": event_id}
 
@@ -466,19 +568,9 @@ def export_ontology(
         since: ISO timestamp — nodes created/updated after this date
         changed_only: If True with 'since', use updated_at instead of created_at
     """
+    _ready.wait()
     return _export_ontology(types, project, since, changed_only)
 
-
-# DB 초기화 + 스키마 동기화
-init_db()
-sync_schema()
-
-# quick verify (search_quality 스킵, <2초)
-try:
-    from scripts.eval.verify import run_all
-    run_all(quick=True)
-except Exception:
-    pass  # 검증 실패가 서버 시작을 막지 않음
 
 if __name__ == "__main__":
     mcp.run(transport="stdio")
