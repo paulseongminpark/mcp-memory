@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>Lens D — 경쟁 지형</title>
+<link rel="stylesheet" href="el-croquis.css">
+<style>
+  .quote-block {
+    border-left: none;
+    position: relative;
+  }
+  .quote-block::before {
+    content: '';
+    position: absolute;
+    left: calc(var(--quote-indent) - 4mm);
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: var(--accent);
+  }
+  .comp-table { border-collapse: collapse; width: 100%; max-width: 145mm; margin: 6mm 0; }
+  .comp-table th, .comp-table td { border: 0.25px solid #D8D8D8; padding: 2mm 2.5mm; font-family: 'Inter','Noto Sans KR',sans-serif; font-size: 8pt; font-weight: 300; line-height: 1.5; color: #000; vertical-align: top; }
+  .comp-table th { font-size: 6.8pt; font-weight: 400; letter-spacing: 1px; text-transform: uppercase; color: #666; background: #F7F7F7; }
+  .comp-table td:first-child { font-weight: 400; color: #666; }
+  .comp-table td:nth-child(2) { background: rgba(204,0,0,0.04); }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════
+     COVER
+     ══════════════════════════════════════════════════ -->
+<div class="page" style="padding: 0;">
+  <div style="position: absolute; top: 15.5mm; left: 10mm; right: 20mm; height: 0.9px; background: var(--fg);"></div>
+  <div style="padding: 32mm 78mm 15mm 25mm;">
+    <div style="margin-top: 0; font-size: 7pt; font-weight: 300; letter-spacing: 3px; text-transform: uppercase; color: var(--fg-light);">
+      LENS D &middot; COMPETITIVE LANDSCAPE &middot; 08 OF 09
+    </div>
+    <div style="margin-top: 21mm; font-size: 39px; font-weight: 300; line-height: 1.25; color: var(--fg); max-width: 550px;">
+      기존 AI 메모리 시스템 대비<br>mcp-memory의<br><span style="color: var(--accent);">위치</span>
+    </div>
+    <div style="margin-top: 8mm; font-size: 13.5px; font-weight: 300; line-height: 1.8; color: var(--fg-mid); max-width: 340px;">
+      Mem0, Zep/Graphiti, Cognee, Letta,<br>OpenAI Memory 등과의 구조적 비교
+    </div>
+  </div>
+  <div style="position: absolute; bottom: 171mm; left: 10mm; right: 20mm;">
+    <div style="width: 100%; height: 0.9px; background: var(--accent);"></div>
+    <div style="display: flex; justify-content: space-between; padding: 3mm 0 0 0;">
+      <span style="font-size: 7.5pt; font-weight: 300; letter-spacing: 2.5px; text-transform: uppercase; color: var(--fg-faint);">경쟁 지형 &middot; 비교 분석 &middot; AI 메모리 &middot; 차별점 &middot; 11 Facets</span>
+      <span style="font-size: 7.5pt; font-weight: 300; letter-spacing: 2px; color: var(--fg-faint);">2026</span>
+    </div>
+  </div>
+  <span class="page-number">1</span>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     SECTION OVERVIEW
+     ══════════════════════════════════════════════════ -->
+<div class="page">
+  <div class="page-label">lens d &mdash; 경쟁 지형</div>
+
+  <div class="section-header" style="margin-top:20mm;">
+    <span class="section-label">overview</span>
+    <h2>11 Facets</h2>
+    <p class="section-sub">경쟁 지형을 두 축으로 분류하고, 각 경쟁자와의 구조적 차이를 분석한다</p>
+  </div>
+  <div class="accent-line"></div>
+
+  <div class="body-sans" style="margin-top:12mm;">
+    <p style="font-size:8pt;color:#666;line-height:1.8;">
+      <span style="color:#CC0000;">00</span> &nbsp;지형 정의: 두 축<br>
+      <span style="color:#CC0000;">01</span> &nbsp;Mem0: flat에서 graph-hybrid로 진화 중<br>
+      <span style="color:#CC0000;">02</span> &nbsp;Zep/Graphiti: 시간 인식 지식 그래프<br>
+      <span style="color:#CC0000;">03</span> &nbsp;Cognee: 온톨로지 기반 검증<br>
+      <span style="color:#CC0000;">04</span> &nbsp;추가 경쟁자: Hindsight, LangMem, MemoClaw<br>
+      <span style="color:#CC0000;">05</span> &nbsp;Letta (구 MemGPT): 가장 자주 비교되는 경쟁자<br>
+      <span style="color:#CC0000;">06</span> &nbsp;PKM 도구와 학술 PKG 연구<br>
+      <span style="color:#CC0000;">07</span> &nbsp;OpenAI Memory: 가장 널리 배포된 경쟁자<br>
+      <span style="color:#CC0000;">08</span> &nbsp;우상단 사분면: Structured + Static<br>
+      <span style="color:#CC0000;">09</span> &nbsp;빈 공간의 이유 &mdash; 시장 기회와 위험<br>
+      <span style="color:#CC0000;">10</span> &nbsp;차별점 재평가 &mdash; 그리고 한계
+    </p>
+  </div>
+
+  <div class="page-number">02</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     FACET 00 — 지형 정의: 두 축
+     ══════════════════════════════════════════════════ -->
+<div class="page">
+  <div class="page-label">lens d &mdash; 경쟁 지형</div>
+
+  <div style="position: absolute; right: 12mm; top: 35mm; width: 58mm;">
+    <svg viewBox="-5 -5 218 234" width="58mm" xmlns="http://www.w3.org/2000/svg">
+      <text x="104" y="10" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#999" letter-spacing="2">LANDSCAPE AXES</text>
+      <line x1="18" y1="20" x2="190" y2="20" stroke="#BBB" stroke-width="0.3" stroke-linecap="butt" shape-rendering="crispEdges"/>
+
+      <circle cx="104" cy="110" r="20" fill="none" stroke="#000" stroke-width="0.6"/>
+      <text x="104" y="106" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000" letter-spacing="1">AI MEMORY</text>
+      <text x="104" y="118" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666">2 AXES</text>
+
+      <line x1="104" y1="90" x2="104" y2="44" stroke="#000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="101" y1="48" x2="104" y2="42" stroke="#000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="107" y1="48" x2="104" y2="42" stroke="#000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+
+      <line x1="124" y1="110" x2="170" y2="110" stroke="#000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="166" y1="107" x2="172" y2="110" stroke="#000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="166" y1="113" x2="172" y2="110" stroke="#000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+
+      <line x1="104" y1="130" x2="104" y2="176" stroke="#000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="101" y1="172" x2="104" y2="178" stroke="#000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="107" y1="172" x2="104" y2="178" stroke="#000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+
+      <line x1="84" y1="110" x2="38" y2="110" stroke="#CC0000" stroke-width="0.6" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="42" y1="107" x2="36" y2="110" stroke="#CC0000" stroke-width="0.6" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="42" y1="113" x2="36" y2="110" stroke="#CC0000" stroke-width="0.6" stroke-linecap="butt" shape-rendering="crispEdges"/>
+
+      <text x="104" y="34" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000" letter-spacing="1">SELF-IMPROVING</text>
+      <text x="174" y="114" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000" letter-spacing="1">LAYERED</text>
+      <text x="104" y="194" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000" letter-spacing="1">STATIC</text>
+      <text x="34" y="114" text-anchor="end" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#CC0000" letter-spacing="1">FLAT</text>
+
+      <rect x="18" y="48" width="64" height="28" fill="none" stroke="#000" stroke-width="0.5" stroke-linejoin="miter"/>
+      <text x="50" y="60" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000" letter-spacing="0.8">FLAT</text>
+      <text x="50" y="72" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666">SELF-UPDATING</text>
+
+      <rect x="126" y="48" width="64" height="28" fill="none" stroke="#CC0000" stroke-width="0.6" stroke-linejoin="miter"/>
+      <text x="158" y="60" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#CC0000" letter-spacing="0.8">LAYERED</text>
+      <text x="158" y="72" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#CC0000">EMPTY ZONE</text>
+
+      <rect x="18" y="144" width="64" height="28" fill="none" stroke="#000" stroke-width="0.5" stroke-linejoin="miter"/>
+      <text x="50" y="156" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000" letter-spacing="0.8">FLAT</text>
+      <text x="50" y="168" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666">STATIC</text>
+
+      <rect x="126" y="144" width="64" height="28" fill="none" stroke="#000" stroke-width="0.5" stroke-linejoin="miter"/>
+      <text x="158" y="156" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000" letter-spacing="0.8">LAYERED</text>
+      <text x="158" y="168" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666">MANUAL</text>
+
+      <line x1="0" y1="206" x2="208" y2="206" stroke="#000" stroke-width="0.4" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <text x="0" y="220" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#999" letter-spacing="0.5">2026 경쟁은 우하단으로 이동 중이다.</text>
+    </svg>
+    <div style="font-size: 6px; color: #BBB; letter-spacing: 1px; text-transform: uppercase; margin-top: 2mm;">FIG. 1 &mdash; TWO AXES THAT DEFINE THE FIELD</div>
+  </div>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">facet <span class="accent-num">00</span></span>
+    <h2>지형 정의: 두 축</h2>
+  </div>
+  <div class="accent-line"></div>
+
+  <div class="body-serif" style="margin-top:8mm;">
+    <p>AI 메모리/지식 시스템을 두 축으로 분류한다. 축 1: 구조화 정도 &mdash; flat memory(텍스트 리스트)에서 layered ontology(계층적 타입 체계)까지. 축 2: 자기개선 여부 &mdash; static(수동 유지)에서 self-improving(자동 승격, 자기교정)까지. 이 2&times;2 매트릭스가 경쟁 지형의 기본 지도다. 그러나 2025-2026에 경쟁 지형이 급변했다 &mdash; 여러 경쟁자가 graph 기능을 추가하면서 우하단(structured+static)이 두터워지고 있다.</p>
+  </div>
+
+  <div class="page-number">03</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     FACET 01 — Mem0
+     ══════════════════════════════════════════════════ -->
+<div class="page">
+  <div class="page-label">lens d &mdash; 경쟁 지형</div>
+
+  <div style="position: absolute; right: 12mm; top: 35mm; width: 58mm;">
+    <svg viewBox="-5 -5 218 258" width="58mm" xmlns="http://www.w3.org/2000/svg">
+      <text x="104" y="10" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#999" letter-spacing="2">MEM0 EVOLUTION</text>
+      <line x1="16" y1="18" x2="190" y2="18" stroke="#BBB" stroke-width="0.3" stroke-linecap="butt" shape-rendering="crispEdges"/>
+
+      <rect x="16" y="36" width="186" height="44" fill="none" stroke="#000" stroke-width="0.6" stroke-linejoin="miter"/>
+      <text x="30" y="52" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000" letter-spacing="1">PHASE 1</text>
+      <text x="30" y="66" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666">FACT EXTRACTION</text>
+      <text x="30" y="78" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666">single-level memory</text>
+
+      <line x1="109" y1="80" x2="109" y2="106" stroke="#000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="106" y1="100" x2="109" y2="106" stroke="#000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="112" y1="100" x2="109" y2="106" stroke="#000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <text x="120" y="98" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#999" letter-spacing="1">ADDS GRAPH</text>
+
+      <rect x="16" y="110" width="186" height="54" fill="none" stroke="#000" stroke-width="0.6" stroke-linejoin="miter"/>
+      <text x="30" y="126" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000" letter-spacing="1">PHASE 2</text>
+      <text x="30" y="140" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666">ENTITY + RELATION GRAPH</text>
+      <text x="30" y="152" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666">vector + graph parallel retrieval</text>
+      <text x="30" y="164" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666">still generic relation typing</text>
+
+      <line x1="109" y1="164" x2="109" y2="190" stroke="#CC0000" stroke-width="0.6" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="106" y1="184" x2="109" y2="190" stroke="#CC0000" stroke-width="0.6" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="112" y1="184" x2="109" y2="190" stroke="#CC0000" stroke-width="0.6" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <text x="118" y="182" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#CC0000" letter-spacing="1">LIMIT</text>
+
+      <rect x="16" y="194" width="186" height="42" fill="none" stroke="#CC0000" stroke-width="0.6" stroke-linejoin="miter"/>
+      <text x="30" y="210" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#CC0000" letter-spacing="1">MISSING</text>
+      <text x="30" y="224" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#CC0000">no L0-L5 maturity path</text>
+      <text x="30" y="236" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#CC0000">no promotion into principle</text>
+
+      <line x1="0" y1="246" x2="208" y2="246" stroke="#000" stroke-width="0.4" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <text x="0" y="258" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#999" letter-spacing="0.5">graph-hybrid로 이동했지만 인지 계층은 없다.</text>
+    </svg>
+    <div style="font-size: 6px; color: #BBB; letter-spacing: 1px; text-transform: uppercase; margin-top: 2mm;">FIG. 2 &mdash; MEM0 FROM FLAT MEMORY TO GRAPH HYBRID</div>
+  </div>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">facet <span class="accent-num">01</span></span>
+    <h2>Mem0: flat에서 graph-hybrid로 진화 중</h2>
+  </div>
+  <div class="accent-line"></div>
+
+  <div class="body-serif" style="margin-top:8mm;">
+    <p>초기 모델. Mem0는 대화에서 사실을 추출해 키-값으로 저장했다. &ldquo;사용자는 채식주의자다&rdquo;, &ldquo;선호 언어는 Python이다.&rdquo; 구조 없음 &mdash; 모든 기억이 같은 레벨. 자기개선 없음 &mdash; 새 사실이 들어오면 덮어쓴다.</p>
+
+    <p>현재 기능 (2026-03). Mem0는 더 이상 단순 flat memory가 아니다. Graph Memory를 추가해 엔티티와 관계를 추출하고 Neo4j/Memgraph/Neptune에 저장한다. 벡터 검색과 그래프 검색을 병렬 실행. LOCOMO 벤치마크에서 OpenAI Memory 대비 26% 정확도 향상, 91% 지연 감소를 주장한다.</p>
+
+    <p>로드맵. Conflict Detector + Update Resolver로 모순 지식을 자동 관리. 엔터프라이즈 규모 확장.</p>
+  </div>
+
+  <div class="quote-block">
+    <p>Mem0의 graph는 자동 추출 기반 &mdash; LLM이 대화에서 엔티티/관계를 추출한다. 이건 편리하지만 추출 품질이 LLM에 의존하고, 관계 타입이 범용적이다. mcp-memory의 관계는 설계된 인지 타입 &mdash; crystallized_into, abstracted_from, contradicts 같은 인지적 관계가 8개 군으로 정의되어 있다.</p>
+  </div>
+
+  <div class="body-serif">
+    <p>또한 Mem0에는 인지 계층(L0-L5)이 없고, 승격 메커니즘이 없다. Graph는 있지만 &ldquo;경험이 원칙이 되는 경로&rdquo;는 없다. 그리고 graph 기능은 Pro 티어($249/월)에 제한된다.</p>
+  </div>
+
+  <div class="page-number">04</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     FACET 02 — Zep/Graphiti
+     ══════════════════════════════════════════════════ -->
+<div class="page">
+  <div class="page-label">lens d &mdash; 경쟁 지형</div>
+
+  <div style="position: absolute; right: 12mm; top: 35mm; width: 58mm;">
+    <svg viewBox="-5 -5 218 234" width="58mm" xmlns="http://www.w3.org/2000/svg">
+      <text x="104" y="10" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#999" letter-spacing="2">ZEP TO GRAPHITI</text>
+      <line x1="12" y1="18" x2="196" y2="18" stroke="#BBB" stroke-width="0.3" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="28" y1="106" x2="188" y2="106" stroke="#000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+
+      <line x1="56" y1="98" x2="56" y2="114" stroke="#000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="108" y1="98" x2="108" y2="114" stroke="#000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="160" y1="98" x2="160" y2="114" stroke="#CC0000" stroke-width="0.6" stroke-linecap="butt" shape-rendering="crispEdges"/>
+
+      <circle cx="56" cy="106" r="4" fill="none" stroke="#000" stroke-width="0.5"/>
+      <circle cx="108" cy="106" r="4" fill="none" stroke="#000" stroke-width="0.5"/>
+      <circle cx="160" cy="106" r="5" fill="#CC0000" stroke="#CC0000" stroke-width="0.5"/>
+
+      <text x="56" y="78" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000" letter-spacing="1">ZEP</text>
+      <text x="56" y="90" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666">vector history</text>
+
+      <text x="108" y="60" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000" letter-spacing="1">REPOSITION</text>
+      <text x="108" y="72" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666">context engineering</text>
+      <text x="108" y="84" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666">platform</text>
+
+      <text x="160" y="60" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#CC0000" letter-spacing="1">GRAPHITI</text>
+      <text x="160" y="72" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#CC0000">temporal edges</text>
+      <text x="160" y="84" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#CC0000">past-state replay</text>
+
+      <rect x="24" y="132" width="64" height="34" fill="none" stroke="#000" stroke-width="0.5" stroke-linejoin="miter"/>
+      <text x="56" y="146" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000" letter-spacing="0.8">STRENGTH</text>
+      <text x="56" y="158" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666">when was it true</text>
+
+      <rect x="130" y="132" width="64" height="34" fill="none" stroke="#000" stroke-width="0.5" stroke-linejoin="miter"/>
+      <text x="162" y="146" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000" letter-spacing="0.8">GAP</text>
+      <text x="162" y="158" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666">what matures up</text>
+
+      <line x1="0" y1="198" x2="208" y2="198" stroke="#000" stroke-width="0.4" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <text x="0" y="212" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#999" letter-spacing="0.5">시간 추적은 강하지만 승격 경로는 비어 있다.</text>
+    </svg>
+    <div style="font-size: 6px; color: #BBB; letter-spacing: 1px; text-transform: uppercase; margin-top: 2mm;">FIG. 3 &mdash; TIMELINE OF ZEP'S TEMPORAL GRAPH TURN</div>
+  </div>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">facet <span class="accent-num">02</span></span>
+    <h2>Zep/Graphiti: 시간 인식 지식 그래프</h2>
+  </div>
+  <div class="accent-line"></div>
+
+  <div class="body-serif" style="margin-top:8mm;">
+    <p>초기 모델. Zep은 대화 히스토리를 벡터 DB에 저장하고 검색했다. 장기 기억과 요약을 제공. 그러나 지식의 계층이나 관계 타입은 없었다.</p>
+
+    <p>현재 기능. Zep은 &ldquo;context engineering platform&rdquo;으로 리포지셔닝했다. Graphiti 프레임워크는 시간 인식(temporally-aware) 지식 그래프를 제공한다 &mdash; 모든 엣지에 유효 기간(t_valid, t_invalid)이 있고, 과거 시점의 지식 상태를 재구성할 수 있다. LongMemEval에서 Mem0 대비 15%p 우위(63.8% vs 49.0%).</p>
+  </div>
+
+  <div class="quote-block">
+    <p>Graphiti의 강점은 시간 추적이고, mcp-memory의 강점은 인지 계층과 승격이다. Graphiti는 &ldquo;이 사실이 언제 유효했는가&rdquo;를 잘 추적하지만, &ldquo;이 경험에서 어떤 원칙을 추출할 것인가&rdquo;는 다루지 않는다. 시간적 정확성 vs 인지적 깊이의 차이.</p>
+  </div>
+
+  <div class="page-number">05</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     FACET 03 — Cognee
+     ══════════════════════════════════════════════════ -->
+<div class="page">
+  <div class="page-label">lens d &mdash; 경쟁 지형</div>
+
+  <div style="position: absolute; right: 12mm; top: 35mm; width: 58mm;">
+    <svg viewBox="-5 -5 218 258" width="58mm" xmlns="http://www.w3.org/2000/svg">
+      <text x="104" y="10" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#999" letter-spacing="2">COGNEE STACK</text>
+      <line x1="18" y1="18" x2="190" y2="18" stroke="#BBB" stroke-width="0.3" stroke-linecap="butt" shape-rendering="crispEdges"/>
+
+      <rect x="34" y="36" width="140" height="34" fill="none" stroke="#000" stroke-width="0.6" stroke-linejoin="miter"/>
+      <text x="104" y="50" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000" letter-spacing="1">EXTRACT</text>
+      <text x="104" y="62" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666">ingest raw text and entities</text>
+
+      <line x1="104" y1="70" x2="104" y2="92" stroke="#000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="101" y1="86" x2="104" y2="92" stroke="#000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="107" y1="86" x2="104" y2="92" stroke="#000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+
+      <rect x="34" y="96" width="140" height="42" fill="none" stroke="#CC0000" stroke-width="0.6" stroke-linejoin="miter"/>
+      <text x="104" y="110" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#CC0000" letter-spacing="1">COGNIFY</text>
+      <text x="104" y="122" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#CC0000">validated schema match</text>
+      <text x="104" y="134" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#CC0000">domain alignment</text>
+
+      <line x1="104" y1="138" x2="104" y2="160" stroke="#000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="101" y1="154" x2="104" y2="160" stroke="#000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="107" y1="154" x2="104" y2="160" stroke="#000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+
+      <rect x="34" y="164" width="140" height="34" fill="none" stroke="#000" stroke-width="0.6" stroke-linejoin="miter"/>
+      <text x="104" y="178" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000" letter-spacing="1">LOAD</text>
+      <text x="104" y="190" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666">graph persistence + retrieval</text>
+
+      <line x1="22" y1="214" x2="186" y2="214" stroke="#BBB" stroke-width="0.3" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <text x="22" y="228" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000" letter-spacing="1">ABOVE THE STACK</text>
+      <text x="22" y="240" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666">strong domain ontology discipline</text>
+      <text x="22" y="252" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666">no cognitive maturity ladder</text>
+    </svg>
+    <div style="font-size: 6px; color: #BBB; letter-spacing: 1px; text-transform: uppercase; margin-top: 2mm;">FIG. 4 &mdash; COGNEE'S ONTOLOGY-VALIDATED PIPELINE</div>
+  </div>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">facet <span class="accent-num">03</span></span>
+    <h2>Cognee: 온톨로지 기반 검증</h2>
+  </div>
+  <div class="accent-line"></div>
+
+  <div class="body-serif" style="margin-top:8mm;">
+    <p>현재 기능. 2026년 2월 $7.5M 시드 투자(Pebblebed 리드, OpenAI/Facebook AI Research 창립자 참여). ECL(Extract-Cognify-Load) 파이프라인으로 지식 그래프 구축. 핵심 차별점: 온톨로지 기반 엔티티 검증 &mdash; 도메인 온톨로지를 정의하고, 추출된 엔티티가 온톨로지에 부합하는지 검증. FuzzyMatchingStrategy로 자연어-스키마 불일치를 처리. Memify 파이프라인으로 그래프를 지속적으로 개선.</p>
+  </div>
+
+  <div class="quote-block">
+    <p>Cognee가 mcp-memory에 가장 가까운 경쟁자일 수 있다 &mdash; 온톨로지를 사용하고, 지식 그래프를 구축하고, 자기 개선을 지향한다. 그러나 Cognee의 온톨로지는 도메인 지식을 다루고, mcp-memory의 온톨로지는 인지 과정을 다룬다. Cognee는 &ldquo;데이터를 잘 구조화&rdquo;하고, mcp-memory는 &ldquo;사고를 잘 구조화&rdquo;한다.</p>
+  </div>
+
+  <div class="body-serif">
+    <p>Cognee에는 인지 계층, 승격, Correction 같은 메타인지적 타입이 없다.</p>
+  </div>
+
+  <div class="page-number">06</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     FACET 04 — 추가 경쟁자
+     ══════════════════════════════════════════════════ -->
+<div class="page">
+  <div class="page-label">lens d &mdash; 경쟁 지형</div>
+
+  <div style="position: absolute; right: 12mm; top: 35mm; width: 58mm;">
+    <svg viewBox="-5 -5 218 270" width="58mm" xmlns="http://www.w3.org/2000/svg">
+      <text x="104" y="10" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#999" letter-spacing="2">OTHER PLAYERS</text>
+      <line x1="0" y1="20" x2="208" y2="20" stroke="#000" stroke-width="0.6" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="74" y1="20" x2="74" y2="236" stroke="#BBB" stroke-width="0.3" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="146" y1="20" x2="146" y2="236" stroke="#BBB" stroke-width="0.3" stroke-linecap="butt" shape-rendering="crispEdges"/>
+
+      <text x="8" y="34" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000" letter-spacing="1">SYSTEM</text>
+      <text x="110" y="34" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000" letter-spacing="1">MEMORY FORM</text>
+      <text x="176" y="34" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000" letter-spacing="1">UPLIFT</text>
+
+      <line x1="0" y1="42" x2="208" y2="42" stroke="#BBB" stroke-width="0.3" stroke-linecap="butt" shape-rendering="crispEdges"/>
+
+      <text x="8" y="62" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000">HINDSIGHT</text>
+      <text x="110" y="62" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666">parallel retrieval</text>
+      <text x="176" y="62" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666">none</text>
+
+      <line x1="0" y1="76" x2="208" y2="76" stroke="#D8D8D8" stroke-width="0.3" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <text x="8" y="96" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000">LANGMEM</text>
+      <text x="110" y="96" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666">flat + vector</text>
+      <text x="176" y="96" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666">none</text>
+
+      <line x1="0" y1="110" x2="208" y2="110" stroke="#D8D8D8" stroke-width="0.3" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <text x="8" y="130" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000">LANGCHAIN</text>
+      <text x="110" y="130" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666">context buffers</text>
+      <text x="176" y="130" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666">none</text>
+
+      <line x1="0" y1="144" x2="208" y2="144" stroke="#D8D8D8" stroke-width="0.3" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <text x="8" y="164" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000">MEMOCLAW</text>
+      <text x="110" y="164" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666">store / recall</text>
+      <text x="176" y="164" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666">none</text>
+
+      <line x1="0" y1="178" x2="208" y2="178" stroke="#000" stroke-width="0.4" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <rect x="8" y="192" width="192" height="28" fill="none" stroke="#CC0000" stroke-width="0.5" stroke-linejoin="miter"/>
+      <text x="104" y="206" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#CC0000" letter-spacing="1">COMMON LIMIT</text>
+      <text x="104" y="218" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#CC0000">recall only, no maturation</text>
+
+      <text x="0" y="244" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#999" letter-spacing="0.5">검색 정교함은 올라가지만 구조적 증류는 비어 있다.</text>
+    </svg>
+    <div style="font-size: 6px; color: #BBB; letter-spacing: 1px; text-transform: uppercase; margin-top: 2mm;">FIG. 5 &mdash; CLASSIFICATION OF SECOND-TIER COMPETITORS</div>
+  </div>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">facet <span class="accent-num">04</span></span>
+    <h2>추가 경쟁자: Hindsight, LangMem, MemoClaw</h2>
+  </div>
+  <div class="accent-line"></div>
+
+  <div class="body-serif" style="margin-top:8mm;">
+    <p>Hindsight: 4가지 병렬 검색 전략 + cross-encoder reranking. LongMemEval에서 91.4%(Mem0: 49.0%). 조직 지식(institutional knowledge)에 초점. mcp-memory와의 차이: retrieval 전략의 정교함은 높지만 온톨로지나 승격 메커니즘은 없다.</p>
+
+    <p>LangMem: LangChain 생태계. flat 키-값 저장 + 벡터 검색. graph 없음, 온톨로지 없음. 단순성이 장점이자 한계.</p>
+
+    <p>LangChain Memory: ConversationBufferMemory, ConversationSummaryMemory 등. 대화의 맥락을 유지하지만, 구조적 지식 축적은 범위 밖이다.</p>
+
+    <p>MemoClaw: 극단적 단순성(store/recall 2개 연산), 암호화폐 결제. graph 없음. 개인 프로젝트/간단한 에이전트에 적합.</p>
+  </div>
+
+  <div class="quote-block">
+    <p>이들은 모두 &ldquo;지난 대화에서 뭐라고 했는가&rdquo;를 기억한다. 한계: &ldquo;그 기억에서 어떤 구조가 드러나는가&rdquo;는 답하지 못한다.</p>
+  </div>
+
+  <div class="page-number">07</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     FACET 05 — Letta (구 MemGPT)
+     ══════════════════════════════════════════════════ -->
+<div class="page">
+  <div class="page-label">lens d &mdash; 경쟁 지형</div>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">facet <span class="accent-num">05</span></span>
+    <h2>Letta (구 MemGPT): 가장 자주 비교되는 경쟁자</h2>
+  </div>
+  <div class="accent-line"></div>
+
+  <div class="body-serif" style="margin-top:8mm;">
+    <p>Letta는 &ldquo;장기 기억을 가진 에이전트&rdquo;다. 운영체제의 가상 메모리에서 영감을 받아, 컨텍스트 윈도우를 자동으로 관리한다. 메인 메모리(컨텍스트)와 아카이벌 메모리(외부 저장) 사이에서 데이터를 자동으로 이동한다.</p>
+  </div>
+
+  <div class="quote-block">
+    <p>Letta의 초점은 양 &mdash; 더 많은 기억을 효율적으로 관리. mcp-memory의 초점은 구조와 질 &mdash; 기억을 계층화하고, 패턴을 추출하고, 원칙으로 승격하고, 자기교정한다. Letta는 기억의 양을 늘리고, mcp-memory는 기억의 질을 높인다.</p>
+  </div>
+
+  <div style="margin-top: 6mm; max-width: 145mm;">
+    <svg viewBox="-5 -5 558 168" width="145mm" xmlns="http://www.w3.org/2000/svg">
+      <text x="0" y="10" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#999" letter-spacing="2">LETTA MEMORY FLOW</text>
+      <line x1="0" y1="18" x2="540" y2="18" stroke="#BBB" stroke-width="0.3" stroke-linecap="butt" shape-rendering="crispEdges"/>
+
+      <rect x="20" y="42" width="148" height="48" fill="none" stroke="#000" stroke-width="0.6" stroke-linejoin="miter"/>
+      <text x="94" y="58" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000" letter-spacing="1">USER EXCHANGE</text>
+      <text x="94" y="72" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666">conversation arrives</text>
+      <text x="94" y="84" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666">context pressure rises</text>
+
+      <line x1="168" y1="66" x2="216" y2="66" stroke="#000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <polygon points="212,63 218,66 212,69" fill="#000"/>
+
+      <rect x="220" y="42" width="148" height="48" fill="none" stroke="#000" stroke-width="0.6" stroke-linejoin="miter"/>
+      <text x="294" y="58" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000" letter-spacing="1">MAIN MEMORY</text>
+      <text x="294" y="72" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666">active context window</text>
+      <text x="294" y="84" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666">fast but capacity-bound</text>
+
+      <line x1="294" y1="90" x2="294" y2="118" stroke="#000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <polygon points="291,114 294,120 297,114" fill="#000"/>
+      <text x="306" y="106" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#999" letter-spacing="1">SWAP</text>
+
+      <rect x="220" y="124" width="148" height="32" fill="none" stroke="#CC0000" stroke-width="0.6" stroke-linejoin="miter"/>
+      <text x="294" y="138" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#CC0000" letter-spacing="1">ARCHIVAL MEMORY</text>
+      <text x="294" y="150" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#CC0000">more storage, same logic</text>
+
+      <line x1="368" y1="66" x2="416" y2="66" stroke="#000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <polygon points="412,63 418,66 412,69" fill="#000"/>
+
+      <rect x="420" y="42" width="120" height="48" fill="none" stroke="#000" stroke-width="0.6" stroke-linejoin="miter"/>
+      <text x="480" y="58" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000" letter-spacing="1">OUTCOME</text>
+      <text x="480" y="72" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666">longer memory span</text>
+      <text x="480" y="84" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666">not deeper ontology</text>
+
+      <line x1="20" y1="154" x2="540" y2="154" stroke="#000" stroke-width="0.4" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <text x="20" y="166" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#999" letter-spacing="0.5">Letta는 기억의 양을 확장하지만 기억의 계층을 재구성하지는 않는다.</text>
+    </svg>
+    <div style="font-size: 6px; color: #BBB; letter-spacing: 1px; text-transform: uppercase; margin-top: 2mm;">FIG. 6 &mdash; LETTA AS CONTEXT-TO-ARCHIVE MEMORY FLOW</div>
+  </div>
+
+  <div class="page-number">08</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     FACET 06 — PKM 도구와 학술 PKG 연구
+     ══════════════════════════════════════════════════ -->
+<div class="page">
+  <div class="page-label">lens d &mdash; 경쟁 지형</div>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">facet <span class="accent-num">06</span></span>
+    <h2>PKM 도구와 학술 PKG 연구</h2>
+  </div>
+  <div class="accent-line"></div>
+
+  <div class="body-serif" style="margin-top:8mm;">
+    <p>PKM 도구. Obsidian, Roam Research, Logseq &mdash; 개인 지식 관리(PKM) 도구들. 이들은 구조적이다(링크, 그래프 뷰, 태그). 그러나 AI 통합이 제한적이고, 자기개선 메커니즘이 없다. 사용자가 수동으로 링크하고 분류한다.</p>
+
+    <p>mcp-memory는 PKM의 구조적 장점과 AI 메모리의 자동화를 결합한다. 그러나 PKM과 달리 UI가 없다 &mdash; MCP 프로토콜을 통한 프로그래매틱 접근만 가능. 이건 현재의 제한이자 설계 선택이다(lean storage 원칙).</p>
+
+    <p>학술 Personal Knowledge Graph(PKG) 연구. PKG 분야는 2020년대에 활발해졌다. &ldquo;개인 지식을 그래프로 구조화하고 AI와 결합한다&rdquo;는 방향. mcp-memory와 공유하는 문제의식이 있지만, 학술 PKG는 주로 (1) 정보 검색 개선과 (2) 추천 시스템에 초점을 맞추며, 인지 계층이나 자기교정 메커니즘은 거의 다루지 않는다. mcp-memory의 차별점은 PKG를 인지 과정 모델링에 적용한 것이다.</p>
+  </div>
+
+  <div class="page-number">09</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     FACET 07 — OpenAI Memory
+     ══════════════════════════════════════════════════ -->
+<div class="page">
+  <div class="page-label">lens d &mdash; 경쟁 지형</div>
+
+  <div style="position: absolute; right: 12mm; top: 35mm; width: 58mm;">
+    <svg viewBox="-5 -5 218 238" width="58mm" xmlns="http://www.w3.org/2000/svg">
+      <text x="104" y="10" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#999" letter-spacing="2">OPENAI MEMORY</text>
+      <line x1="20" y1="18" x2="188" y2="18" stroke="#BBB" stroke-width="0.3" stroke-linecap="butt" shape-rendering="crispEdges"/>
+
+      <text x="50" y="72" text-anchor="middle" font-family="Inter, sans-serif" font-size="26" font-weight="200" fill="#000">1</text>
+      <text x="50" y="88" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="300" fill="#666" letter-spacing="1">LEVEL</text>
+
+      <text x="160" y="72" text-anchor="middle" font-family="Inter, sans-serif" font-size="26" font-weight="200" fill="#000">0</text>
+      <text x="160" y="88" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="300" fill="#666" letter-spacing="1">RELATION TYPES</text>
+
+      <text x="50" y="146" text-anchor="middle" font-family="Inter, sans-serif" font-size="26" font-weight="200" fill="#000">0</text>
+      <text x="50" y="162" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="300" fill="#666" letter-spacing="1">PROMOTION PATH</text>
+
+      <text x="160" y="146" text-anchor="middle" font-family="Inter, sans-serif" font-size="26" font-weight="200" fill="#CC0000">1</text>
+      <text x="160" y="162" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="300" fill="#CC0000" letter-spacing="1">PLATFORM TIE</text>
+
+      <line x1="104" y1="32" x2="104" y2="182" stroke="#D8D8D8" stroke-width="0.3" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="20" y1="106" x2="188" y2="106" stroke="#D8D8D8" stroke-width="0.3" stroke-linecap="butt" shape-rendering="crispEdges"/>
+
+      <rect x="22" y="192" width="164" height="28" fill="none" stroke="#000" stroke-width="0.5" stroke-linejoin="miter"/>
+      <text x="104" y="206" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000" letter-spacing="1">WHAT IT DOES WELL</text>
+      <text x="104" y="218" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666">broad rollout, auto-updates</text>
+    </svg>
+    <div style="font-size: 6px; color: #BBB; letter-spacing: 1px; text-transform: uppercase; margin-top: 2mm;">FIG. 7 &mdash; STATISTICAL PROFILE OF OPENAI MEMORY</div>
+  </div>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">facet <span class="accent-num">07</span></span>
+    <h2>OpenAI Memory: 가장 널리 배포된 경쟁자</h2>
+  </div>
+  <div class="accent-line"></div>
+
+  <div class="body-serif" style="margin-top:8mm;">
+    <p>OpenAI의 Memory 기능: 대화에서 자동으로 기억을 추출하고, 사용자가 수정하거나 삭제할 수 있다. &ldquo;자기개선&rdquo;이 있다 &mdash; 새 대화에서 기존 기억을 업데이트한다.</p>
+  </div>
+
+  <div class="quote-block">
+    <p>추출된 기억은 flat한 텍스트 리스트다. &ldquo;사용자는 Next.js를 쓴다&rdquo;와 &ldquo;사용자는 빼기가 더하기보다 중요하다고 생각한다&rdquo;가 같은 레벨에 존재한다. 전자는 도구 선호이고 후자는 인지 원칙인데, 이 구분이 없다. 계층 없음, 관계 타입 없음, 승격 경로 없음.</p>
+  </div>
+
+  <div class="page-number">10</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     FACET 08 — Structured + Static 사분면
+     ══════════════════════════════════════════════════ -->
+<div class="page">
+  <div class="page-label">lens d &mdash; 경쟁 지형</div>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">facet <span class="accent-num">08</span></span>
+    <h2>우상단 사분면: Structured + Static</h2>
+  </div>
+  <div class="accent-line"></div>
+
+  <div class="body-serif" style="margin-top:8mm;">
+    <p>Notion AI: 워크스페이스의 문서를 AI가 검색하고 요약한다. 구조가 있다 &mdash; 데이터베이스, 관계, 프로퍼티. 그러나 이 구조는 사용자가 수동으로 만들고 유지한다. AI가 구조를 자동으로 발견하거나 승격하지 않는다.</p>
+
+    <p>전통적 Knowledge Graph (Neo4j + LLM): 엔티티와 관계를 그래프로 저장한다. 구조적이지만 정적이다 &mdash; 새로운 패턴의 자동 발견, 지식의 계층적 성숙, 자기교정은 없다.</p>
+
+    <p>학술 연구의 AI Knowledge Graph Reasoning(AKGR)과 Knowledge Graph Question Answering(KGQA)은 대규모 지식 그래프(Wikidata, Freebase)에 LLM을 결합한다. 이들은 공공 지식을 다루고, 범용적이다. mcp-memory는 개인 지식을 다루고, 특수적이다. 학술 KG에는 Belief, Identity, Correction 같은 자기참조적 타입이 없다. 학술 KG가 &ldquo;세계에 대한 지식&rdquo;을 다루는 반면, mcp-memory는 &ldquo;나의 판단에 대한 지식&rdquo;을 다룬다.</p>
+  </div>
+
+  <div class="page-number">11</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     FACET 09 — 빈 공간의 이유
+     ══════════════════════════════════════════════════ -->
+<div class="page">
+  <div class="page-label">lens d &mdash; 경쟁 지형</div>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">facet <span class="accent-num">09</span></span>
+    <h2>빈 공간의 이유 &mdash; 그리고 시장 기회와 위험</h2>
+  </div>
+  <div class="accent-line"></div>
+
+  <div class="body-serif" style="margin-top:8mm;">
+    <p>빈 공간의 이유. structured + self-improving 사분면이 비어있는(또는 극히 희소한) 이유: 세 가지 역량이 동시에 필요하기 때문이다.</p>
+
+    <p>1. 엔지니어링: 하이브리드 검색, 그래프 구조, MCP 서버, 세션 주입 파이프라인<br>
+    2. 인지과학: CLS, 작업기억, BCM 가소성, 메타인지에 대한 이해<br>
+    3. 철학: 존재론 설계, 자기참조 구조, 들뢰즈적 현실화/반-현실화 개념</p>
+
+    <p>이 세 영역의 교차점에 있는 사람이 드물다. 엔지니어는 철학을 모르고, 철학자는 코드를 안 짜고, 인지과학자는 개인 시스템을 안 만든다. Cognee가 온톨로지를 도입하면서 이 공간에 가까워지고 있지만, 인지적 깊이(승격, 역방향 흐름, 자기교정)에서 차이가 있다.</p>
+  </div>
+
+  <div class="quote-block">
+    <p>기회. LLM 에이전트가 보편화되면서, &ldquo;에이전트의 기억을 어떻게 관리할 것인가&rdquo;가 산업적 문제가 된다. 현재는 Mem0 수준의 flat memory가 주류지만, 에이전트의 작업이 복잡해질수록 구조적 기억의 필요성이 커진다.</p>
+  </div>
+
+  <div class="body-serif">
+    <p>위험. (1) OpenAI, Anthropic, Google이 자체 메모리 시스템을 강화하면 독립 솔루션의 공간이 줄어든다. 그러나 이들의 접근은 &ldquo;플랫폼 내장 메모리&rdquo;이지 &ldquo;사용자가 소유하는 인지 구조&rdquo;가 아니다. 이 차이가 mcp-memory의 지속 가능한 차별점이다. (2) Mem0/Cognee가 인지 계층을 추가하면 차별점 약화. (3) &ldquo;사용자가 소유하는 인지 구조&rdquo; vs &ldquo;클라우드 내장 메모리&rdquo;의 차이가 일반 사용자에게 소구하지 않을 수 있다.</p>
+  </div>
+
+  <div style="margin-top: 6mm; max-width: 145mm;">
+    <svg viewBox="-5 -5 558 186" width="145mm" xmlns="http://www.w3.org/2000/svg">
+      <text x="0" y="10" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#999" letter-spacing="2">ENTRY CONDITIONS VS MARKET RISK</text>
+      <line x1="0" y1="18" x2="540" y2="18" stroke="#BBB" stroke-width="0.3" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="270" y1="30" x2="270" y2="164" stroke="#D8D8D8" stroke-width="0.3" stroke-linecap="butt" shape-rendering="crispEdges"/>
+
+      <text x="135" y="40" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000" letter-spacing="1.5">WHY THE SPACE IS EMPTY</text>
+      <text x="405" y="40" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000" letter-spacing="1.5">WHY THE SPACE IS FRAGILE</text>
+
+      <rect x="20" y="56" width="230" height="28" fill="none" stroke="#000" stroke-width="0.5" stroke-linejoin="miter"/>
+      <text x="34" y="70" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000" letter-spacing="1">ENGINEERING</text>
+      <text x="130" y="70" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666">hybrid retrieval + graph + session injection</text>
+
+      <rect x="20" y="92" width="230" height="28" fill="none" stroke="#000" stroke-width="0.5" stroke-linejoin="miter"/>
+      <text x="34" y="106" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000" letter-spacing="1">COGNITION</text>
+      <text x="130" y="106" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666">CLS, working memory, metacognition</text>
+
+      <rect x="20" y="128" width="230" height="28" fill="none" stroke="#CC0000" stroke-width="0.6" stroke-linejoin="miter"/>
+      <text x="34" y="142" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#CC0000" letter-spacing="1">PHILOSOPHY</text>
+      <text x="130" y="142" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#CC0000">ontology design + self-reference</text>
+
+      <rect x="290" y="56" width="230" height="28" fill="none" stroke="#000" stroke-width="0.5" stroke-linejoin="miter"/>
+      <text x="304" y="70" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000" letter-spacing="1">PLATFORMS</text>
+      <text x="394" y="70" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666">OpenAI / Anthropic / Google can compress space</text>
+
+      <rect x="290" y="92" width="230" height="28" fill="none" stroke="#000" stroke-width="0.5" stroke-linejoin="miter"/>
+      <text x="304" y="106" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000" letter-spacing="1">FOLLOWERS</text>
+      <text x="394" y="106" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666">Mem0 / Cognee can add cognitive layers</text>
+
+      <rect x="290" y="128" width="230" height="28" fill="none" stroke="#000" stroke-width="0.5" stroke-linejoin="miter"/>
+      <text x="304" y="142" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000" letter-spacing="1">DEMAND</text>
+      <text x="394" y="142" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666">ownership may not be visible to casual users</text>
+
+      <line x1="0" y1="174" x2="540" y2="174" stroke="#000" stroke-width="0.4" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <text x="0" y="186" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#999" letter-spacing="0.5">기회는 교차역량에서 나오고, 리스크는 플랫폼 흡수와 후발 모방에서 온다.</text>
+    </svg>
+    <div style="font-size: 6px; color: #BBB; letter-spacing: 1px; text-transform: uppercase; margin-top: 2mm;">FIG. 8 &mdash; COMPARISON OF ENTRY BARRIERS AND MARKET RISKS</div>
+  </div>
+
+  <div class="page-number">12</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     FACET 10 — 차별점 재평가 + 비교표
+     ══════════════════════════════════════════════════ -->
+<div class="page">
+  <div class="page-label">lens d &mdash; 경쟁 지형</div>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">facet <span class="accent-num">10</span></span>
+    <h2>차별점 재평가 &mdash; 그리고 한계</h2>
+  </div>
+  <div class="accent-line"></div>
+
+  <div class="body-serif" style="margin-top:8mm;">
+    <p>2026-03 경쟁 지형을 반영한 차별점 재평가:</p>
+  </div>
+
+  <table class="comp-table">
+    <thead>
+      <tr>
+        <th>기능</th>
+        <th>mcp-memory</th>
+        <th>Mem0</th>
+        <th>Zep/Graphiti</th>
+        <th>Cognee</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>인지 계층(L0-L5)</td><td>O</td><td>X</td><td>X</td><td>X</td></tr>
+      <tr><td>승격 메커니즘</td><td>O</td><td>X</td><td>X</td><td>&triangle;(Memify)</td></tr>
+      <tr><td>자기교정(Correction)</td><td>O</td><td>&triangle;(Conflict Detector)</td><td>X</td><td>X</td></tr>
+      <tr><td>역방향 흐름</td><td>O</td><td>X</td><td>X</td><td>X</td></tr>
+      <tr><td>시간 추적</td><td>X</td><td>X</td><td>O</td><td>X</td></tr>
+      <tr><td>온톨로지 검증</td><td>&triangle;(validators)</td><td>X</td><td>X</td><td>O</td></tr>
+      <tr><td>로컬 소유</td><td>O</td><td>&triangle;(OSS 가능)</td><td>X</td><td>O</td></tr>
+      <tr><td>MCP 표준</td><td>O</td><td>X</td><td>X</td><td>X</td></tr>
+      <tr><td>schema-driven extensibility</td><td>O</td><td>X</td><td>X</td><td>&triangle;</td></tr>
+    </tbody>
+  </table>
+
+  <div class="body-serif">
+    <p>차별점 요약. 1. 인지 계층(L0-L5): 다른 시스템에 없다. 2. 승격 메커니즘(BCM): 지식이 자동으로 성숙한다. 3. 자기교정(Correction recall 최우선): 실패에서 배운다. 4. 역방향 흐름: 원칙이 경험의 해석을 바꾼다. 5. schema-driven extensibility: 코드 변경 없이 온톨로지 확장. 6. 사용자 소유: 데이터가 로컬 SQLite에 있다. 클라우드 종속 없음. 7. MCP 표준: 특정 LLM에 종속되지 않는다.</p>
+  </div>
+
+  <div class="quote-block">
+    <p>이 7가지의 조합이 현재 시장에서 유일하다.</p>
+  </div>
+
+  <div class="page-number">13</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     FACET 10 (cont.) — 한계
+     ══════════════════════════════════════════════════ -->
+<div class="page">
+  <div class="page-label">lens d &mdash; 경쟁 지형</div>
+
+  <div class="body-serif" style="margin-top:20mm;">
+    <p>한계. 이 비교는 mcp-memory의 관점에서 선택된 기준이다. 다른 기준(벤치마크 성능, 엔터프라이즈 지원, 커뮤니티 크기, 문서화 품질)에서는 경쟁자들이 mcp-memory를 압도한다. Mem0는 GitHub 40K+ 스타, Cognee는 $7.5M 투자, Zep은 엔터프라이즈 고객 기반을 갖고 있다. mcp-memory는 1인 개발자의 프로젝트다. 이 규모 차이를 무시하면 안 된다. 차별점의 &ldquo;유일성&rdquo;은 현재 상태이지 영속적 해자(moat)가 아니다.</p>
+  </div>
+
+  <div class="page-number">14</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     COLOPHON
+     ══════════════════════════════════════════════════ -->
+<div class="page">
+  <div class="colophon">
+    <div class="colophon-title">colophon</div>
+    <div class="colophon-body">
+      Lens D &mdash; 경쟁 지형<br>
+      MCP-Memory System Analysis<br>
+      Paul Park &times; Claude
+    </div>
+    <div class="colophon-rule"></div>
+    <div class="colophon-body">
+      Typeset in Inter + Noto Serif KR<br>
+      247 &times; 340 mm &middot; El Croquis format<br>
+      2026-03-28
+    </div>
+  </div>
+  <div class="page-number">15</div>
+</div>
+
+</body>
+</html>

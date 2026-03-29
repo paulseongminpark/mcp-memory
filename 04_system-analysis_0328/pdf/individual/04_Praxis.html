@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>Praxis — 어떻게 만드는가</title>
+<link rel="stylesheet" href="el-croquis.css">
+<style>
+.quote-block {
+  border-left: none;
+  position: relative;
+}
+.quote-block::before {
+  content: '';
+  position: absolute;
+  left: calc(var(--quote-indent) - 4mm);
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--accent);
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════
+     COVER
+     ══════════════════════════════════════════════════ -->
+<div class="page" style="padding: 0;">
+  <div style="position: absolute; top: 15.5mm; left: 10mm; right: 20mm; height: 0.9px; background: var(--fg);"></div>
+  <div style="padding: 32mm 78mm 15mm 25mm;">
+    <div style="margin-top: 0; font-size: 7pt; font-weight: 300; letter-spacing: 3px; text-transform: uppercase; color: var(--fg-light);">
+      PRAXIS &middot; METHODOLOGY &middot; 04 OF 09
+    </div>
+    <div style="margin-top: 21mm; font-size: 39px; font-weight: 300; line-height: 1.25; color: var(--fg); max-width: 550px;">
+      자기개선 인지 엔진의<br>구축 <span style="color: var(--accent);">방법론</span>
+    </div>
+    <div style="margin-top: 8mm; font-size: 13.5px; font-weight: 300; line-height: 1.8; color: var(--fg-mid); max-width: 340px;">
+      삼부작을 잇는 방법론 문서로,<br>이론과 발견을 실천으로 전환한다.
+    </div>
+  </div>
+  <div style="position: absolute; bottom: 171mm; left: 10mm; right: 20mm;">
+    <div style="width: 100%; height: 0.9px; background: var(--accent);"></div>
+    <div style="display: flex; justify-content: space-between; padding: 3mm 0 0 0;">
+      <span style="font-size: 7.5pt; font-weight: 300; letter-spacing: 2.5px; text-transform: uppercase; color: var(--fg-faint);">방법론 &middot; 구축 &middot; 프레임워크 &middot; 실천 &middot; 13 섹션</span>
+      <span style="font-size: 7.5pt; font-weight: 300; letter-spacing: 2px; color: var(--fg-faint);">2026</span>
+    </div>
+  </div>
+  <span class="page-number">1</span>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     SECTION OVERVIEW
+     ══════════════════════════════════════════════════ -->
+<div class="page" id="overview">
+  <div class="page-label">praxis</div>
+
+  <div class="section-header" style="margin-top:20mm;">
+    <span class="section-label">contents</span>
+    <h2>11 Phases</h2>
+    <div class="section-sub">Phase 0에서 Phase 10까지. 전제 조건에서 함정까지.</div>
+  </div>
+  <div class="accent-line"></div>
+
+  <div class="body-sans" style="margin-top:12mm; line-height:22pt;">
+    <p style="color:var(--fg-mid); font-size:9pt;">
+      <span style="color:var(--accent);">0</span> &mdash; 전제: 이 방법론이 요구하는 것<br>
+      <span style="color:var(--accent);">1</span> &mdash; 관찰: 저장부터 시작하지 마라<br>
+      <span style="color:var(--accent);">2</span> &mdash; 최소 온톨로지: 5개 타입, 3개 관계로 시작<br>
+      <span style="color:var(--accent);">3</span> &mdash; 저장 엔진: SQLite + 벡터 DB<br>
+      <span style="color:var(--accent);">4</span> &mdash; 첫 100개 노드: 무엇을 넣고 무엇을 넣지 않을 것인가<br>
+      <span style="color:var(--accent);">5</span> &mdash; 승격 경로: 100개가 넘으면 패턴이 보인다<br>
+      <span style="color:var(--accent);">6</span> &mdash; 세션 주입: 무엇을 의식에 올릴 것인가<br>
+      <span style="color:var(--accent);">7</span> &mdash; 자기교정 루프: 시스템이 전환되는 순간<br>
+      <span style="color:var(--accent);">8</span> &mdash; 역방향 흐름: 정적 피라미드에서 살아있는 순환으로<br>
+      <span style="color:var(--accent);">9</span> &mdash; 측정과 반복: 시스템의 건강을 본다<br>
+      <span style="color:var(--accent);">10</span> &mdash; 함정: 시스템이 목적이 되면 안 된다
+    </p>
+  </div>
+
+  <div class="page-number">02</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     PHASE 0 — 전제
+     ══════════════════════════════════════════════════ -->
+<div class="page" id="phase0">
+  <div class="page-label">praxis</div>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">phase <span class="accent-num">0</span></span>
+    <h2>전제: 이 방법론이 요구하는 것</h2>
+  </div>
+  <div class="accent-line"></div>
+
+  <div class="body-serif" style="margin-top:8mm;">
+    <p>아무나 따라할 수 있는 레시피가 아니다. 이 방법론은 세 가지를 전제한다.</p>
+
+    <p>첫째, LLM과의 지속적 협업 환경. 일회성 대화가 아니라, 같은 프로젝트에 대해 수십~수백 세션을 이어가는 작업 방식. Claude Code, Cursor, Windsurf 같은 코딩 에이전트 환경이 전형적이다. 단발성 질의응답에서는 이 시스템의 가치가 드러나지 않는다.</p>
+
+    <p>둘째, 자기 사고를 관찰하려는 의지. 대부분의 사람은 자기가 어떻게 판단하는지 모른다. "왜 그렇게 결정했어?"라는 질문에 사후적으로 이유를 만들어낸다. 이 방법론은 판단의 과정을 기록하고, 기록에서 패턴을 추출하고, 패턴을 원칙으로 승격하는 것을 요구한다. 관찰하지 않으면 승격할 게 없다.</p>
+
+    <p>셋째, 구조화에 대한 최소한의 감각. "이 경험은 어떤 타입인가?", "이 두 노드의 관계는 무엇인가?"라는 질문을 자연스럽게 할 수 있어야 한다. 이건 훈련으로 얻어지는 것이지만, 시작점에서의 최소 감각은 필요하다.</p>
+
+    <div class="quote-block">
+      <p>이 전제가 없으면? 시스템은 메모 저장소로 전락한다. Evernote의 무덤 &mdash; 열심히 저장하지만 다시 꺼내 쓰지 않는 디지털 먼지.</p>
+    </div>
+  </div>
+
+  <div class="page-number">03</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     PHASE 1 — 관찰
+     ══════════════════════════════════════════════════ -->
+<div class="page" id="phase1">
+  <div class="page-label">praxis</div>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">phase <span class="accent-num">1</span></span>
+    <h2>관찰: 저장부터 시작하지 마라</h2>
+  </div>
+  <div class="accent-line"></div>
+
+  <div class="body-serif" style="margin-top:8mm;">
+    <p>가장 흔한 실수: "일단 도구를 만들고 메모를 많이 저장하자." 이건 순서가 틀렸다.</p>
+
+    <p>0단계는 도구 없이, 시스템 없이, "나는 무엇을 반복적으로 판단하는가"를 관찰하는 것이다. 2주간 종이에 적어도 좋고, 텍스트 파일에 적어도 좋다. 중요한 건 형식이 아니라 내용이다.</p>
+
+    <p>관찰해야 할 것:</p>
+    <p style="padding-left:8mm; color:var(--fg-mid);">
+      &mdash; 하루에 몇 번 판단을 내리는가?<br>
+      &mdash; 그 판단은 주로 어떤 종류인가? (기술적/방향성/우선순위/디자인)<br>
+      &mdash; 같은 판단을 반복하고 있는가?<br>
+      &mdash; 판단이 틀렸을 때 어떻게 알게 되는가?
+    </p>
+
+    <div class="quote-block">
+      <p>이 관찰 결과가 이후 모든 설계의 기초가 된다. mcp-memory에서 Decision이 987개로 가장 많은 것은 Paul이 이 관찰을 통해 "내 작업의 핵심은 판단이다"를 발견했기 때문이다.</p>
+    </div>
+  </div>
+
+  <div class="page-number">04</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     PHASE 2 — 최소 온톨로지
+     ══════════════════════════════════════════════════ -->
+<div class="page" id="phase2">
+  <div class="page-label">praxis</div>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">phase <span class="accent-num">2</span></span>
+    <h2>최소 온톨로지: 5개 타입, 3개 관계로 시작</h2>
+  </div>
+  <div class="accent-line"></div>
+
+  <div class="body-serif" style="margin-top:8mm;">
+    <p>51개 타입으로 시작하면 죽는다. 분류의 부담이 기록의 장벽이 된다. "이건 Insight인가 Pattern인가 Observation인가?"를 매번 고민하면 아무것도 기록하지 않게 된다.</p>
+
+    <p>최소 시작 세트 &mdash; 타입 5개:</p>
+    <p style="padding-left:8mm; color:var(--fg-mid);">
+      &mdash; Observation &mdash; 관찰한 것<br>
+      &mdash; Decision &mdash; 결정한 것<br>
+      &mdash; Failure &mdash; 틀린 것<br>
+      &mdash; Pattern &mdash; 반복된 것<br>
+      &mdash; Principle &mdash; 확신하는 것
+    </p>
+
+    <p>왜 이 5개인가? 이것이 인지 순환의 최소 단위이기 때문이다. 관찰하고(Observation), 판단하고(Decision), 실패하고(Failure), 패턴을 발견하고(Pattern), 원칙을 세운다(Principle).</p>
+
+    <p>최소 시작 세트 &mdash; 관계 3개:</p>
+    <p style="padding-left:8mm; color:var(--fg-mid);">
+      &mdash; led_to &mdash; A가 B를 낳았다 (인과)<br>
+      &mdash; abstracted_from &mdash; A에서 B를 추출했다 (승격)<br>
+      &mdash; contradicts &mdash; A가 B와 모순된다 (긴장)
+    </p>
+
+    <p>이 3개면 인과, 승격, 모순을 잡을 수 있다. 나머지 관계는 필요가 발견되면 추가한다. Correction 타입이 mcp-memory에서 사후에 추가된 것처럼.</p>
+  </div>
+
+  <div class="page-number">05</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     PHASE 3 — 저장 엔진
+     ══════════════════════════════════════════════════ -->
+<div class="page" id="phase3">
+  <div class="page-label">praxis</div>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">phase <span class="accent-num">3</span></span>
+    <h2>저장 엔진: SQLite + 벡터 DB</h2>
+  </div>
+  <div class="accent-line"></div>
+
+  <div class="body-serif" style="margin-top:8mm;">
+    <p>기술 선택에 대한 논증.</p>
+
+    <p>SQLite를 선택하는 이유: 서버 불필요, 단일 파일, FTS(Full-Text Search) 내장, 어디서든 동작. 개인 인지 시스템은 클라우드 의존성이 없어야 한다 &mdash; 네 사고 구조가 외부 서비스의 가동 여부에 의존하면 안 된다.</p>
+
+    <p>벡터 DB(ChromaDB)를 추가하는 이유: SQLite FTS는 키워드 매칭이다. "이 경험과 비슷한 경험"은 표현이 달라도 의미가 비슷할 수 있다. 벡터 검색이 이 간극을 메운다.</p>
+
+    <p>Graph DB(Neo4j)로 시작하면 안 되는 이유: 운영 부담이 크다. 서버 프로세스, 쿼리 언어(Cypher) 학습, 스키마 관리. 개인 시스템에서 이 부담은 지속가능하지 않다. 대신 SQLite에 edges 테이블을 만들고, Python의 NetworkX로 그래프 탐색을 하면 충분하다.</p>
+
+    <div class="quote-block">
+      <p>핵심 원칙: lean storage + rich ontology. 저장 엔진은 최대한 가볍게, 의미 체계는 ontology 파일(schema.yaml)로 외부화. "이 파일을 편집하면 코드 변경 없이 타입 확장 가능" &mdash; mcp-memory의 실제 설계 원칙.</p>
+    </div>
+  </div>
+
+  <div class="page-number">06</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     PHASE 4 — 첫 100개 노드
+     ══════════════════════════════════════════════════ -->
+<div class="page" id="phase4">
+  <div class="page-label">praxis</div>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">phase <span class="accent-num">4</span></span>
+    <h2>첫 100개 노드: 무엇을 넣고 무엇을 넣지 않을 것인가</h2>
+  </div>
+  <div class="accent-line"></div>
+
+  <div class="body-serif" style="margin-top:8mm;">
+    <p>첫 100개 노드가 시스템의 성격을 결정한다.</p>
+
+    <p>넣을 것: 판단이 있는 것만. "오늘 날씨가 좋았다"는 넣지 않는다. "A 대신 B를 선택했다, 왜냐하면 X 때문이다"는 넣는다. "이 라이브러리가 있다"는 넣지 않는다. "이 라이브러리를 선택한 이유는 Y이고, 이 부분에서 문제가 있었다"는 넣는다.</p>
+
+    <p>넣지 않을 것: 검색 가능한 사실. Google에서 찾을 수 있는 정보는 온톨로지에 넣을 이유가 없다. 온톨로지에 넣을 가치가 있는 건 검색할 수 없는 것 &mdash; 개인적 판단, 맥락, 실패, 패턴.</p>
+
+    <div class="quote-block">
+      <p>특히 넣을 것: 실패. 대부분의 사람은 성공을 기록한다. 실패를 기록하는 습관이 시스템의 자기교정 능력을 결정한다. Beta Finding 2에서 논증했듯, 실패는 지식의 가장 순도 높은 형태다.</p>
+    </div>
+
+    <p>첫 100개를 넣은 후 돌아보면, 어떤 타입이 가장 많은지가 보인다. 그게 "이 시스템이 나에게 무엇인지"의 첫 번째 단서다.</p>
+  </div>
+
+  <div class="page-number">07</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     PHASE 5 — 승격 경로
+     ══════════════════════════════════════════════════ -->
+<div class="page" id="phase5">
+  <div class="page-label">praxis</div>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">phase <span class="accent-num">5</span></span>
+    <h2>승격 경로: 100개가 넘으면 패턴이 보인다</h2>
+  </div>
+  <div class="accent-line"></div>
+
+  <div class="body-serif" style="margin-top:8mm;">
+    <p>노드가 100개를 넘기면 "이 세 개는 사실 같은 말이다"가 보이기 시작한다. 이때 승격 경로를 만든다.</p>
+
+    <p>수동 승격 (초기):</p>
+    <p style="padding-left:8mm; color:var(--fg-mid);">
+      &mdash; 비슷한 Observation 3개 이상 &rarr; Pattern 하나를 생성하고, abstracted_from 관계로 연결<br>
+      &mdash; Decision + Failure에서 반복되는 구조 &rarr; Principle 생성<br>
+      &mdash; "매번 이걸 확인해야 한다" &rarr; Principle로 승격
+    </p>
+
+    <p>반자동 승격 (중기):</p>
+    <p style="padding-left:8mm; color:var(--fg-mid);">
+      &mdash; confidence 필드 도입. 새 노드는 confidence 0.5에서 시작.<br>
+      &mdash; 다른 노드에서 참조될 때마다 confidence 증가.<br>
+      &mdash; confidence가 임계값(0.8)을 넘으면 승격 후보로 플래그.<br>
+      &mdash; 최종 승격은 human-in-the-loop &mdash; 사람이 판단한다.
+    </p>
+
+    <p>BCM 가소성의 실용적 구현: 활성화 빈도에 따라 가중치가 변하는 모델을 confidence 필드 + 참조 횟수로 단순화. 이것은 BCM에서 영감을 받은 단순화된 모델이다 &mdash; 신경과학적 정밀함을 재현하는 것이 아니라, "자주 다시 꺼내 쓰이는 지식은 올라가야 한다"는 핵심 원리만 차용한 것이다. 신경과학적 정밀함은 필요 없다. "자주 다시 꺼내 쓰이는 지식은 올라가야 한다"는 원칙만 구현하면 된다.</p>
+  </div>
+
+  <div class="page-number">08</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     PHASE 6 — 세션 주입
+     ══════════════════════════════════════════════════ -->
+<div class="page" id="phase6">
+  <div class="page-label">praxis</div>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">phase <span class="accent-num">6</span></span>
+    <h2>세션 주입: 무엇을 의식에 올릴 것인가</h2>
+  </div>
+  <div class="accent-line"></div>
+
+  <div class="body-serif" style="margin-top:8mm;">
+    <p>노드가 300개를 넘으면 "무엇을 세션에 넣을 것인가"가 핵심 문제가 된다. 전부 넣으면 노이즈. 최근 것만 넣으면 구조가 사라진다.</p>
+
+    <p>주입 정책 설계 원칙:</p>
+
+    <p style="padding-left:8mm; color:var(--fg-mid);">
+      1. 구조 먼저: L2(Pattern, Insight, Framework) 이상을 우선 주입. 개별 사건이 아니라 구조를 먼저 의식에 올린다.<br><br>
+      2. 현장성 보조: 최근 7일 Observation을 소량 추가. 지금 무슨 일이 벌어지고 있는가.<br><br>
+      3. 교정 최우선: Correction 타입이 있으면 무조건 포함. 과거의 오류를 먼저 떠올린다.
+    </p>
+
+    <p>Context as Currency 적용:</p>
+    <p style="padding-left:8mm; color:var(--fg-mid);">
+      &mdash; 전체 토큰 예산을 정한다 (예: 10K 토큰)<br>
+      &mdash; 각 노드의 토큰 비용을 계산한다<br>
+      &mdash; 가치/비용 비율이 높은 순서로 채운다<br>
+      &mdash; 예산을 초과하면 가장 낮은 가치/비용 노드를 제거한다
+    </p>
+
+    <div class="quote-block">
+      <p>이건 운영체제의 메모리 관리와 동형이다. LRU(Least Recently Used) 대신 LLV(Least Layer Value) &mdash; 가장 낮은 레이어의 가장 오래된 노드를 먼저 제거한다.</p>
+    </div>
+  </div>
+
+  <div class="page-number">09</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     PHASE 7 — 자기교정 루프
+     ══════════════════════════════════════════════════ -->
+<div class="page" id="phase7">
+  <div class="page-label">praxis</div>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">phase <span class="accent-num">7</span></span>
+    <h2>자기교정 루프: 시스템이 전환되는 순간</h2>
+  </div>
+  <div class="accent-line"></div>
+
+  <div class="body-serif" style="margin-top:8mm;">
+    <p>Failure를 기록하기 시작하고, Correction 타입을 추가하고, recall 우선순위를 설정한다. 이 시점에서 시스템이 "저장소"에서 "자기교정 엔진"으로 전환된다.</p>
+
+    <p>구현 순서:</p>
+    <p style="padding-left:8mm; color:var(--fg-mid);">
+      1. Failure 타입 활성화 (이미 Phase 2에서 포함)<br>
+      2. Failure 노드에 led_to 관계로 원인 노드 연결<br>
+      3. 반복되는 Failure 패턴 &rarr; Pattern으로 승격<br>
+      4. 교정 규칙 &rarr; Correction 타입 추가 (schema.yaml에 새 타입)<br>
+      5. Session injection에서 Correction을 최우선으로 설정
+    </p>
+
+    <div class="quote-block">
+      <p>이 전환이 가장 중요한 순간인 이유: 이전까지 시스템은 "과거를 기억하는 도구"였다. 이 순간부터 시스템은 "과거의 오류로부터 미래의 판단을 교정하는 도구"가 된다. 1차 피드백에서 2차 피드백으로의 전환.</p>
+    </div>
+  </div>
+
+  <div class="page-number">10</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     PHASE 8 — 역방향 흐름
+     ══════════════════════════════════════════════════ -->
+<div class="page" id="phase8">
+  <div class="page-label">praxis</div>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">phase <span class="accent-num">8</span></span>
+    <h2>역방향 흐름: 정적 피라미드에서 살아있는 순환으로</h2>
+  </div>
+  <div class="accent-line"></div>
+
+  <div class="body-serif" style="margin-top:8mm;">
+    <p>Principle이 20개 이상 쌓이면, 상위 원칙이 하위 관찰을 재해석하기 시작하는 구조를 만든다.</p>
+
+    <p>구현:</p>
+    <p style="padding-left:8mm; color:var(--fg-mid);">
+      1. Principle 노드 중 가장 자주 참조되는 것 5-7개를 선별<br>
+      2. 이 원칙들을 "해석 렌즈(Lens)"로 명명<br>
+      3. 새로운 Observation이 들어올 때, 이 렌즈로 먼저 해석<br>
+      4. 예: "이 기술 뉴스가 나의 '빼기의 관점' 원칙에서 어떤 의미를 갖는가?"
+    </p>
+
+    <p>mcp-memory에서 WIM 7렌즈가 이 구현이다. Identity 노드에서 추출된 7가지 관점이 모든 새로운 입력의 해석 틀이 된다.</p>
+
+    <div class="quote-block">
+      <p>이것이 정적 피라미드에서 살아있는 순환으로 전환되는 지점이다. 위에서 아래로의 흐름이 없으면, 시스템은 "예전에 이런 일이 있었다"만 말할 수 있다. 역방향 흐름이 있으면 "이 새로운 일은 나의 원칙에서 이런 의미다"를 말할 수 있다.</p>
+    </div>
+  </div>
+
+  <div class="page-number">11</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     PHASE 9 — 측정과 반복
+     ══════════════════════════════════════════════════ -->
+<div class="page" id="phase9">
+  <div class="page-label">praxis</div>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">phase <span class="accent-num">9</span></span>
+    <h2>측정과 반복: 시스템의 건강을 본다</h2>
+  </div>
+  <div class="accent-line"></div>
+
+  <div class="body-serif" style="margin-top:8mm;">
+    <p>시스템이 돌아가기 시작하면, 측정이 필요하다. 무엇을 측정하는가?</p>
+
+    <p>레이어별 분포:</p>
+    <p style="padding-left:8mm; color:var(--fg-mid);">
+      &mdash; L1에만 노드가 몰려있다 &rarr; 실행 편향. 판단만 하고 구조화를 안 한다.<br>
+      &mdash; L2에만 몰려있다 &rarr; 분석 편향. 분석만 하고 결정을 안 한다.<br>
+      &mdash; L3이 비어있다 &rarr; 축적 실패. 매번 처음부터 판단한다.
+    </p>
+
+    <p>Failure 비율:</p>
+    <p style="padding-left:8mm; color:var(--fg-mid);">
+      &mdash; Failure / Decision 비율이 너무 낮다 &rarr; 실패를 기록하지 않고 있다.<br>
+      &mdash; 비율이 너무 높다 &rarr; 실패에서 학습이 안 되고 있다.
+    </p>
+
+    <p>승격률:</p>
+    <p style="padding-left:8mm; color:var(--fg-mid);">
+      &mdash; Pattern / Observation 비율 &rarr; 관찰이 얼마나 구조화되고 있는가<br>
+      &mdash; Principle / Pattern 비율 &rarr; 패턴이 얼마나 원칙으로 올라가는가
+    </p>
+
+    <p>mcp-memory의 auto-iterate(measure.py + policy engine)가 이 측정을 자동화한다. 측정 결과를 보고 "L3이 부족하니 이번 주는 기존 Pattern에서 Principle을 추출하는 데 집중하자"는 식으로 방향을 교정한다.</p>
+  </div>
+
+  <div class="page-number">12</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     PHASE 10 — 함정
+     ══════════════════════════════════════════════════ -->
+<div class="page" id="phase10">
+  <div class="page-label">praxis</div>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">phase <span class="accent-num">10</span></span>
+    <h2>함정: 시스템이 목적이 되면 안 된다</h2>
+  </div>
+  <div class="accent-line"></div>
+
+  <div class="body-serif" style="margin-top:8mm;">
+    <p>마지막이자 가장 중요한 경고.</p>
+
+    <p>과잉 설계의 유혹. 시스템을 만드는 일이 재미있어서, 실제 작업보다 시스템 개선에 시간을 더 쓰게 된다. mcp-memory도 이 함정에 빠졌던 적이 있다 &mdash; 15K 토큰 자동 로딩, 8개 hook, 13개 skill, 35개 pipeline 규칙. "빼기가 더하기보다 어렵고 중요하다"는 교훈은 이 경험에서 나왔다.</p>
+
+    <p>분류 강박. 모든 경험을 "정확한 타입"으로 분류하려는 충동. 분류가 어려우면 기록을 포기하게 된다. Unclassified 타입이 존재하는 이유다 &mdash; 분류 실패도 보존한다. 분류가 어려우면 일단 넣고, 나중에 분류한다.</p>
+
+    <p>도구 의존. 시스템 없이는 판단할 수 없다는 느낌. 이건 위험 신호다. 시스템은 사고를 보조하는 것이지, 대체하는 것이 아니다.</p>
+
+    <div class="quote-block">
+      <p>시스템은 사고를 위한 것이지, 시스템을 위한 사고는 본말전도다. 내가 구조를 만들고, 구조가 나를 만든다 &mdash; 이 순환이 건강하려면, "나"가 항상 시작점이어야 한다.</p>
+    </div>
+
+    <p>이 방법론에는 구조적 한계가 있다. 첫째, Phase 1-10은 선형 순서로 제시되지만 실제 구축은 반복적이다 &mdash; Phase 5에서 Phase 2의 타입 체계를 수정하게 된다. 이 비선형성을 이 문서가 충분히 포착하지 못한다. 둘째, 이 방법론은 개인 사용자를 전제한다. 팀이나 조직에서의 공유 온톨로지 구축은 다른 문제를 낳는다 &mdash; 타입 합의, 권한 관리, 관점 충돌. 셋째, 이 방법론을 실제로 끝까지 따라간 사람은 현재 1명(Paul)이다. 재현 가능성은 미검증이다.</p>
+  </div>
+
+  <div class="page-number">13</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     COLOPHON
+     ══════════════════════════════════════════════════ -->
+<div class="page" id="colophon">
+  <div class="page-label">praxis</div>
+
+  <div class="colophon">
+    <div class="colophon-title">colophon</div>
+    <div class="colophon-body">
+      Praxis &mdash; 어떻게 만드는가<br>
+      자기개선 인지 엔진의 구축 방법론
+    </div>
+    <div class="colophon-rule"></div>
+    <div class="colophon-body">
+      Part 04 of 09 &middot; mcp-memory System Analysis<br>
+      Paul Park &times; Claude &middot; 2026-03-28
+    </div>
+    <div class="colophon-rule"></div>
+    <div class="colophon-body">
+      Typeset in Inter + Noto Serif KR<br>
+      247 &times; 340 mm &middot; El Croquis design system v2.0
+    </div>
+  </div>
+
+  <div class="page-number">14</div>
+</div>
+
+</body>
+</html>

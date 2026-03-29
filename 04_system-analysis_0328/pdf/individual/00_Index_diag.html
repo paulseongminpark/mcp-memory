@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>Index — mcp-memory 분석 보고서 체계</title>
+<link rel="stylesheet" href="el-croquis.css">
+<style>
+  .quote-block {
+    border-left: none;
+    position: relative;
+  }
+  .quote-block::before {
+    content: '';
+    position: absolute;
+    left: calc(var(--quote-indent) - 4mm);
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: var(--accent);
+  }
+  .toc-grid { margin-top: 6mm; }
+  .toc-item { display: flex; align-items: baseline; margin-bottom: 3.5mm; }
+  .toc-num {
+    font-size: var(--text-toc-number);
+    font-weight: 300;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--accent);
+    min-width: 18mm;
+    flex-shrink: 0;
+  }
+  .toc-title {
+    font-size: var(--text-toc-item);
+    font-weight: 300;
+    color: var(--fg);
+    line-height: 1.5;
+  }
+  .toc-title .toc-desc {
+    display: block;
+    font-size: 7pt;
+    font-weight: 200;
+    color: var(--fg-light);
+    letter-spacing: 0.5px;
+    margin-top: 0.5mm;
+  }
+  .toc-lede {
+    font-size: var(--text-toc-lede);
+    font-weight: 200;
+    color: var(--fg);
+    margin-bottom: 6mm;
+    max-width: var(--text-body-width);
+    line-height: 1.4;
+  }
+  .diagram-block {
+    font-family: var(--sans);
+    font-size: 8.5pt;
+    font-weight: 300;
+    line-height: 1.7;
+    color: var(--fg);
+    white-space: pre;
+    margin: 5mm 0;
+    max-width: var(--text-body-width);
+  }
+  .matrix-table {
+    font-family: var(--sans);
+    font-size: 8pt;
+    font-weight: 300;
+    border-collapse: collapse;
+    margin: 4mm 0;
+    max-width: var(--text-body-width);
+  }
+  .matrix-table th {
+    font-weight: 300;
+    font-size: 7pt;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--fg-light);
+    text-align: left;
+    padding: 2mm 3mm;
+    border-bottom: 1px solid var(--line);
+  }
+  .matrix-table td {
+    padding: 1.5mm 3mm;
+    border-bottom: 1px solid var(--line-f);
+    color: var(--fg);
+    font-size: 7.5pt;
+    line-height: 1.5;
+    vertical-align: top;
+  }
+  .matrix-table td:first-child {
+    font-weight: 400;
+    color: var(--fg);
+  }
+  .ref-dot {
+    display: inline-block;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--accent);
+    margin: 0 0.5mm;
+  }
+  .ref-dot.empty {
+    background: var(--line-f);
+  }
+  .path-table {
+    font-family: var(--sans);
+    font-size: 8pt;
+    font-weight: 300;
+    border-collapse: collapse;
+    margin: 4mm 0;
+    max-width: var(--text-body-width);
+  }
+  .path-table th {
+    font-weight: 300;
+    font-size: 7pt;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--fg-light);
+    text-align: left;
+    padding: 2mm 3mm;
+    border-bottom: 1px solid var(--line);
+  }
+  .path-table td {
+    padding: 1.5mm 3mm;
+    border-bottom: 1px solid var(--line-f);
+    color: var(--fg);
+    font-size: 7.5pt;
+    line-height: 1.5;
+  }
+  .meta-table {
+    font-family: var(--sans);
+    font-size: 8pt;
+    font-weight: 300;
+    border-collapse: collapse;
+    margin: 4mm 0;
+    max-width: var(--text-body-width);
+  }
+  .meta-table td {
+    padding: 1.5mm 3mm;
+    border-bottom: 1px solid var(--line-f);
+    color: var(--fg);
+    font-size: 7.5pt;
+    line-height: 1.5;
+    vertical-align: top;
+  }
+  .meta-table td:first-child {
+    font-weight: 300;
+    color: var(--fg-light);
+    font-size: 7pt;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    min-width: 30mm;
+  }
+</style>
+</head>
+<body>
+
+<!-- PAGE 1: COVER -->
+<div class="page" style="padding: 0;">
+  <div style="position: absolute; top: 15.5mm; left: 10mm; right: 20mm; height: 0.9px; background: var(--fg);"></div>
+  <div style="padding: 32mm 78mm 15mm 25mm;">
+    <div style="margin-top: 0; font-size: 7pt; font-weight: 300; letter-spacing: 3px; text-transform: uppercase; color: var(--fg-light);">
+      INDEX &middot; 9 DOCUMENTS &middot; 99 SECTIONS
+    </div>
+    <div style="margin-top: 21mm; font-size: 39px; font-weight: 300; line-height: 1.25; color: var(--fg); max-width: 550px;">
+      9개 렌즈로 분해한<br>하나의 <span style="color: var(--accent);">시스템</span>
+    </div>
+    <div style="margin-top: 8mm; font-size: 13.5px; font-weight: 300; line-height: 1.8; color: var(--fg-mid); max-width: 340px;">
+      mcp-memory 분석 보고서 체계.<br>
+      4,786 nodes &middot; 6,765 edges &middot; 25 types &middot; L0&ndash;L5 계층
+    </div>
+  </div>
+  <div style="position: absolute; bottom: 171mm; left: 10mm; right: 20mm;">
+    <div style="width: 100%; height: 0.9px; background: var(--accent);"></div>
+    <div style="display: flex; justify-content: space-between; padding: 3mm 0 0 0;">
+      <span style="font-size: 7.5pt; font-weight: 300; letter-spacing: 2.5px; text-transform: uppercase; color: var(--fg-faint);">온톨로지 &middot; 인지 &middot; 인프라 &middot; 자기개선 메모리</span>
+      <span style="font-size: 7.5pt; font-weight: 300; letter-spacing: 2px; color: var(--fg-faint);">2026</span>
+    </div>
+  </div>
+  <span class="page-number">1</span>
+</div>
+
+<!-- PAGE 2: DOCUMENT OVERVIEW -->
+<div class="page">
+  <span class="page-label">Index</span>
+  <span class="page-number">2</span>
+
+  <div class="toc-lede">9 Documents</div>
+
+  <div class="section-sep"></div>
+
+  <div class="toc-grid">
+    <div class="toc-item">
+      <span class="toc-num">00</span>
+      <span class="toc-title">Index<span class="toc-desc">메타 개요 &mdash; 구조, 읽기 경로, 교차 참조</span></span>
+    </div>
+    <div class="toc-item">
+      <span class="toc-num">01</span>
+      <span class="toc-title">Alpha &mdash; 왜 구조인가<span class="toc-desc">이론에서 시스템으로의 연역적 논증 &middot; 11 Theses</span></span>
+    </div>
+    <div class="toc-item">
+      <span class="toc-num">02</span>
+      <span class="toc-title">Beta &mdash; 무엇이 드러났는가<span class="toc-desc">시스템에서 발견으로의 귀납적 보고 &middot; 11 Findings</span></span>
+    </div>
+    <div class="toc-item">
+      <span class="toc-num">03</span>
+      <span class="toc-title">Omega &mdash; 무엇이 달라져야 하는가<span class="toc-desc">발견에서 새로운 이론으로의 귀추적 제안 &middot; 11 Propositions</span></span>
+    </div>
+    <div class="toc-item">
+      <span class="toc-num">04</span>
+      <span class="toc-title">Praxis &mdash; 어떻게 만드는가<span class="toc-desc">이론과 발견을 실천으로 전환하는 방법론 &middot; 11 Phases</span></span>
+    </div>
+    <div class="toc-item">
+      <span class="toc-num">05</span>
+      <span class="toc-title">Lens A &mdash; 인지과학<span class="toc-desc">뇌의 메커니즘과 mcp-memory의 대응 &middot; 11 Facets</span></span>
+    </div>
+    <div class="toc-item">
+      <span class="toc-num">06</span>
+      <span class="toc-title">Lens B &mdash; 존재론/철학<span class="toc-desc">설계 선택이 전제하는 철학적 입장 &middot; 11 Facets</span></span>
+    </div>
+    <div class="toc-item">
+      <span class="toc-num">07</span>
+      <span class="toc-title">Lens C &mdash; 소프트웨어 아키텍처<span class="toc-desc">엔지니어링 결정과 트레이드오프 &middot; 11 Facets</span></span>
+    </div>
+    <div class="toc-item">
+      <span class="toc-num">08</span>
+      <span class="toc-title">Lens D &mdash; 경쟁 지형<span class="toc-desc">기존 시스템 대비 포지셔닝 &middot; 11 Facets</span></span>
+    </div>
+    <div class="toc-item">
+      <span class="toc-num">09</span>
+      <span class="toc-title">Lens E &mdash; 언어학/의미론<span class="toc-desc">LLM의 언어적 한계와 온톨로지의 보완 &middot; 11 Facets</span></span>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 3: STRUCTURE -->
+<div class="page">
+  <span class="page-label">Index</span>
+  <span class="page-number">3</span>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">Section <span class="accent-num">01</span></span>
+    <h2>구조</h2>
+    <span class="section-sub">삼부작 + 방법론 + 5개 렌즈의 3층 아키텍처</span>
+  </div>
+  <div class="accent-line"></div>
+
+  <div class="body-serif" style="margin-top: 6mm;">
+    <p>9개 문서는 세 개의 층으로 조직된다.</p>
+  </div>
+
+  <svg width="420" height="340" viewBox="0 0 420 340" style="margin: 4mm 0;">
+    <!-- Layer 1: 삼부작 -->
+    <rect x="0" y="0" width="420" height="120" fill="none" stroke="#D8D8D8" stroke-width="0.5"/>
+    <text x="16" y="22" font-family="'Inter','Noto Sans KR',sans-serif" font-size="6" font-weight="300" letter-spacing="2" fill="#999" text-transform="uppercase">삼부작 (뼈대)</text>
+    <text x="40" y="58" font-family="'Inter','Noto Sans KR',sans-serif" font-size="13" font-weight="300" fill="#000">Alpha</text>
+    <line x1="90" y1="55" x2="140" y2="55" stroke="#000" stroke-width="0.5" marker-end="url(#arrow)"/>
+    <text x="155" y="58" font-family="'Inter','Noto Sans KR',sans-serif" font-size="13" font-weight="300" fill="#000">Beta</text>
+    <line x1="195" y1="55" x2="245" y2="55" stroke="#000" stroke-width="0.5" marker-end="url(#arrow)"/>
+    <text x="260" y="58" font-family="'Inter','Noto Sans KR',sans-serif" font-size="13" font-weight="300" fill="#000">Omega</text>
+    <text x="40" y="78" font-family="'Inter','Noto Sans KR',sans-serif" font-size="7" font-weight="200" fill="#999" letter-spacing="1.5">WHY</text>
+    <text x="155" y="78" font-family="'Inter','Noto Sans KR',sans-serif" font-size="7" font-weight="200" fill="#999" letter-spacing="1.5">WHAT</text>
+    <text x="260" y="78" font-family="'Inter','Noto Sans KR',sans-serif" font-size="7" font-weight="200" fill="#999" letter-spacing="1.5">SO WHAT</text>
+    <text x="40" y="98" font-family="'Inter','Noto Sans KR',sans-serif" font-size="8" font-weight="300" fill="#666">연역</text>
+    <text x="155" y="98" font-family="'Inter','Noto Sans KR',sans-serif" font-size="8" font-weight="300" fill="#666">귀납</text>
+    <text x="260" y="98" font-family="'Inter','Noto Sans KR',sans-serif" font-size="8" font-weight="300" fill="#666">귀추</text>
+
+    <!-- Layer 2: 방법론 -->
+    <rect x="0" y="130" width="420" height="80" fill="none" stroke="#D8D8D8" stroke-width="0.5"/>
+    <text x="16" y="152" font-family="'Inter','Noto Sans KR',sans-serif" font-size="6" font-weight="300" letter-spacing="2" fill="#999">방법론 (다리)</text>
+    <text x="40" y="182" font-family="'Inter','Noto Sans KR',sans-serif" font-size="13" font-weight="300" fill="#000">Praxis</text>
+    <text x="110" y="182" font-family="'Inter','Noto Sans KR',sans-serif" font-size="7" font-weight="200" fill="#999" letter-spacing="1.5">HOW</text>
+
+    <!-- Layer 3: 5개 렌즈 -->
+    <rect x="0" y="220" width="420" height="120" fill="none" stroke="#D8D8D8" stroke-width="0.5"/>
+    <text x="16" y="242" font-family="'Inter','Noto Sans KR',sans-serif" font-size="6" font-weight="300" letter-spacing="2" fill="#999">5개 렌즈 (살)</text>
+    <text x="40" y="278" font-family="'Inter','Noto Sans KR',sans-serif" font-size="9" font-weight="300" fill="#000">A. 인지과학</text>
+    <text x="140" y="278" font-family="'Inter','Noto Sans KR',sans-serif" font-size="9" font-weight="300" fill="#000">B. 철학</text>
+    <text x="220" y="278" font-family="'Inter','Noto Sans KR',sans-serif" font-size="9" font-weight="300" fill="#000">C. 아키텍처</text>
+    <text x="40" y="302" font-family="'Inter','Noto Sans KR',sans-serif" font-size="9" font-weight="300" fill="#000">D. 경쟁 지형</text>
+    <text x="140" y="302" font-family="'Inter','Noto Sans KR',sans-serif" font-size="9" font-weight="300" fill="#000">E. 언어학</text>
+
+    <!-- Accent dots -->
+    <circle cx="8" cy="54" r="2.5" fill="#CC0000"/>
+    <circle cx="8" cy="178" r="2.5" fill="#CC0000"/>
+    <circle cx="8" cy="274" r="2.5" fill="#CC0000"/>
+
+    <!-- Arrow marker -->
+    <defs>
+      <marker id="arrow" markerWidth="6" markerHeight="4" refX="5" refY="2" orient="auto">
+        <polygon points="0,0 6,2 0,4" fill="#000"/>
+      </marker>
+    </defs>
+  </svg>
+
+  <div class="body-serif" style="margin-top: 4mm;">
+    <p>삼부작은 뼈대다. Alpha(WHY)는 연역적으로 구조의 필연성을 논증한다. Beta(WHAT)는 귀납적으로 4,786개 노드의 운영 결과를 보고한다. Omega(SO WHAT)는 귀추적으로 새로운 이론을 제안한다.</p>
+    <p>Praxis는 다리다. 이론과 발견을 실천으로 전환하는 방법론을 제공한다.</p>
+    <p>5개 렌즈는 살이다. 동일한 시스템을 인지과학, 철학, 소프트웨어 아키텍처, 경쟁 지형, 언어학의 관점에서 각각 조명한다.</p>
+  </div>
+</div>
+
+<!-- PAGE 4: READING PATHS -->
+<div class="page">
+  <span class="page-label">Index</span>
+  <span class="page-number">4</span>
+
+  <!-- DIAGRAM 1: Radial — Five Reading Paths -->
+  <div style="position: absolute; right: 12mm; top: 35mm; width: 58mm;">
+    <svg viewBox="-5 -5 218 305" width="58mm" xmlns="http://www.w3.org/2000/svg">
+      <text x="0" y="10" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#999" letter-spacing="2">FIVE ENTRY PATHS</text>
+      <line x1="104" y1="110" x2="104" y2="56" stroke="#000" stroke-width="0.4" stroke-linecap="butt" stroke-linejoin="miter" shape-rendering="crispEdges"/>
+      <line x1="126" y1="122" x2="146" y2="102" stroke="#000" stroke-width="0.4" stroke-linecap="butt" stroke-linejoin="miter" shape-rendering="crispEdges"/>
+      <line x1="124" y1="144" x2="146" y2="172" stroke="#000" stroke-width="0.4" stroke-linecap="butt" stroke-linejoin="miter" shape-rendering="crispEdges"/>
+      <line x1="84" y1="144" x2="60" y2="172" stroke="#000" stroke-width="0.4" stroke-linecap="butt" stroke-linejoin="miter" shape-rendering="crispEdges"/>
+      <line x1="82" y1="122" x2="60" y2="102" stroke="#000" stroke-width="0.4" stroke-linecap="butt" stroke-linejoin="miter" shape-rendering="crispEdges"/>
+
+      <rect x="66" y="26" width="76" height="28" fill="none" stroke="#000" stroke-width="0.6"/>
+      <text x="104" y="38" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000" letter-spacing="1">WHOLE</text>
+      <text x="104" y="48" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#666">A→B→O→P→A-E</text>
+
+      <rect x="140" y="76" width="68" height="28" fill="none" stroke="#000" stroke-width="0.6"/>
+      <text x="174" y="88" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000" letter-spacing="1">THEORY</text>
+      <text x="174" y="98" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#666">A→B→E→O</text>
+
+      <rect x="140" y="172" width="68" height="28" fill="none" stroke="#000" stroke-width="0.6"/>
+      <text x="174" y="184" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000" letter-spacing="1">ENGINEER</text>
+      <text x="174" y="194" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#666">C→B→P→D</text>
+
+      <rect x="0" y="172" width="68" height="28" fill="none" stroke="#000" stroke-width="0.6"/>
+      <text x="34" y="184" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000" letter-spacing="1">BUILDER</text>
+      <text x="34" y="194" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#666">P→B→A</text>
+
+      <rect x="0" y="76" width="68" height="28" fill="none" stroke="#000" stroke-width="0.6"/>
+      <text x="34" y="88" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000" letter-spacing="1">COGNITION</text>
+      <text x="34" y="98" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#666">A→T4-6→O</text>
+
+      <circle cx="104" cy="132" r="24" fill="#CC0000"/>
+      <text x="104" y="128" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="300" fill="#fff" letter-spacing="1">INDEX</text>
+      <text x="104" y="140" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="rgba(255,255,255,0.85)">00</text>
+
+      <line x1="0" y1="226" x2="208" y2="226" stroke="#000" stroke-width="0.5" stroke-linecap="butt" stroke-linejoin="miter" shape-rendering="crispEdges"/>
+      <text x="0" y="244" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#999" letter-spacing="0.5">SAME ARCHIVE, DIFFERENT ENTRANCES.</text>
+      <text x="0" y="256" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#999" letter-spacing="0.5">THE READER CHOOSES A FIRST QUESTION,</text>
+      <text x="0" y="268" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#999" letter-spacing="0.5">THEN THE INDEX REORDERS THE SAME SYSTEM.</text>
+    </svg>
+    <div style="font-size: 6px; color: #BBB; letter-spacing: 1px; text-transform: uppercase; margin-top: 2mm;">FIG. 1 &mdash; FIVE ENTRY PATHS INTO THE ARCHIVE</div>
+  </div>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">Section <span class="accent-num">02</span></span>
+    <h2>읽기 경로</h2>
+    <span class="section-sub">독자의 관심에 따른 5가지 진입점</span>
+  </div>
+  <div class="accent-line"></div>
+
+  <table class="path-table" style="margin-top: 6mm;">
+    <thead>
+      <tr><th>경로</th><th>순서</th><th>대상</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>전체</td><td>Alpha &rarr; Beta &rarr; Omega &rarr; Praxis &rarr; Lens A&ndash;E</td><td>처음부터 끝까지</td></tr>
+      <tr><td>이론가</td><td>Alpha &rarr; Lens B &rarr; Lens E &rarr; Omega</td><td>철학/언어학 관심</td></tr>
+      <tr><td>엔지니어</td><td>Lens C &rarr; Beta &rarr; Praxis &rarr; Lens D</td><td>구현/시장 관심</td></tr>
+      <tr><td>빌더</td><td>Praxis &rarr; Beta &rarr; Alpha</td><td>만들면서 이해</td></tr>
+      <tr><td>인지과학</td><td>Lens A &rarr; Alpha(T4&ndash;6) &rarr; Omega(P2,4)</td><td>뇌-시스템 대응</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- PAGE 5: UNIT SYSTEM + DOCUMENT DETAIL Alpha/Beta -->
+<div class="page">
+  <span class="page-label">Index</span>
+  <span class="page-number">5</span>
+
+  <!-- DIAGRAM 2: Statistics — System Summary -->
+  <div style="position: absolute; right: 12mm; top: 35mm; width: 58mm;">
+    <svg viewBox="-5 -5 218 255" width="58mm" xmlns="http://www.w3.org/2000/svg">
+      <text x="0" y="10" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#999" letter-spacing="2">SYSTEM AT A GLANCE</text>
+      <line x1="0" y1="20" x2="208" y2="20" stroke="#000" stroke-width="0.75" stroke-linecap="butt" stroke-linejoin="miter" shape-rendering="crispEdges"/>
+      <line x1="104" y1="32" x2="104" y2="156" stroke="#BBB" stroke-width="0.4" stroke-linecap="butt" stroke-linejoin="miter" shape-rendering="crispEdges"/>
+      <line x1="0" y1="94" x2="208" y2="94" stroke="#BBB" stroke-width="0.4" stroke-linecap="butt" stroke-linejoin="miter" shape-rendering="crispEdges"/>
+
+      <text x="52" y="64" text-anchor="middle" font-family="Inter, sans-serif" font-size="28" font-weight="200" fill="#000">9</text>
+      <text x="52" y="80" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000" letter-spacing="1.5">DOCUMENTS</text>
+      <text x="52" y="92" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#999">INDEX + TRILOGY</text>
+      <text x="52" y="104" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#999">PRAXIS + LENSES</text>
+
+      <text x="156" y="64" text-anchor="middle" font-family="Inter, sans-serif" font-size="28" font-weight="200" fill="#CC0000">99</text>
+      <text x="156" y="80" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000" letter-spacing="1.5">SECTIONS</text>
+      <text x="156" y="92" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#999">11 UNITS</text>
+      <text x="156" y="104" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#999">PER MAIN DOCUMENT</text>
+
+      <text x="52" y="138" text-anchor="middle" font-family="Inter, sans-serif" font-size="28" font-weight="200" fill="#000">5</text>
+      <text x="52" y="154" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000" letter-spacing="1.5">UNIT SYSTEMS</text>
+      <text x="52" y="166" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#999">THESIS / FINDING</text>
+      <text x="52" y="178" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#999">PROPOSITION / PHASE / FACET</text>
+
+      <text x="156" y="138" text-anchor="middle" font-family="Inter, sans-serif" font-size="28" font-weight="200" fill="#000">11</text>
+      <text x="156" y="154" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000" letter-spacing="1.5">ALPHA THESES</text>
+      <text x="156" y="166" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#999">WHY / WHAT / SO WHAT</text>
+      <text x="156" y="178" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#999">TRILOGY STARTS HERE</text>
+
+      <line x1="0" y1="196" x2="208" y2="196" stroke="#000" stroke-width="0.5" stroke-linecap="butt" stroke-linejoin="miter" shape-rendering="crispEdges"/>
+      <text x="0" y="214" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#999" letter-spacing="0.5">ONE INDEX, MULTIPLE READING UNITS.</text>
+      <text x="0" y="226" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#999" letter-spacing="0.5">THE REPORT SYSTEM CHANGES SCALE</text>
+      <text x="0" y="238" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#999" letter-spacing="0.5">WITHOUT CHANGING ITS ARCHITECTURE.</text>
+    </svg>
+    <div style="font-size: 6px; color: #BBB; letter-spacing: 1px; text-transform: uppercase; margin-top: 2mm;">FIG. 2 &mdash; INDEX SYSTEM SUMMARY IN NUMBERS</div>
+  </div>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">Section <span class="accent-num">03</span></span>
+    <h2>문서별 단위 체계</h2>
+    <span class="section-sub">각 문서의 분석 단위와 성격</span>
+  </div>
+  <div class="accent-line"></div>
+
+  <table class="path-table" style="margin-top: 6mm;">
+    <thead>
+      <tr><th>문서</th><th>단위</th><th>성격</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Alpha</td><td>Thesis</td><td>증명해야 할 명제</td></tr>
+      <tr><td>Beta</td><td>Finding</td><td>보고해야 할 발견</td></tr>
+      <tr><td>Omega</td><td>Proposition</td><td>제안해야 할 새 이론</td></tr>
+      <tr><td>Praxis</td><td>Phase</td><td>실행해야 할 단계</td></tr>
+      <tr><td>Lens A&ndash;E</td><td>Facet</td><td>비춰야 할 분석 면</td></tr>
+    </tbody>
+  </table>
+
+  <div style="margin-top: 10mm;">
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">Section <span class="accent-num">04</span></span>
+    <h2>Alpha &mdash; 왜 구조인가</h2>
+    <span class="section-sub">이론에서 시스템으로의 연역적 논증 &middot; "LLM 시대에 인간의 사고는 어떤 외부 구조를 필요로 하는가?"</span>
+  </div>
+  <div class="accent-line"></div>
+  </div>
+
+  <table class="matrix-table" style="margin-top: 5mm;">
+    <thead>
+      <tr><th>#</th><th>Thesis</th><th>핵심 주장</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>0</td><td>LLM의 구조적 불가능</td><td>할루시네이션&middot;맥락소멸&middot;비구조성은 스케일링으로 해결 안 된다</td></tr>
+      <tr><td>1</td><td>세 가지 간극</td><td>토큰-의미, 문장-구조, 컨텍스트-세계</td></tr>
+      <tr><td>2</td><td>온톨로지의 필연</td><td>벡터 DB의 세 가지 실패 모드 &rarr; 하이브리드 검색</td></tr>
+      <tr><td>3</td><td>정적 온톨로지의 한계</td><td>BFO/DOLCE/Gene Ontology가 개인 인지에 안 맞는 이유</td></tr>
+      <tr><td>4</td><td>승격 메커니즘</td><td>L0&rarr;L5 증류 피라미드, BCM 게이트, DB 분포 실증</td></tr>
+      <tr><td>5</td><td>역방향 흐름</td><td>원칙&rarr;경험 재해석, WIM 7렌즈, 들뢰즈 반-현실화</td></tr>
+      <tr><td>6</td><td>자기교정</td><td>Correction recall 최우선, 2차 피드백 루프, node #5353/#5369</td></tr>
+      <tr><td>7</td><td>세션 주입</td><td>작업기억 대응, L2+ 우선, Context as Currency</td></tr>
+      <tr><td>8</td><td>에코시스템</td><td>12개 프로젝트, foundation/ 자기참조, 인지 순환</td></tr>
+      <tr><td>9</td><td>경쟁 지형</td><td>2&times;2 매트릭스, 우상단 빈 공간</td></tr>
+      <tr><td>10</td><td>선언</td><td>LLM은 매체, 매체에는 구조, 구조는 살아있어야</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- PAGE 6: DOCUMENT DETAIL Beta/Omega -->
+<div class="page">
+  <span class="page-label">Index</span>
+  <span class="page-number">6</span>
+
+  <!-- DIAGRAM 3: Comparison — Beta and Omega -->
+  <div style="position: absolute; right: 12mm; top: 35mm; width: 58mm;">
+    <svg viewBox="-5 -5 218 295" width="58mm" xmlns="http://www.w3.org/2000/svg">
+      <text x="0" y="10" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#999" letter-spacing="2">BETA / OMEGA</text>
+      <line x1="0" y1="20" x2="208" y2="20" stroke="#000" stroke-width="0.75" stroke-linecap="butt" stroke-linejoin="miter" shape-rendering="crispEdges"/>
+      <line x1="104" y1="28" x2="104" y2="234" stroke="#BBB" stroke-width="0.4" stroke-linecap="butt" stroke-linejoin="miter" shape-rendering="crispEdges"/>
+
+      <rect x="12" y="32" width="80" height="22" fill="none" stroke="#000" stroke-width="0.6"/>
+      <text x="52" y="46" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="300" fill="#000" letter-spacing="1">BETA</text>
+      <rect x="116" y="32" width="80" height="22" fill="#CC0000" stroke="#CC0000" stroke-width="0.6"/>
+      <text x="156" y="46" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="300" fill="#fff" letter-spacing="1">OMEGA</text>
+
+      <text x="0" y="76" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#999" letter-spacing="1">QUESTION</text>
+      <text x="12" y="90" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000">WHAT EMERGED?</text>
+      <text x="116" y="90" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000">WHAT MUST CHANGE?</text>
+
+      <line x1="0" y1="102" x2="208" y2="102" stroke="#BBB" stroke-width="0.3" stroke-linecap="butt" stroke-linejoin="miter" shape-rendering="crispEdges"/>
+      <text x="0" y="118" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#999" letter-spacing="1">INFERENCE</text>
+      <text x="12" y="132" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000">INDUCTION</text>
+      <text x="116" y="132" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000">ABDUCTION</text>
+
+      <line x1="0" y1="144" x2="208" y2="144" stroke="#BBB" stroke-width="0.3" stroke-linecap="butt" stroke-linejoin="miter" shape-rendering="crispEdges"/>
+      <text x="0" y="160" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#999" letter-spacing="1">UNIT</text>
+      <text x="12" y="174" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000">11 FINDINGS</text>
+      <text x="116" y="174" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000">11 PROPOSITIONS</text>
+
+      <line x1="0" y1="186" x2="208" y2="186" stroke="#BBB" stroke-width="0.3" stroke-linecap="butt" stroke-linejoin="miter" shape-rendering="crispEdges"/>
+      <text x="0" y="202" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#999" letter-spacing="1">OUTPUT</text>
+      <text x="12" y="216" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000">OPERATING REPORT</text>
+      <text x="116" y="216" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000">NEW THEORY</text>
+
+      <line x1="0" y1="234" x2="208" y2="234" stroke="#000" stroke-width="0.5" stroke-linecap="butt" stroke-linejoin="miter" shape-rendering="crispEdges"/>
+      <text x="0" y="252" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#999" letter-spacing="0.5">BETA READS THE RUN. OMEGA</text>
+      <text x="0" y="264" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#999" letter-spacing="0.5">GENERALIZES IT INTO A CLAIM.</text>
+    </svg>
+    <div style="font-size: 6px; color: #BBB; letter-spacing: 1px; text-transform: uppercase; margin-top: 2mm;">FIG. 3 &mdash; BETA REPORTS, OMEGA REFRAMES</div>
+  </div>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">Section <span class="accent-num">05</span></span>
+    <h2>Beta &mdash; 무엇이 드러났는가</h2>
+    <span class="section-sub">시스템에서 발견으로의 귀납적 보고 &middot; "4,786개 노드를 운영하면서 무엇을 발견했는가?"</span>
+  </div>
+  <div class="accent-line"></div>
+
+  <table class="matrix-table" style="margin-top: 5mm;">
+    <thead>
+      <tr><th>#</th><th>Finding</th><th>핵심 발견</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>0</td><td>의도 vs 결과</td><td>메모리 서버 &rarr; 메타인지 운영체계</td></tr>
+      <tr><td>1</td><td>판단이 가장 많다</td><td>Decision 987개 = 전체 20.6%. knowledge base가 아니라 decision engine</td></tr>
+      <tr><td>2</td><td>실패의 가치</td><td>Failure 141개. 같은 실패 방지 + 패턴 발견 + Correction 생성</td></tr>
+      <tr><td>3</td><td>타입은 사후 발견</td><td>materialized 25/51. Correction 사후 추가. L4&ndash;L5 아직 비어있음</td></tr>
+      <tr><td>4</td><td>Context as Currency</td><td>더 넣으면 더 나쁘다. 에이전트 24&rarr;15, 스킬 14&rarr;9 + 4단계</td></tr>
+      <tr><td>5</td><td>프로토콜의 필요</td><td>Claude 단정 패턴 &rarr; Phase v3, PDR, foundation 3문서</td></tr>
+      <tr><td>6</td><td>멀티에이전트 카오스</td><td>동시 쓰기 충돌 &rarr; .ctx/, rulesync, worktree</td></tr>
+      <tr><td>7</td><td>시스템 도입 전후 비교</td><td>대조군 보완 &mdash; 도입 전후 정성적 비교</td></tr>
+      <tr><td>8</td><td>측정이 메타인지</td><td>auto-iterate L1&ndash;L5 분포 &rarr; 사고 편향 가시화</td></tr>
+      <tr><td>9</td><td>온톨로지는 거울</td><td>DB 분포 = 만든 사람의 사고 구조</td></tr>
+      <tr><td>10</td><td>구현이 이해를 바꾼다</td><td>이론 읽기 &ne; 이론 구현. 들뢰즈&middot;BCM&middot;CLS의 코드화</td></tr>
+    </tbody>
+  </table>
+
+  <div style="margin-top: 8mm;">
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">Section <span class="accent-num">06</span></span>
+    <h2>Omega &mdash; 무엇이 달라져야 하는가</h2>
+    <span class="section-sub">발견에서 새로운 이론으로의 귀추적 제안 &middot; "이 경험은 어떤 새로운 이론을 요구하는가?"</span>
+  </div>
+  <div class="accent-line"></div>
+  </div>
+
+  <table class="matrix-table" style="margin-top: 5mm;">
+    <thead>
+      <tr><th>#</th><th>Proposition</th><th>핵심 제안</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>0</td><td>이론의 끊김</td><td>들뢰즈&middot;CLS&middot;BCM 각각의 설명 범위와 한계</td></tr>
+      <tr><td>1</td><td>인지적 공동 구성</td><td>Human-AI = 도구 사용이 아니라 co-construction</td></tr>
+      <tr><td>2</td><td>Extended Cognition</td><td>외부 기억 = 기억이 아니라 사고의 골격</td></tr>
+      <tr><td>3</td><td>인식론적 온톨로지</td><td>존재론이 아니라 "앎의 방식"을 구조화</td></tr>
+      <tr><td>4</td><td>인지적 증류</td><td>승격 = 기존 학습 이론에 없는 새 모델</td></tr>
+      <tr><td>5</td><td>실패 = 최고 순도 지식</td><td>포퍼 반증주의의 개인 인지 적용</td></tr>
+      <tr><td>6</td><td>Context = 제4 자원</td><td>CPU&middot;Memory&middot;Storage + Context</td></tr>
+      <tr><td>7</td><td>프로토콜 > 프롬프트</td><td>인지적 프로토콜 디자인이라는 새 영역</td></tr>
+      <tr><td>8</td><td>불안정 = 생명</td><td>괴델 불완전성 vs 루만 자기생산</td></tr>
+      <tr><td>9</td><td>설계 원리 7가지</td><td>구조 먼저 / 승격 / 역방향 / 실패 1급 / 화폐 / 프로토콜 / 진화</td></tr>
+      <tr><td>10</td><td>내가 구조를 만들고...</td><td>삼부작 자체가 승격 메커니즘과 동형</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- PAGE 7: DOCUMENT DETAIL Praxis / Lens A -->
+<div class="page">
+  <span class="page-label">Index</span>
+  <span class="page-number">7</span>
+
+  <!-- DIAGRAM 4: Cycle — Praxis Loop -->
+  <div style="position: absolute; right: 12mm; top: 35mm; width: 58mm;">
+    <svg viewBox="-5 -5 218 290" width="58mm" xmlns="http://www.w3.org/2000/svg">
+      <text x="0" y="10" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#999" letter-spacing="2">PRAXIS LOOP</text>
+
+      <rect x="74" y="24" width="60" height="22" fill="none" stroke="#000" stroke-width="0.6"/>
+      <text x="104" y="38" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000" letter-spacing="1">OBSERVE</text>
+
+      <rect x="140" y="68" width="68" height="22" fill="none" stroke="#000" stroke-width="0.6"/>
+      <text x="174" y="82" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000" letter-spacing="1">ONTOLOGY</text>
+
+      <rect x="140" y="166" width="68" height="22" fill="none" stroke="#000" stroke-width="0.6"/>
+      <text x="174" y="180" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000" letter-spacing="1">INJECT</text>
+
+      <rect x="74" y="210" width="60" height="22" fill="#CC0000" stroke="#CC0000" stroke-width="0.6"/>
+      <text x="104" y="224" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#fff" letter-spacing="1">CORRECT</text>
+
+      <rect x="0" y="166" width="68" height="22" fill="none" stroke="#000" stroke-width="0.6"/>
+      <text x="34" y="180" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000" letter-spacing="1">MEASURE</text>
+
+      <rect x="0" y="68" width="68" height="22" fill="none" stroke="#000" stroke-width="0.6"/>
+      <text x="34" y="82" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000" letter-spacing="1">STORE</text>
+
+      <line x1="104" y1="46" x2="174" y2="68" stroke="#000" stroke-width="0.4" stroke-linecap="butt" stroke-linejoin="miter" shape-rendering="crispEdges"/>
+      <polygon points="169,66 174,68 170,72" fill="#000"/>
+      <line x1="174" y1="90" x2="174" y2="166" stroke="#000" stroke-width="0.4" stroke-linecap="butt" stroke-linejoin="miter" shape-rendering="crispEdges"/>
+      <polygon points="171,160 174,166 177,160" fill="#000"/>
+      <line x1="140" y1="188" x2="104" y2="210" stroke="#000" stroke-width="0.4" stroke-linecap="butt" stroke-linejoin="miter" shape-rendering="crispEdges"/>
+      <polygon points="107,205 104,210 110,210" fill="#000"/>
+      <line x1="74" y1="210" x2="34" y2="188" stroke="#000" stroke-width="0.4" stroke-linecap="butt" stroke-linejoin="miter" shape-rendering="crispEdges"/>
+      <polygon points="40,189 34,188 37,183" fill="#000"/>
+      <line x1="34" y1="166" x2="34" y2="90" stroke="#000" stroke-width="0.4" stroke-linecap="butt" stroke-linejoin="miter" shape-rendering="crispEdges"/>
+      <polygon points="31,96 34,90 37,96" fill="#000"/>
+      <line x1="68" y1="68" x2="104" y2="46" stroke="#000" stroke-width="0.4" stroke-linecap="butt" stroke-linejoin="miter" shape-rendering="crispEdges"/>
+      <polygon points="98,46 104,46 101,51" fill="#000"/>
+
+      <circle cx="104" cy="128" r="24" fill="none" stroke="#000" stroke-width="0.6"/>
+      <text x="104" y="124" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="300" fill="#000" letter-spacing="1">BUILD</text>
+      <text x="104" y="136" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#666">SELF-IMPROVEMENT</text>
+
+      <line x1="0" y1="248" x2="208" y2="248" stroke="#000" stroke-width="0.5" stroke-linecap="butt" stroke-linejoin="miter" shape-rendering="crispEdges"/>
+      <text x="0" y="266" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#999" letter-spacing="0.5">FAILURE RETURNS AS BETTER CONTEXT.</text>
+    </svg>
+    <div style="font-size: 6px; color: #BBB; letter-spacing: 1px; text-transform: uppercase; margin-top: 2mm;">FIG. 4 &mdash; PRAXIS AS A SELF-CORRECTING LOOP</div>
+  </div>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">Section <span class="accent-num">07</span></span>
+    <h2>Praxis &mdash; 어떻게 만드는가</h2>
+    <span class="section-sub">이론과 발견을 실천으로 전환하는 방법론 &middot; "자기개선 인지 엔진을 어떻게 구축하는가?"</span>
+  </div>
+  <div class="accent-line"></div>
+
+  <table class="matrix-table" style="margin-top: 5mm;">
+    <thead>
+      <tr><th>#</th><th>Phase</th><th>핵심 행동</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>0</td><td>전제</td><td>지속적 LLM 협업 + 자기관찰 의지 + 구조화 감각</td></tr>
+      <tr><td>1</td><td>관찰</td><td>도구 없이 2주간 자기 판단 패턴 기록</td></tr>
+      <tr><td>2</td><td>최소 온톨로지</td><td>5타입(Obs/Dec/Fail/Pat/Prin) + 3관계</td></tr>
+      <tr><td>3</td><td>저장 엔진</td><td>SQLite + ChromaDB. Neo4j로 시작하면 안 되는 이유</td></tr>
+      <tr><td>4</td><td>첫 100개 노드</td><td>판단 있는 것만. 실패 적극 기록</td></tr>
+      <tr><td>5</td><td>승격 경로</td><td>수동&rarr;반자동. confidence + 참조횟수 기반 임계값</td></tr>
+      <tr><td>6</td><td>세션 주입</td><td>L2+ 우선 + 현장성 보조 + Correction 최우선</td></tr>
+      <tr><td>7</td><td>자기교정 루프</td><td>Failure&rarr;Pattern&rarr;Correction. 저장소&rarr;엔진 전환점</td></tr>
+      <tr><td>8</td><td>역방향 흐름</td><td>Principle 20개+ &rarr; 해석 렌즈 &rarr; 새 입력 필터링</td></tr>
+      <tr><td>9</td><td>측정과 반복</td><td>레이어 분포, Failure 비율, 승격률</td></tr>
+      <tr><td>10</td><td>함정</td><td>과잉 설계, 분류 강박, 도구 의존. 시스템 &ne; 목적</td></tr>
+    </tbody>
+  </table>
+
+  <div style="margin-top: 8mm;">
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">Section <span class="accent-num">08</span></span>
+    <h2>Lens A &mdash; 인지과학</h2>
+    <span class="section-sub">뇌의 메커니즘과 mcp-memory의 구현 대응</span>
+  </div>
+  <div class="accent-line"></div>
+  </div>
+
+  <table class="matrix-table" style="margin-top: 5mm;">
+    <thead>
+      <tr><th>#</th><th>Facet</th><th>인지과학 개념 &rarr; 시스템 대응</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>0</td><td>CLS</td><td>해마(session injection) &harr; 신피질(ontology 승격)</td></tr>
+      <tr><td>1</td><td>작업기억</td><td>Baddeley 모델 &harr; 컨텍스트 윈도우 + injection policy</td></tr>
+      <tr><td>2</td><td>스키마 이론</td><td>Piaget 동화/조절 &harr; 타입 분류/Unclassified/schema 진화</td></tr>
+      <tr><td>3</td><td>BCM 가소성</td><td>수정 임계값 &harr; confidence + 참조횟수 기반 승격</td></tr>
+      <tr><td>4</td><td>메타인지</td><td>자기 사고 관찰 &harr; Correction recall 최우선</td></tr>
+      <tr><td>5</td><td>예측 코딩</td><td>top-down prediction &harr; WIM 7렌즈 주입</td></tr>
+      <tr><td>6</td><td>기억 응고</td><td>해마&rarr;신피질 전이 &harr; L0&rarr;L2 성숙</td></tr>
+      <tr><td>7</td><td>인지 부하</td><td>extraneous load 제거 &harr; 에이전트 24&rarr;15, Context as Currency</td></tr>
+      <tr><td>8</td><td>전문성</td><td>청킹 &harr; L2 Pattern/Framework 밀도</td></tr>
+      <tr><td>9</td><td>이중 과정</td><td>시스템1/2 &harr; Signal+Obs / Principle</td></tr>
+      <tr><td>10</td><td>분산 인지</td><td>Hutchins 조종석 &harr; 12개 프로젝트 에코시스템</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- PAGE 8: DOCUMENT DETAIL Lens B / Lens C -->
+<div class="page">
+  <span class="page-label">Index</span>
+  <span class="page-number">8</span>
+
+  <!-- DIAGRAM 5: Transformation — Claim to Code -->
+  <div style="position: absolute; right: 12mm; top: 35mm; width: 58mm;">
+    <svg viewBox="-5 -5 218 305" width="58mm" xmlns="http://www.w3.org/2000/svg">
+      <text x="0" y="10" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#999" letter-spacing="2">CLAIM TO CODE</text>
+      <line x1="0" y1="20" x2="208" y2="20" stroke="#000" stroke-width="0.75" stroke-linecap="butt" stroke-linejoin="miter" shape-rendering="crispEdges"/>
+
+      <rect x="0" y="34" width="80" height="28" fill="none" stroke="#000" stroke-width="0.6"/>
+      <text x="40" y="46" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000" letter-spacing="1">VIRTUAL /</text>
+      <text x="40" y="56" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000" letter-spacing="1">ACTUAL</text>
+      <line x1="86" y1="48" x2="122" y2="48" stroke="#000" stroke-width="0.4" stroke-linecap="butt" stroke-linejoin="miter" shape-rendering="crispEdges"/>
+      <polygon points="86,45 80,48 86,51" fill="#000"/>
+      <polygon points="122,45 128,48 122,51" fill="#000"/>
+      <rect x="128" y="34" width="80" height="28" fill="none" stroke="#000" stroke-width="0.6"/>
+      <text x="168" y="51" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000" letter-spacing="1">PROMOTION</text>
+
+      <rect x="0" y="82" width="80" height="28" fill="none" stroke="#000" stroke-width="0.6"/>
+      <text x="40" y="99" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000" letter-spacing="1">RHIZOME</text>
+      <line x1="86" y1="96" x2="122" y2="96" stroke="#000" stroke-width="0.4" stroke-linecap="butt" stroke-linejoin="miter" shape-rendering="crispEdges"/>
+      <polygon points="86,93 80,96 86,99" fill="#000"/>
+      <polygon points="122,93 128,96 122,99" fill="#000"/>
+      <rect x="128" y="82" width="80" height="28" fill="none" stroke="#000" stroke-width="0.6"/>
+      <text x="168" y="94" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000" letter-spacing="1">CROSS</text>
+      <text x="168" y="104" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000" letter-spacing="1">RELATIONS</text>
+
+      <rect x="0" y="130" width="80" height="28" fill="none" stroke="#000" stroke-width="0.6"/>
+      <text x="40" y="142" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000" letter-spacing="1">EPISTEMIC</text>
+      <text x="40" y="152" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000" letter-spacing="1">ONTOLOGY</text>
+      <line x1="86" y1="144" x2="122" y2="144" stroke="#000" stroke-width="0.4" stroke-linecap="butt" stroke-linejoin="miter" shape-rendering="crispEdges"/>
+      <polygon points="86,141 80,144 86,147" fill="#000"/>
+      <polygon points="122,141 128,144 122,147" fill="#000"/>
+      <rect x="128" y="130" width="80" height="28" fill="#CC0000" stroke="#CC0000" stroke-width="0.6"/>
+      <text x="168" y="142" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#fff" letter-spacing="1">SCHEMA</text>
+      <text x="168" y="152" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#fff" letter-spacing="1">DRIVEN</text>
+
+      <rect x="0" y="178" width="80" height="28" fill="none" stroke="#000" stroke-width="0.6"/>
+      <text x="40" y="190" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000" letter-spacing="1">AUTO</text>
+      <text x="40" y="200" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000" letter-spacing="1">POIESIS</text>
+      <line x1="86" y1="192" x2="122" y2="192" stroke="#000" stroke-width="0.4" stroke-linecap="butt" stroke-linejoin="miter" shape-rendering="crispEdges"/>
+      <polygon points="86,189 80,192 86,195" fill="#000"/>
+      <polygon points="122,189 128,192 122,195" fill="#000"/>
+      <rect x="128" y="178" width="80" height="28" fill="none" stroke="#000" stroke-width="0.6"/>
+      <text x="168" y="190" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000" letter-spacing="1">SELF</text>
+      <text x="168" y="200" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000" letter-spacing="1">REFERENCE</text>
+
+      <line x1="0" y1="228" x2="208" y2="228" stroke="#000" stroke-width="0.5" stroke-linecap="butt" stroke-linejoin="miter" shape-rendering="crispEdges"/>
+      <text x="0" y="246" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#999" letter-spacing="0.5">LENS B NAMES THE CLAIM.</text>
+      <text x="0" y="258" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#999" letter-spacing="0.5">LENS C TURNS IT INTO A PIPELINE.</text>
+    </svg>
+    <div style="font-size: 6px; color: #BBB; letter-spacing: 1px; text-transform: uppercase; margin-top: 2mm;">FIG. 5 &mdash; PHILOSOPHICAL CLAIMS BECOMING RUNTIME RULES</div>
+  </div>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">Section <span class="accent-num">09</span></span>
+    <h2>Lens B &mdash; 존재론/철학</h2>
+    <span class="section-sub">설계 선택이 전제하는 철학적 입장</span>
+  </div>
+  <div class="accent-line"></div>
+
+  <table class="matrix-table" style="margin-top: 5mm;">
+    <thead>
+      <tr><th>#</th><th>Facet</th><th>철학 개념 &rarr; 시스템 해석</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>0</td><td>잠재성/현실화</td><td>들뢰즈 virtualisation &harr; L0&rarr;Pattern 결정화</td></tr>
+      <tr><td>1</td><td>반-현실화</td><td>counter-actualisation &harr; constrains/generates 역방향</td></tr>
+      <tr><td>2</td><td>리좀/나무</td><td>설계상 나무(L0&ndash;L5) + 운영상 리좀(교차 relation)</td></tr>
+      <tr><td>3</td><td>BFO 비교</td><td>continuant/occurrent &rarr; 기능적 분류로 전환</td></tr>
+      <tr><td>4</td><td>DOLCE 비교</td><td>범용 인지 &rarr; 개인 인지 편향의 명시화</td></tr>
+      <tr><td>5</td><td>화이트헤드</td><td>과정철학 actual entity &harr; 노드의 생성-성숙-소멸</td></tr>
+      <tr><td>6</td><td>포퍼</td><td>반증주의 &harr; Failure 1급 시민, Correction</td></tr>
+      <tr><td>7</td><td>루만</td><td>자기생산(autopoiesis) &harr; 시스템의 자기참조적 폐쇄</td></tr>
+      <tr><td>8</td><td>하이데거</td><td>Zuhandenheit &harr; 온톨로지는 사용될 때 도구가 된다</td></tr>
+      <tr><td>9</td><td>차이와 반복</td><td>들뢰즈 &harr; 같은 타입의 반복 속 내용의 차이</td></tr>
+      <tr><td>10</td><td>존재론적 겸손</td><td>Unclassified + 빈 L4&ndash;L5 = 분류 불완전성의 보존</td></tr>
+    </tbody>
+  </table>
+
+  <div style="margin-top: 8mm;">
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">Section <span class="accent-num">10</span></span>
+    <h2>Lens C &mdash; 소프트웨어 아키텍처</h2>
+    <span class="section-sub">엔지니어링 결정과 트레이드오프</span>
+  </div>
+  <div class="accent-line"></div>
+  </div>
+
+  <table class="matrix-table" style="margin-top: 5mm;">
+    <thead>
+      <tr><th>#</th><th>Facet</th><th>주제</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>0</td><td>아키텍처 개요</td><td>lean storage + rich ontology. 2테이블 + schema.yaml</td></tr>
+      <tr><td>1</td><td>하이브리드 검색</td><td>SQLite FTS + ChromaDB + Graph traversal</td></tr>
+      <tr><td>2</td><td>Schema-driven</td><td>YAML이 런타임 진실. 코드 변경 없이 타입 확장</td></tr>
+      <tr><td>3</td><td>노드 스키마</td><td>type/content/confidence/source/project/tags 설계 근거</td></tr>
+      <tr><td>4</td><td>세션 주입 파이프라인</td><td>session_context.py 동작. retrieval &harr; injection 분리</td></tr>
+      <tr><td>5</td><td>온톨로지 건강</td><td>ontology_review.py, orphan 571개 연결, auto-iterate 3-way</td></tr>
+      <tr><td>6</td><td>MCP 서버</td><td>LLM 비종속 인터페이스. 4개 플랫폼 동작 확인</td></tr>
+      <tr><td>7</td><td>에코시스템 토폴로지</td><td>star topology, index-system 자동 추적</td></tr>
+      <tr><td>8</td><td>Context as Currency 구현</td><td>42K&rarr;70K&rarr;120K&rarr;150K&rarr;200K 임계값</td></tr>
+      <tr><td>9</td><td>기술 부채</td><td>validators 불확실, re-embed 미완료, SQLite 동시 쓰기</td></tr>
+      <tr><td>10</td><td>아키텍처 원칙</td><td>단순 저장 / 풍부 의미 / 다중 검색 / 측정 가능 / 점진적 복잡성</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- PAGE 9: DOCUMENT DETAIL Lens D / Lens E -->
+<div class="page">
+  <span class="page-label">Index</span>
+  <span class="page-number">9</span>
+
+  <!-- DIAGRAM 6: Timeline — Competitive Shift -->
+  <div style="position: absolute; right: 12mm; top: 35mm; width: 58mm;">
+    <svg viewBox="-5 -5 218 235" width="58mm" xmlns="http://www.w3.org/2000/svg">
+      <text x="0" y="10" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#999" letter-spacing="2">COMPETITIVE SHIFT</text>
+      <line x1="16" y1="108" x2="192" y2="108" stroke="#000" stroke-width="0.5" stroke-linecap="butt" stroke-linejoin="miter" shape-rendering="crispEdges"/>
+
+      <circle cx="28" cy="108" r="4" fill="none" stroke="#000" stroke-width="0.6"/>
+      <text x="28" y="36" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#666">2023</text>
+      <text x="28" y="52" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000">PKM</text>
+      <text x="28" y="64" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#999">STATIC</text>
+      <text x="28" y="126" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#999">TEXT FIRST</text>
+
+      <circle cx="80" cy="108" r="4" fill="none" stroke="#000" stroke-width="0.6"/>
+      <text x="80" y="36" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#666">2024</text>
+      <text x="80" y="52" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000">MEMORY</text>
+      <text x="80" y="64" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#999">LONGER</text>
+      <text x="80" y="126" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#999">RECALL</text>
+
+      <circle cx="132" cy="108" r="4" fill="none" stroke="#000" stroke-width="0.6"/>
+      <text x="132" y="36" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#666">2025</text>
+      <text x="132" y="52" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000">GRAPH</text>
+      <text x="132" y="64" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#999">RELATIONS</text>
+      <text x="132" y="126" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#999">EMERGE</text>
+
+      <line x1="136" y1="108" x2="154" y2="108" stroke="#CC0000" stroke-width="0.6" stroke-linecap="butt" stroke-linejoin="miter" shape-rendering="crispEdges"/>
+      <polygon points="154,105 160,108 154,111" fill="#CC0000"/>
+      <rect x="160" y="90" width="48" height="36" fill="#CC0000" stroke="#CC0000" stroke-width="0.6"/>
+      <text x="184" y="104" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#fff">mcp-</text>
+      <text x="184" y="114" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#fff">memory</text>
+      <text x="184" y="78" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#666">2026</text>
+      <text x="184" y="142" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#999">LAYERED +</text>
+      <text x="184" y="154" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#999">EVOLVING</text>
+
+      <line x1="0" y1="182" x2="208" y2="182" stroke="#000" stroke-width="0.5" stroke-linecap="butt" stroke-linejoin="miter" shape-rendering="crispEdges"/>
+      <text x="0" y="200" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#999" letter-spacing="0.5">THE EMPTY TOP-RIGHT QUADRANT</text>
+      <text x="0" y="212" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#999" letter-spacing="0.5">BECOMES THE TARGET POSITION.</text>
+    </svg>
+    <div style="font-size: 6px; color: #BBB; letter-spacing: 1px; text-transform: uppercase; margin-top: 2mm;">FIG. 6 &mdash; FROM STATIC MEMORY TO SELF-IMPROVING STRUCTURE</div>
+  </div>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">Section <span class="accent-num">11</span></span>
+    <h2>Lens D &mdash; 경쟁 지형</h2>
+    <span class="section-sub">기존 시스템 대비 포지셔닝</span>
+  </div>
+  <div class="accent-line"></div>
+
+  <table class="matrix-table" style="margin-top: 5mm;">
+    <thead>
+      <tr><th>#</th><th>Facet</th><th>주제</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>0</td><td>2&times;2 매트릭스</td><td>구조화(flat&harr;layered) &times; 자기개선(static&harr;self-improving)</td></tr>
+      <tr><td>1</td><td>Mem0</td><td>flat&rarr;graph-hybrid 진화, Graph Memory 상세 분석</td></tr>
+      <tr><td>2</td><td>Zep/Graphiti</td><td>시간 인식 KG, LongMemEval 결과</td></tr>
+      <tr><td>3</td><td>Cognee</td><td>온톨로지 기반 검증, $7.5M 시드</td></tr>
+      <tr><td>4</td><td>Hindsight/LangMem/MemoClaw</td><td>추가 경쟁자 3종</td></tr>
+      <tr><td>5</td><td>Letta (MemGPT)</td><td>양(Letta) vs 구조+질(mcp-memory)</td></tr>
+      <tr><td>6</td><td>PKM + PKG</td><td>Obsidian/Roam/Logseq + 학술 PKG 연구</td></tr>
+      <tr><td>7</td><td>OpenAI Memory</td><td>가장 널리 배포, flat 텍스트 한계</td></tr>
+      <tr><td>8</td><td>Notion AI + 전통 KG + 학술 KG</td><td>Structured+Static 사분면</td></tr>
+      <tr><td>9</td><td>빈 공간의 이유</td><td>3역량 교차 + 시장 기회/위험</td></tr>
+      <tr><td>10</td><td>차별점 재평가 + 한계</td><td>비교표, 7가지 차별점, 규모 차이 인정</td></tr>
+    </tbody>
+  </table>
+
+  <div style="margin-top: 8mm;">
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">Section <span class="accent-num">12</span></span>
+    <h2>Lens E &mdash; 언어학/의미론</h2>
+    <span class="section-sub">LLM의 언어적 한계와 온톨로지의 보완</span>
+  </div>
+  <div class="accent-line"></div>
+  </div>
+
+  <table class="matrix-table" style="margin-top: 5mm;">
+    <thead>
+      <tr><th>#</th><th>Facet</th><th>언어학 개념 &rarr; 시스템 대응</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>0</td><td>토큰과 형태소</td><td>BPE 통계적 근사 &harr; 온톨로지 타입 = 인지적 의미 단위</td></tr>
+      <tr><td>1</td><td>소쉬르 구조주의</td><td>계열적 관계 &harr; 임베딩 + 수직적 계층 추가</td></tr>
+      <tr><td>2</td><td>촘스키 통사론</td><td>어텐션 = 표면 구조 &harr; relation = 의미론적 구조</td></tr>
+      <tr><td>3</td><td>화용론</td><td>프롬프트 = 즉석 화용론 &harr; session injection = 구조적 화용론</td></tr>
+      <tr><td>4</td><td>의미론적 역할</td><td>Fillmore 격 문법 &harr; relation 방향과 타입</td></tr>
+      <tr><td>5</td><td>개념적 은유</td><td>Lakoff &harr; Metaphor 타입, "Context as Currency"</td></tr>
+      <tr><td>6</td><td>텍스트 응집성</td><td>텍스트 수준(LLM) &harr; 지식 수준(graph 6,765 edges)</td></tr>
+      <tr><td>7</td><td>담화 구조</td><td>RST &harr; Narrative 271개 + 인과 relation 군</td></tr>
+      <tr><td>8</td><td>다의성 해소</td><td>project + tags = 맥락 기반 의미 해소</td></tr>
+      <tr><td>9</td><td>언어 상대성</td><td>타입이 사고를 프레이밍 (Failure/Tension/Aporia)</td></tr>
+      <tr><td>10</td><td>표면과 구조</td><td>LLM = 언어의 표면 &harr; 온톨로지 = 언어가 가리키는 구조</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- PAGE 10: CROSS-REFERENCE MATRIX -->
+<div class="page">
+  <span class="page-label">Index</span>
+  <span class="page-number">10</span>
+
+  <!-- DIAGRAM 7: Network — Cross-Reference Motifs -->
+  <div style="position: absolute; right: 12mm; top: 35mm; width: 58mm;">
+    <svg viewBox="-5 -5 218 330" width="58mm" xmlns="http://www.w3.org/2000/svg">
+      <text x="0" y="10" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#999" letter-spacing="2">CROSS-REFERENCE NETWORK</text>
+
+      <rect x="0" y="34" width="48" height="20" fill="none" stroke="#000" stroke-width="0.6"/>
+      <text x="24" y="47" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000">ALPHA</text>
+      <rect x="0" y="82" width="48" height="20" fill="none" stroke="#000" stroke-width="0.6"/>
+      <text x="24" y="95" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000">BETA</text>
+      <rect x="0" y="130" width="48" height="20" fill="none" stroke="#000" stroke-width="0.6"/>
+      <text x="24" y="143" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000">PRAXIS</text>
+      <rect x="0" y="178" width="48" height="20" fill="none" stroke="#000" stroke-width="0.6"/>
+      <text x="24" y="191" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000">LENS A</text>
+      <rect x="0" y="226" width="48" height="20" fill="none" stroke="#000" stroke-width="0.6"/>
+      <text x="24" y="239" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000">LENS D</text>
+
+      <rect x="80" y="34" width="48" height="20" fill="none" stroke="#000" stroke-width="0.6"/>
+      <text x="104" y="47" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000">PROMOTE</text>
+      <rect x="80" y="96" width="48" height="20" fill="none" stroke="#000" stroke-width="0.6"/>
+      <text x="104" y="109" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000">CORRECT</text>
+      <rect x="80" y="158" width="48" height="20" fill="#CC0000" stroke="#CC0000" stroke-width="0.6"/>
+      <text x="104" y="171" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#fff">CONTEXT</text>
+      <rect x="80" y="220" width="48" height="20" fill="none" stroke="#000" stroke-width="0.6"/>
+      <text x="104" y="233" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000">SYSTEM</text>
+
+      <rect x="160" y="34" width="48" height="20" fill="none" stroke="#000" stroke-width="0.6"/>
+      <text x="184" y="47" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000">OMEGA</text>
+      <rect x="160" y="82" width="48" height="20" fill="none" stroke="#000" stroke-width="0.6"/>
+      <text x="184" y="95" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000">LENS B</text>
+      <rect x="160" y="130" width="48" height="20" fill="none" stroke="#000" stroke-width="0.6"/>
+      <text x="184" y="143" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000">LENS C</text>
+      <rect x="160" y="178" width="48" height="20" fill="none" stroke="#000" stroke-width="0.6"/>
+      <text x="184" y="191" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000">LENS E</text>
+
+      <line x1="48" y1="44" x2="80" y2="44" stroke="#000" stroke-width="0.35" stroke-linecap="butt" stroke-linejoin="miter" shape-rendering="crispEdges"/>
+      <line x1="48" y1="92" x2="80" y2="106" stroke="#000" stroke-width="0.35" stroke-linecap="butt" stroke-linejoin="miter" shape-rendering="crispEdges"/>
+      <line x1="48" y1="140" x2="80" y2="106" stroke="#000" stroke-width="0.35" stroke-linecap="butt" stroke-linejoin="miter" shape-rendering="crispEdges"/>
+      <line x1="48" y1="188" x2="80" y2="44" stroke="#BBB" stroke-width="0.35" stroke-linecap="butt" stroke-linejoin="miter" shape-rendering="crispEdges"/>
+      <line x1="48" y1="236" x2="80" y2="230" stroke="#BBB" stroke-width="0.35" stroke-linecap="butt" stroke-linejoin="miter" shape-rendering="crispEdges"/>
+
+      <line x1="128" y1="44" x2="160" y2="44" stroke="#000" stroke-width="0.35" stroke-linecap="butt" stroke-linejoin="miter" shape-rendering="crispEdges"/>
+      <line x1="128" y1="106" x2="160" y2="92" stroke="#000" stroke-width="0.35" stroke-linecap="butt" stroke-linejoin="miter" shape-rendering="crispEdges"/>
+      <line x1="128" y1="168" x2="160" y2="140" stroke="#000" stroke-width="0.35" stroke-linecap="butt" stroke-linejoin="miter" shape-rendering="crispEdges"/>
+      <line x1="128" y1="168" x2="160" y2="188" stroke="#000" stroke-width="0.35" stroke-linecap="butt" stroke-linejoin="miter" shape-rendering="crispEdges"/>
+      <line x1="128" y1="230" x2="160" y2="92" stroke="#BBB" stroke-width="0.35" stroke-linecap="butt" stroke-linejoin="miter" shape-rendering="crispEdges"/>
+      <line x1="128" y1="230" x2="160" y2="140" stroke="#BBB" stroke-width="0.35" stroke-linecap="butt" stroke-linejoin="miter" shape-rendering="crispEdges"/>
+
+      <line x1="104" y1="54" x2="104" y2="96" stroke="#BBB" stroke-width="0.3" stroke-linecap="butt" stroke-linejoin="miter" shape-rendering="crispEdges"/>
+      <line x1="104" y1="116" x2="104" y2="158" stroke="#BBB" stroke-width="0.3" stroke-linecap="butt" stroke-linejoin="miter" shape-rendering="crispEdges"/>
+      <line x1="104" y1="178" x2="104" y2="220" stroke="#BBB" stroke-width="0.3" stroke-linecap="butt" stroke-linejoin="miter" shape-rendering="crispEdges"/>
+
+      <line x1="0" y1="270" x2="208" y2="270" stroke="#000" stroke-width="0.5" stroke-linecap="butt" stroke-linejoin="miter" shape-rendering="crispEdges"/>
+      <text x="0" y="288" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#999" letter-spacing="0.5">A SMALL SET OF MOTIFS BINDS THE</text>
+      <text x="0" y="300" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#999" letter-spacing="0.5">TRILOGY, METHOD, AND LENSES TOGETHER.</text>
+    </svg>
+    <div style="font-size: 6px; color: #BBB; letter-spacing: 1px; text-transform: uppercase; margin-top: 2mm;">FIG. 7 &mdash; CORE MOTIFS RECURRING ACROSS DOCUMENTS</div>
+  </div>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">Section <span class="accent-num">13</span></span>
+    <h2>교차 참조</h2>
+    <span class="section-sub">핵심 주제가 여러 문서에 걸쳐 등장하는 지점</span>
+  </div>
+  <div class="accent-line"></div>
+
+  <table class="matrix-table" style="margin-top: 6mm; font-size: 7pt;">
+    <thead>
+      <tr>
+        <th>주제</th><th>Alpha</th><th>Beta</th><th>Omega</th><th>Praxis</th>
+        <th>A</th><th>B</th><th>C</th><th>D</th><th>E</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>승격 메커니즘</td><td>T4</td><td>F1,F3</td><td>P4</td><td>Ph5</td><td>F3,F6</td><td>F0</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td></tr>
+      <tr><td>역방향 흐름</td><td>T5</td><td>&mdash;</td><td>P2</td><td>Ph8</td><td>F5</td><td>F1</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td></tr>
+      <tr><td>Correction/자기교정</td><td>T6</td><td>F2</td><td>P5</td><td>Ph7</td><td>F4</td><td>F6</td><td>F5</td><td>&mdash;</td><td>&mdash;</td></tr>
+      <tr><td>Context as Currency</td><td>T7</td><td>F4</td><td>P6</td><td>Ph6</td><td>F7</td><td>&mdash;</td><td>F8</td><td>&mdash;</td><td>&mdash;</td></tr>
+      <tr><td>들뢰즈</td><td>T4,T5</td><td>F10</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>F0,F1,F2,F9</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td></tr>
+      <tr><td>DB 분포 실증</td><td>T4</td><td>F1,F8,F9</td><td>&mdash;</td><td>Ph4</td><td>F8</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td></tr>
+      <tr><td>WIM 7렌즈</td><td>T5</td><td>&mdash;</td><td>P7</td><td>Ph8</td><td>F5</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>F3</td></tr>
+      <tr><td>node #5353/#5367</td><td>T0,T6</td><td>F2</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td></tr>
+      <tr><td>에코시스템</td><td>T8</td><td>F6</td><td>&mdash;</td><td>&mdash;</td><td>F10</td><td>F7</td><td>F7</td><td>&mdash;</td><td>&mdash;</td></tr>
+      <tr><td>경쟁 비교</td><td>T9</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>F3,F4</td><td>&mdash;</td><td>F0&ndash;F10</td><td>&mdash;</td></tr>
+      <tr><td>한계/반론</td><td>T10</td><td>F10</td><td>P10</td><td>Ph10</td><td>F10</td><td>F10</td><td>F10</td><td>F10</td><td>F10</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- PAGE 11: META + COLOPHON -->
+<div class="page">
+  <span class="page-label">Index</span>
+  <span class="page-number">11</span>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">Section <span class="accent-num">14</span></span>
+    <h2>메타 정보</h2>
+    <span class="section-sub">보고서 체계의 기본 사양</span>
+  </div>
+  <div class="accent-line"></div>
+
+  <table class="meta-table" style="margin-top: 6mm;">
+    <tbody>
+      <tr><td>총 문서</td><td>9 + 1 인덱스</td></tr>
+      <tr><td>총 섹션</td><td>99 (11 &times; 9)</td></tr>
+      <tr><td>언어</td><td>한국어</td></tr>
+      <tr><td>형식</td><td>Markdown (Obsidian 호환)</td></tr>
+      <tr><td>밀도</td><td>에세이 (400&ndash;600 단어/섹션)</td></tr>
+      <tr><td>내부 구조</td><td>자유 형식 (섹션별 상이)</td></tr>
+      <tr><td>데이터 기준일</td><td>2026-03-28</td></tr>
+      <tr><td>경쟁 지형 기준일</td><td>2026-03 (Mem0 Graph, Cognee $7.5M, Graphiti 반영)</td></tr>
+      <tr><td>대상 시스템</td><td>mcp-memory v3.1.0-dev</td></tr>
+      <tr><td>대상 DB</td><td>4,786 nodes / 6,765 edges / 25 materialized types</td></tr>
+    </tbody>
+  </table>
+
+  <div class="colophon">
+    <div class="colophon-title">Colophon</div>
+    <div class="colophon-rule"></div>
+    <div class="colophon-body">
+      Index &mdash; mcp-memory 분석 보고서 체계<br>
+      Paul Park &times; Claude<br>
+      2026-03-28<br>
+      mcp-memory v3.1.0-dev<br>
+      4,786 nodes &middot; 6,765 edges &middot; 25 types &middot; L0&ndash;L5
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

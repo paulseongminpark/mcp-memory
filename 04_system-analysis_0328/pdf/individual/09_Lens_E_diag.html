@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>Lens E — 언어학/의미론</title>
+<link rel="stylesheet" href="el-croquis.css">
+<style>
+  .quote-block {
+    border-left: none;
+    position: relative;
+  }
+  .quote-block::before {
+    content: '';
+    position: absolute;
+    left: calc(var(--quote-indent) - 4mm);
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: var(--accent);
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════
+     COVER
+     ══════════════════════════════════════════════════ -->
+<div class="page" style="padding: 0;">
+  <div style="position: absolute; top: 15.5mm; left: 10mm; right: 20mm; height: 0.9px; background: var(--fg);"></div>
+  <div style="padding: 32mm 78mm 15mm 25mm;">
+    <div style="margin-top: 0; font-size: 7pt; font-weight: 300; letter-spacing: 3px; text-transform: uppercase; color: var(--fg-light);">
+      LENS E &middot; LINGUISTICS / SEMANTICS &middot; 09 OF 09
+    </div>
+    <div style="margin-top: 21mm; font-size: 39px; font-weight: 300; line-height: 1.25; color: var(--fg); max-width: 550px;">
+      LLM의 언어적 한계를<br>mcp-memory는 어떻게<br><span style="color: var(--accent);">보완</span>하는가
+    </div>
+    <div style="margin-top: 8mm; font-size: 13.5px; font-weight: 300; line-height: 1.8; color: var(--fg-mid); max-width: 340px;">
+      소쉬르, 촘스키, Fillmore, Lakoff에서<br>Sapir-Whorf까지
+    </div>
+  </div>
+  <div style="position: absolute; bottom: 171mm; left: 10mm; right: 20mm;">
+    <div style="width: 100%; height: 0.9px; background: var(--accent);"></div>
+    <div style="display: flex; justify-content: space-between; padding: 3mm 0 0 0;">
+      <span style="font-size: 7.5pt; font-weight: 300; letter-spacing: 2.5px; text-transform: uppercase; color: var(--fg-faint);">언어학 &middot; 의미론 &middot; 프레임 &middot; 상보 관계 &middot; 11 Facets</span>
+      <span style="font-size: 7.5pt; font-weight: 300; letter-spacing: 2px; color: var(--fg-faint);">2026</span>
+    </div>
+  </div>
+  <span class="page-number">1</span>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     SECTION OVERVIEW
+     ══════════════════════════════════════════════════ -->
+<div class="page">
+  <div class="page-label">lens e &mdash; 언어학/의미론</div>
+
+  <div class="section-header" style="margin-top:20mm;">
+    <span class="section-label">overview</span>
+    <h2>11 Facets</h2>
+    <p class="section-sub">언어학의 주요 이론으로 LLM의 한계와 온톨로지의 보완 구조를 진단한다</p>
+  </div>
+  <div class="accent-line"></div>
+
+  <div class="body-sans" style="margin-top:12mm;">
+    <p style="font-size:8pt;color:#666;line-height:1.8;">
+      <span style="color:#CC0000;">00</span> &nbsp;토큰은 의미의 근사치다<br>
+      <span style="color:#CC0000;">01</span> &nbsp;소쉬르의 구조주의와 임베딩 공간<br>
+      <span style="color:#CC0000;">02</span> &nbsp;촘스키의 통사론과 어텐션<br>
+      <span style="color:#CC0000;">03</span> &nbsp;화용론과 컨텍스트 엔지니어링<br>
+      <span style="color:#CC0000;">04</span> &nbsp;의미론적 역할과 relation 타입<br>
+      <span style="color:#CC0000;">05</span> &nbsp;은유와 cross-domain transfer<br>
+      <span style="color:#CC0000;">06</span> &nbsp;텍스트 응집성과 그래프 연결성<br>
+      <span style="color:#CC0000;">07</span> &nbsp;담화 구조와 Narrative 타입<br>
+      <span style="color:#CC0000;">08</span> &nbsp;다의성과 맥락 의존<br>
+      <span style="color:#CC0000;">09</span> &nbsp;언어 상대성과 온톨로지의 프레이밍 효과<br>
+      <span style="color:#CC0000;">10</span> &nbsp;LLM은 언어를 다루고, 온톨로지는 언어가 가리키는 것을 다룬다
+    </p>
+  </div>
+
+  <div class="page-number">02</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     FACET 00 — 토큰은 의미의 근사치다
+     ══════════════════════════════════════════════════ -->
+<div class="page">
+  <div class="page-label">lens e &mdash; 언어학/의미론</div>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">facet <span class="accent-num">00</span></span>
+    <h2>토큰은 의미의 근사치다</h2>
+  </div>
+  <div class="accent-line"></div>
+
+  <div class="body-serif" style="margin-top:8mm;">
+    <p>BPE(Byte Pair Encoding)가 텍스트를 토큰으로 분리하는 과정은 통계적이다. 자주 등장하는 바이트 쌍을 병합한다. 이 과정이 결과적으로 형태소(morpheme) 경계에 수렴한다 &mdash; &ldquo;unhappiness&rdquo;가 un+happi+ness로 분리되는 건 부정 접두사, 어근, 명사화 접미사의 근사치다.</p>
+
+    <p>그러나 근사치일 뿐이다. 토크나이저는 빈도를 보지 의미를 보지 않는다. 의미적으로 중요한 드문 전문 용어는 글자 단위로 쪼개지고, 의미 없이 빈번한 패턴은 하나로 뭉쳐진다. 한국어에서는 이 문제가 더 심하다 &mdash; 교착어의 조사/어미 분리가 형태소 분석 없이는 정확하지 않다.</p>
+  </div>
+
+  <div class="quote-block">
+    <p>mcp-memory의 온톨로지는 이 간극을 메운다. 토큰이 포착하지 못하는 의미 단위 &mdash; Decision, Pattern, Principle &mdash; 를 명시적 타입으로 정의한다. 토큰은 하위 단어(subword)의 통계적 단위이고, 온톨로지의 타입은 인지적 단위다.</p>
+  </div>
+
+  <!-- DIAGRAM 1: Flow — Token to Cognitive Unit -->
+  <div style="position: absolute; right: 12mm; top: 35mm; width: 58mm;">
+    <svg viewBox="-5 -5 218 286" width="58mm" xmlns="http://www.w3.org/2000/svg">
+      <text x="0" y="10" font-family="Inter, sans-serif" font-size="8" font-weight="200" fill="#999999" letter-spacing="2">TOKEN TO COGNITIVE UNIT</text>
+
+      <rect x="44" y="28" width="120" height="24" fill="none" stroke="#000000" stroke-width="0.6" stroke-linejoin="miter"/>
+      <text x="104" y="43" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000000" letter-spacing="1">TEXT STRING</text>
+
+      <line x1="104" y1="52" x2="104" y2="68" stroke="#000000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <polygon points="104,72 101,66 107,66" fill="#000000"/>
+
+      <rect x="44" y="78" width="120" height="24" fill="none" stroke="#000000" stroke-width="0.6" stroke-linejoin="miter"/>
+      <text x="104" y="93" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000000" letter-spacing="1">BPE SPLIT</text>
+
+      <rect x="18" y="116" width="50" height="18" fill="none" stroke="#BBBBBB" stroke-width="0.5" stroke-linejoin="miter"/>
+      <rect x="79" y="116" width="50" height="18" fill="none" stroke="#BBBBBB" stroke-width="0.5" stroke-linejoin="miter"/>
+      <rect x="140" y="116" width="50" height="18" fill="none" stroke="#BBBBBB" stroke-width="0.5" stroke-linejoin="miter"/>
+      <text x="43" y="128" text-anchor="middle" font-family="Inter, sans-serif" font-size="8" font-weight="300" fill="#666666">un</text>
+      <text x="104" y="128" text-anchor="middle" font-family="Inter, sans-serif" font-size="8" font-weight="300" fill="#666666">happi</text>
+      <text x="165" y="128" text-anchor="middle" font-family="Inter, sans-serif" font-size="8" font-weight="300" fill="#666666">ness</text>
+
+      <text x="104" y="150" text-anchor="middle" font-family="Inter, sans-serif" font-size="8" font-weight="200" fill="#999999" letter-spacing="1">FREQUENCY MERGE, NOT MEANING</text>
+
+      <line x1="104" y1="158" x2="104" y2="174" stroke="#000000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <polygon points="104,178 101,172 107,172" fill="#000000"/>
+
+      <rect x="34" y="184" width="140" height="24" fill="none" stroke="#000000" stroke-width="0.6" stroke-linejoin="miter"/>
+      <text x="104" y="199" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000000" letter-spacing="1">MORPHEME-LIKE FORM</text>
+
+      <line x1="104" y1="208" x2="104" y2="224" stroke="#000000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <polygon points="104,228 101,222 107,222" fill="#000000"/>
+
+      <rect x="26" y="234" width="156" height="30" fill="#CC0000" stroke="#CC0000" stroke-width="0.6" stroke-linejoin="miter"/>
+      <text x="104" y="248" text-anchor="middle" font-family="Inter, sans-serif" font-size="8.5" font-weight="300" fill="#FFFFFF" letter-spacing="1">ONTOLOGY TYPE</text>
+      <text x="104" y="258" text-anchor="middle" font-family="Inter, sans-serif" font-size="7.5" font-weight="200" fill="#FFFFFF">DECISION / PATTERN / PRINCIPLE</text>
+
+      <text x="0" y="278" font-family="Inter, sans-serif" font-size="7.5" font-weight="200" fill="#999999" letter-spacing="0.5">STATISTICAL SUBWORD BELOW</text>
+      <text x="0" y="288" font-family="Inter, sans-serif" font-size="7.5" font-weight="200" fill="#999999" letter-spacing="0.5">EXPLICIT COGNITIVE UNIT ABOVE</text>
+    </svg>
+    <div style="font-size: 6px; color: #BBB; letter-spacing: 1px; text-transform: uppercase; margin-top: 2mm;">FIG. 1 &mdash; TOKEN TO COGNITIVE UNIT FLOW</div>
+  </div>
+
+  <div class="page-number">03</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     FACET 01 — 소쉬르의 구조주의와 임베딩 공간
+     ══════════════════════════════════════════════════ -->
+<div class="page">
+  <div class="page-label">lens e &mdash; 언어학/의미론</div>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">facet <span class="accent-num">01</span></span>
+    <h2>소쉬르의 구조주의와 임베딩 공간</h2>
+  </div>
+  <div class="accent-line"></div>
+
+  <div class="body-serif" style="margin-top:8mm;">
+    <p>소쉬르(Saussure)의 핵심 통찰: 언어의 의미는 기호 자체에 있지 않고, 기호 간의 차이(difference)에 있다. &ldquo;개&rdquo;의 의미는 &ldquo;개&rdquo;라는 소리에 내재하지 않고, &ldquo;고양이&rdquo;, &ldquo;늑대&rdquo;, &ldquo;강아지&rdquo; 등과의 차이에서 생긴다.</p>
+
+    <p>LLM의 임베딩 공간이 이 원리의 수학적 구현이다. &ldquo;king - man + woman = queen&rdquo;이 성립하는 건, 단어 간 관계가 벡터 연산으로 인코딩되어 있기 때문이다. 소쉬르가 말한 계열적 관계(paradigmatic relation) &mdash; 같은 자리에 올 수 있는 것들의 관계 &mdash; 가 기하학적으로 표현된 것.</p>
+  </div>
+
+  <div class="quote-block">
+    <p>소쉬르의 체계에는 계층이 없었다. 모든 기호가 같은 레벨에서 차이를 형성한다. mcp-memory는 이 제한을 넘어선다. L0의 Observation과 L3의 Principle은 같은 레벨의 기호가 아니다. 다른 계층의 의미 단위다. 소쉬르적 차이에 수직적 계층을 더한 것.</p>
+  </div>
+
+  <!-- DIAGRAM 2: Comparison — Horizontal Difference vs Vertical Layer -->
+  <div style="position: absolute; right: 12mm; top: 35mm; width: 58mm;">
+    <svg viewBox="-5 -5 218 286" width="58mm" xmlns="http://www.w3.org/2000/svg">
+      <text x="0" y="10" font-family="Inter, sans-serif" font-size="8" font-weight="200" fill="#999999" letter-spacing="2">STRUCTURE COMPARISON</text>
+      <line x1="104" y1="20" x2="104" y2="270" stroke="#BBBBBB" stroke-width="0.4" stroke-linecap="butt" shape-rendering="crispEdges"/>
+
+      <text x="48" y="34" text-anchor="middle" font-family="Inter, sans-serif" font-size="8" font-weight="300" fill="#000000" letter-spacing="1">SAUSSURE</text>
+      <text x="160" y="34" text-anchor="middle" font-family="Inter, sans-serif" font-size="8" font-weight="300" fill="#000000" letter-spacing="1">MCP-MEMORY</text>
+
+      <line x1="20" y1="78" x2="84" y2="78" stroke="#000000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <circle cx="24" cy="78" r="4" fill="none" stroke="#000000" stroke-width="0.5"/>
+      <circle cx="45" cy="78" r="4" fill="none" stroke="#000000" stroke-width="0.5"/>
+      <circle cx="66" cy="78" r="4" fill="none" stroke="#000000" stroke-width="0.5"/>
+      <circle cx="87" cy="78" r="4" fill="none" stroke="#000000" stroke-width="0.5"/>
+      <text x="24" y="66" text-anchor="middle" font-family="Inter, sans-serif" font-size="7.5" font-weight="300" fill="#000000">DOG</text>
+      <text x="45" y="95" text-anchor="middle" font-family="Inter, sans-serif" font-size="7.5" font-weight="300" fill="#000000">CAT</text>
+      <text x="66" y="66" text-anchor="middle" font-family="Inter, sans-serif" font-size="7.5" font-weight="300" fill="#000000">WOLF</text>
+      <text x="87" y="95" text-anchor="middle" font-family="Inter, sans-serif" font-size="7.5" font-weight="300" fill="#000000">PUPPY</text>
+      <text x="52" y="118" text-anchor="middle" font-family="Inter, sans-serif" font-size="7.5" font-weight="200" fill="#999999" letter-spacing="0.5">HORIZONTAL DIFFERENCE</text>
+
+      <rect x="124" y="56" width="72" height="24" fill="#CC0000" stroke="#CC0000" stroke-width="0.6" stroke-linejoin="miter"/>
+      <rect x="124" y="90" width="72" height="24" fill="none" stroke="#000000" stroke-width="0.6" stroke-linejoin="miter"/>
+      <rect x="124" y="124" width="72" height="24" fill="none" stroke="#000000" stroke-width="0.6" stroke-linejoin="miter"/>
+      <rect x="124" y="158" width="72" height="24" fill="none" stroke="#000000" stroke-width="0.6" stroke-linejoin="miter"/>
+      <text x="160" y="71" text-anchor="middle" font-family="Inter, sans-serif" font-size="8" font-weight="300" fill="#FFFFFF" letter-spacing="1">L3 PRINCIPLE</text>
+      <text x="160" y="105" text-anchor="middle" font-family="Inter, sans-serif" font-size="8" font-weight="300" fill="#000000" letter-spacing="1">L2 PATTERN</text>
+      <text x="160" y="139" text-anchor="middle" font-family="Inter, sans-serif" font-size="8" font-weight="300" fill="#000000" letter-spacing="1">L1 DECISION</text>
+      <text x="160" y="173" text-anchor="middle" font-family="Inter, sans-serif" font-size="8" font-weight="300" fill="#000000" letter-spacing="1">L0 OBSERVE</text>
+      <text x="160" y="196" text-anchor="middle" font-family="Inter, sans-serif" font-size="7.5" font-weight="200" fill="#999999" letter-spacing="0.5">VERTICAL DIFFERENCE</text>
+
+      <line x1="20" y1="224" x2="92" y2="224" stroke="#000000" stroke-width="0.4" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="116" y1="224" x2="196" y2="224" stroke="#000000" stroke-width="0.4" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <text x="0" y="240" font-family="Inter, sans-serif" font-size="7.5" font-weight="200" fill="#999999" letter-spacing="0.5">MEANING FROM CONTRAST</text>
+      <text x="0" y="250" font-family="Inter, sans-serif" font-size="7.5" font-weight="200" fill="#999999" letter-spacing="0.5">ON ONE LEVEL</text>
+      <text x="116" y="240" font-family="Inter, sans-serif" font-size="7.5" font-weight="200" fill="#999999" letter-spacing="0.5">MEANING FROM CONTRAST</text>
+      <text x="116" y="250" font-family="Inter, sans-serif" font-size="7.5" font-weight="200" fill="#999999" letter-spacing="0.5">PLUS RANKED LAYERS</text>
+    </svg>
+    <div style="font-size: 6px; color: #BBB; letter-spacing: 1px; text-transform: uppercase; margin-top: 2mm;">FIG. 2 &mdash; HORIZONTAL DIFFERENCE VS VERTICAL LAYER</div>
+  </div>
+
+  <div class="page-number">04</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     FACET 02 — 촘스키의 통사론과 어텐션
+     ══════════════════════════════════════════════════ -->
+<div class="page">
+  <div class="page-label">lens e &mdash; 언어학/의미론</div>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">facet <span class="accent-num">02</span></span>
+    <h2>촘스키의 통사론과 어텐션</h2>
+  </div>
+  <div class="accent-line"></div>
+
+  <div class="body-serif" style="margin-top:8mm;">
+    <p>촘스키의 생성문법: 문장은 표면 구조(surface structure)와 심층 구조(deep structure)를 갖는다. 트랜스포머의 어텐션이 표면 구조의 의존 관계를 학습한다 &mdash; 주어-동사 일치, 관계절 바인딩, 장거리 의존성.</p>
+
+    <p>그러나 통사를 넘어선 의미론적 구조 &mdash; 논리적 관계, 인과 관계, 함의 관계 &mdash; 는 어텐션만으로 보장되지 않는다. &ldquo;비가 오면 우산을 가져간다&rdquo;의 조건-결과 관계는 통사론이 아니라 의미론의 영역이다. 엄밀히 말해, 촘스키의 &ldquo;심층 구조(deep structure)&rdquo;는 표면 구조의 변환 전 추상적 통사 표상이다. 여기서 다루는 것은 Lexical Functional Grammar(LFG)의 f-structure(기능 구조)나 의미론적 의존 관계에 더 가깝다 &mdash; 문장의 통사를 넘어선 논리적&middot;의미적 관계 구조.</p>
+  </div>
+
+  <div class="quote-block">
+    <p>mcp-memory의 relation 체계가 이 의미론적 구조를 명시적으로 표현한다. caused_by, led_to, resulted_in은 인과 관계. supports, contradicts는 논증 관계. abstracted_from, generalizes_to는 추상화 관계. 어텐션이 놓치는 논리적 구조를 edge의 타입으로 보존한다.</p>
+  </div>
+
+  <!-- DIAGRAM 3: Transformation — Surface Syntax to Typed Semantics -->
+  <div style="position: absolute; right: 12mm; top: 35mm; width: 58mm;">
+    <svg viewBox="-5 -5 218 286" width="58mm" xmlns="http://www.w3.org/2000/svg">
+      <text x="0" y="10" font-family="Inter, sans-serif" font-size="8" font-weight="200" fill="#999999" letter-spacing="2">SYNTAX TO SEMANTICS</text>
+
+      <rect x="0" y="30" width="84" height="166" fill="none" stroke="#000000" stroke-width="0.6" stroke-linejoin="miter"/>
+      <text x="42" y="44" text-anchor="middle" font-family="Inter, sans-serif" font-size="8" font-weight="300" fill="#000000" letter-spacing="1">SURFACE</text>
+
+      <rect x="10" y="60" width="22" height="18" fill="none" stroke="#BBBBBB" stroke-width="0.5" stroke-linejoin="miter"/>
+      <rect x="36" y="60" width="16" height="18" fill="none" stroke="#BBBBBB" stroke-width="0.5" stroke-linejoin="miter"/>
+      <rect x="56" y="60" width="18" height="18" fill="none" stroke="#BBBBBB" stroke-width="0.5" stroke-linejoin="miter"/>
+      <text x="21" y="72" text-anchor="middle" font-family="Inter, sans-serif" font-size="7" font-weight="300" fill="#666666">IF</text>
+      <text x="44" y="72" text-anchor="middle" font-family="Inter, sans-serif" font-size="7" font-weight="300" fill="#666666">A</text>
+      <text x="65" y="72" text-anchor="middle" font-family="Inter, sans-serif" font-size="7" font-weight="300" fill="#666666">B</text>
+
+      <line x1="21" y1="86" x2="44" y2="112" stroke="#000000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="65" y1="86" x2="44" y2="112" stroke="#000000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="44" y1="112" x2="44" y2="146" stroke="#000000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+
+      <text x="42" y="128" text-anchor="middle" font-family="Inter, sans-serif" font-size="7.5" font-weight="200" fill="#999999">ATTENTION</text>
+      <text x="42" y="157" text-anchor="middle" font-family="Inter, sans-serif" font-size="7.5" font-weight="300" fill="#000000">DEPENDENCY</text>
+      <text x="42" y="167" text-anchor="middle" font-family="Inter, sans-serif" font-size="7.5" font-weight="300" fill="#000000">APPROXIMATION</text>
+
+      <rect x="124" y="30" width="84" height="166" fill="none" stroke="#000000" stroke-width="0.6" stroke-linejoin="miter"/>
+      <text x="166" y="44" text-anchor="middle" font-family="Inter, sans-serif" font-size="8" font-weight="300" fill="#000000" letter-spacing="1">TYPED EDGE</text>
+
+      <circle cx="144" cy="82" r="5" fill="none" stroke="#000000" stroke-width="0.5"/>
+      <circle cx="188" cy="82" r="5" fill="none" stroke="#000000" stroke-width="0.5"/>
+      <circle cx="166" cy="126" r="5" fill="#CC0000" stroke="#CC0000" stroke-width="0.5"/>
+      <line x1="149" y1="86" x2="161" y2="121" stroke="#000000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="183" y1="86" x2="171" y2="121" stroke="#000000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <text x="144" y="70" text-anchor="middle" font-family="Inter, sans-serif" font-size="7.5" font-weight="300" fill="#000000">CAUSE</text>
+      <text x="188" y="70" text-anchor="middle" font-family="Inter, sans-serif" font-size="7.5" font-weight="300" fill="#000000">ACTION</text>
+      <text x="166" y="142" text-anchor="middle" font-family="Inter, sans-serif" font-size="7.5" font-weight="300" fill="#CC0000">RESULT</text>
+
+      <line x1="84" y1="92" x2="124" y2="92" stroke="#000000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <polygon points="124,92 118,89 118,95" fill="#000000"/>
+      <line x1="124" y1="116" x2="84" y2="116" stroke="#000000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <polygon points="84,116 90,113 90,119" fill="#000000"/>
+      <text x="104" y="86" text-anchor="middle" font-family="Inter, sans-serif" font-size="7" font-weight="200" fill="#999999" letter-spacing="0.5">MAP</text>
+      <text x="104" y="132" text-anchor="middle" font-family="Inter, sans-serif" font-size="7" font-weight="200" fill="#999999" letter-spacing="0.5">VERIFY</text>
+
+      <line x1="0" y1="220" x2="208" y2="220" stroke="#000000" stroke-width="0.4" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <text x="0" y="236" font-family="Inter, sans-serif" font-size="7.5" font-weight="200" fill="#999999" letter-spacing="0.5">ATTENTION LEARNS DEPENDENCY SHAPES.</text>
+      <text x="0" y="246" font-family="Inter, sans-serif" font-size="7.5" font-weight="200" fill="#999999" letter-spacing="0.5">RELATION TYPES EXTERNALIZE LOGIC.</text>
+    </svg>
+    <div style="font-size: 6px; color: #BBB; letter-spacing: 1px; text-transform: uppercase; margin-top: 2mm;">FIG. 3 &mdash; SURFACE SYNTAX TO TYPED SEMANTICS</div>
+  </div>
+
+  <div class="page-number">05</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     FACET 03 — 화용론과 컨텍스트 엔지니어링
+     ══════════════════════════════════════════════════ -->
+<div class="page">
+  <div class="page-label">lens e &mdash; 언어학/의미론</div>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">facet <span class="accent-num">03</span></span>
+    <h2>화용론과 컨텍스트 엔지니어링</h2>
+  </div>
+  <div class="accent-line"></div>
+
+  <div class="body-serif" style="margin-top:8mm;">
+    <p>화용론(pragmatics): 같은 문장이 다른 맥락에서 다른 의미를 갖는다. &ldquo;이 방이 춥다&rdquo;는 사실 진술일 수도, 창문을 닫아달라는 간접 화행일 수도 있다.</p>
+
+    <p>프롬프트 엔지니어링이 화용론의 실천이다. &ldquo;전문가로서 답해줘&rdquo;는 발화 맥락을 바꿔 생성 확률 분포를 조작한다. 그러나 이건 즉석 조작이다 &mdash; 영속적이지 않고, 구조화되지 않았다.</p>
+  </div>
+
+  <div class="quote-block">
+    <p>mcp-memory의 세션 주입은 화용론을 구조화한다. L2+ Principle, WIM 7렌즈, Correction이 주입되면, 이건 발화 맥락을 일시적으로 바꾸는 것이 아니라 해석의 전제를 구조적으로 설치하는 것이다. 즉석 화용론에서 구조적 화용론으로의 전환.</p>
+  </div>
+
+  <!-- DIAGRAM 4: Cycle — Structured Pragmatics -->
+  <div style="position: absolute; right: 12mm; top: 35mm; width: 58mm;">
+    <svg viewBox="-5 -5 218 286" width="58mm" xmlns="http://www.w3.org/2000/svg">
+      <text x="0" y="10" font-family="Inter, sans-serif" font-size="8" font-weight="200" fill="#999999" letter-spacing="2">STRUCTURED PRAGMATICS</text>
+
+      <rect x="72" y="28" width="64" height="22" fill="none" stroke="#000000" stroke-width="0.6" stroke-linejoin="miter"/>
+      <text x="104" y="42" text-anchor="middle" font-family="Inter, sans-serif" font-size="8" font-weight="300" fill="#000000" letter-spacing="1">L2 PRINCIPLE</text>
+
+      <rect x="146" y="82" width="58" height="22" fill="none" stroke="#000000" stroke-width="0.6" stroke-linejoin="miter"/>
+      <text x="175" y="96" text-anchor="middle" font-family="Inter, sans-serif" font-size="8" font-weight="300" fill="#000000" letter-spacing="1">WIM LENS</text>
+
+      <rect x="138" y="166" width="66" height="22" fill="none" stroke="#000000" stroke-width="0.6" stroke-linejoin="miter"/>
+      <text x="171" y="180" text-anchor="middle" font-family="Inter, sans-serif" font-size="8" font-weight="300" fill="#000000" letter-spacing="1">PROMPT</text>
+
+      <rect x="14" y="166" width="78" height="22" fill="none" stroke="#000000" stroke-width="0.6" stroke-linejoin="miter"/>
+      <text x="53" y="180" text-anchor="middle" font-family="Inter, sans-serif" font-size="8" font-weight="300" fill="#000000" letter-spacing="1">RESPONSE</text>
+
+      <rect x="12" y="82" width="80" height="22" fill="none" stroke="#000000" stroke-width="0.6" stroke-linejoin="miter"/>
+      <text x="52" y="96" text-anchor="middle" font-family="Inter, sans-serif" font-size="8" font-weight="300" fill="#000000" letter-spacing="1">MEMORY UPDATE</text>
+
+      <line x1="136" y1="40" x2="170" y2="82" stroke="#000000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <polygon points="170,82 164,78 167,76" fill="#000000"/>
+      <line x1="175" y1="104" x2="171" y2="166" stroke="#000000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <polygon points="171,166 168,160 174,160" fill="#000000"/>
+      <line x1="138" y1="177" x2="92" y2="177" stroke="#000000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <polygon points="92,177 98,174 98,180" fill="#000000"/>
+      <line x1="40" y1="166" x2="40" y2="104" stroke="#000000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <polygon points="40,104 37,110 43,110" fill="#000000"/>
+      <line x1="60" y1="82" x2="90" y2="50" stroke="#000000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <polygon points="90,50 83,52 87,56" fill="#000000"/>
+
+      <rect x="58" y="114" width="92" height="28" fill="#CC0000" stroke="#CC0000" stroke-width="0.6" stroke-linejoin="miter"/>
+      <text x="104" y="127" text-anchor="middle" font-family="Inter, sans-serif" font-size="8.5" font-weight="300" fill="#FFFFFF" letter-spacing="1">SESSION INJECTION</text>
+      <text x="104" y="137" text-anchor="middle" font-family="Inter, sans-serif" font-size="7.5" font-weight="200" fill="#FFFFFF">INTERPRETIVE FRAME</text>
+
+      <line x1="0" y1="220" x2="208" y2="220" stroke="#000000" stroke-width="0.4" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <text x="0" y="236" font-family="Inter, sans-serif" font-size="7.5" font-weight="200" fill="#999999" letter-spacing="0.5">PROMPTING IS A MOMENTARY CONTEXT SHIFT.</text>
+      <text x="0" y="246" font-family="Inter, sans-serif" font-size="7.5" font-weight="200" fill="#999999" letter-spacing="0.5">SESSION INJECTION MAKES THAT SHIFT STRUCTURAL.</text>
+    </svg>
+    <div style="font-size: 6px; color: #BBB; letter-spacing: 1px; text-transform: uppercase; margin-top: 2mm;">FIG. 4 &mdash; STRUCTURED PRAGMATICS CYCLE</div>
+  </div>
+
+  <div class="page-number">06</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     FACET 04 — 의미론적 역할과 relation 타입
+     ══════════════════════════════════════════════════ -->
+<div class="page">
+  <div class="page-label">lens e &mdash; 언어학/의미론</div>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">facet <span class="accent-num">04</span></span>
+    <h2>의미론적 역할과 relation 타입</h2>
+  </div>
+  <div class="accent-line"></div>
+
+  <div class="body-serif" style="margin-top:8mm;">
+    <p>Fillmore의 격 문법(Case Grammar): 문장에서 각 명사구는 의미론적 역할(semantic role)을 갖는다 &mdash; 행위자(Agent), 대상(Patient), 도구(Instrument), 장소(Location) 등.</p>
+
+    <p>mcp-memory의 relation 8개 군이 이 역할 구분의 지식 그래프 버전이다. caused_by에서 source는 원인(Agent), target은 결과(Patient). governed_by에서 source는 피규정자, target은 규정자. viewed_through에서 source는 관찰, target은 렌즈(Instrument).</p>
+  </div>
+
+  <div class="quote-block">
+    <p>벡터 DB에서 &ldquo;A와 B가 관련 있다&rdquo;는 역할이 없다. 관계의 방향과 타입이 없다. 의미론적 역할의 부재가 벡터 DB의 근본 한계이고, 이것을 relation 타입이 해결한다.</p>
+  </div>
+
+  <!-- DIAGRAM 5: Classification — Semantic Role Matrix -->
+  <div style="position: absolute; right: 12mm; top: 35mm; width: 58mm;">
+    <svg viewBox="-5 -5 218 286" width="58mm" xmlns="http://www.w3.org/2000/svg">
+      <text x="0" y="10" font-family="Inter, sans-serif" font-size="8" font-weight="200" fill="#999999" letter-spacing="2">SEMANTIC ROLE MATRIX</text>
+
+      <line x1="0" y1="26" x2="208" y2="26" stroke="#000000" stroke-width="0.6" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="0" y1="50" x2="208" y2="50" stroke="#000000" stroke-width="0.4" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="0" y1="82" x2="208" y2="82" stroke="#BBBBBB" stroke-width="0.3" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="0" y1="114" x2="208" y2="114" stroke="#BBBBBB" stroke-width="0.3" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="0" y1="146" x2="208" y2="146" stroke="#BBBBBB" stroke-width="0.3" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="0" y1="178" x2="208" y2="178" stroke="#BBBBBB" stroke-width="0.3" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="0" y1="210" x2="208" y2="210" stroke="#000000" stroke-width="0.6" stroke-linecap="butt" shape-rendering="crispEdges"/>
+
+      <line x1="76" y1="26" x2="76" y2="210" stroke="#BBBBBB" stroke-width="0.3" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="146" y1="26" x2="146" y2="210" stroke="#BBBBBB" stroke-width="0.3" stroke-linecap="butt" shape-rendering="crispEdges"/>
+
+      <text x="8" y="41" font-family="Inter, sans-serif" font-size="8" font-weight="300" fill="#000000" letter-spacing="1">RELATION</text>
+      <text x="84" y="41" font-family="Inter, sans-serif" font-size="8" font-weight="300" fill="#000000" letter-spacing="1">SOURCE</text>
+      <text x="154" y="41" font-family="Inter, sans-serif" font-size="8" font-weight="300" fill="#000000" letter-spacing="1">TARGET</text>
+
+      <text x="8" y="69" font-family="Inter, sans-serif" font-size="7.5" font-weight="300" fill="#000000">caused_by</text>
+      <text x="84" y="69" font-family="Inter, sans-serif" font-size="7.5" font-weight="200" fill="#666666">cause</text>
+      <text x="154" y="69" font-family="Inter, sans-serif" font-size="7.5" font-weight="200" fill="#666666">effect</text>
+
+      <text x="8" y="101" font-family="Inter, sans-serif" font-size="7.5" font-weight="300" fill="#000000">supports</text>
+      <text x="84" y="101" font-family="Inter, sans-serif" font-size="7.5" font-weight="200" fill="#666666">evidence</text>
+      <text x="154" y="101" font-family="Inter, sans-serif" font-size="7.5" font-weight="200" fill="#666666">claim</text>
+
+      <rect x="0" y="122" width="76" height="18" fill="#CC0000" stroke="#CC0000" stroke-width="0.5" stroke-linejoin="miter"/>
+      <text x="8" y="134" font-family="Inter, sans-serif" font-size="7.5" font-weight="300" fill="#FFFFFF">viewed_through</text>
+      <text x="84" y="133" font-family="Inter, sans-serif" font-size="7.5" font-weight="200" fill="#666666">observation</text>
+      <text x="154" y="133" font-family="Inter, sans-serif" font-size="7.5" font-weight="200" fill="#666666">lens</text>
+
+      <text x="8" y="165" font-family="Inter, sans-serif" font-size="7.5" font-weight="300" fill="#000000">governed_by</text>
+      <text x="84" y="165" font-family="Inter, sans-serif" font-size="7.5" font-weight="200" fill="#666666">case</text>
+      <text x="154" y="165" font-family="Inter, sans-serif" font-size="7.5" font-weight="200" fill="#666666">rule</text>
+
+      <text x="8" y="197" font-family="Inter, sans-serif" font-size="7.5" font-weight="300" fill="#000000">abstracted_from</text>
+      <text x="84" y="197" font-family="Inter, sans-serif" font-size="7.5" font-weight="200" fill="#666666">pattern</text>
+      <text x="154" y="197" font-family="Inter, sans-serif" font-size="7.5" font-weight="200" fill="#666666">source set</text>
+
+      <text x="0" y="232" font-family="Inter, sans-serif" font-size="7.5" font-weight="200" fill="#999999" letter-spacing="0.5">VECTOR SIMILARITY SAYS "RELATED."</text>
+      <text x="0" y="242" font-family="Inter, sans-serif" font-size="7.5" font-weight="200" fill="#999999" letter-spacing="0.5">ROLE TYPING SAYS HOW A RELATION WORKS.</text>
+    </svg>
+    <div style="font-size: 6px; color: #BBB; letter-spacing: 1px; text-transform: uppercase; margin-top: 2mm;">FIG. 5 &mdash; RELATION TYPE AS SEMANTIC ROLE MATRIX</div>
+  </div>
+
+  <div class="page-number">07</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     FACET 05 — 은유와 cross-domain transfer
+     ══════════════════════════════════════════════════ -->
+<div class="page">
+  <div class="page-label">lens e &mdash; 언어학/의미론</div>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">facet <span class="accent-num">05</span></span>
+    <h2>은유와 cross-domain transfer</h2>
+  </div>
+  <div class="accent-line"></div>
+
+  <div class="body-serif" style="margin-top:8mm;">
+    <p>Lakoff &amp; Johnson의 개념적 은유 이론: 추상적 개념은 구체적 경험의 은유로 이해된다. &ldquo;시간은 돈이다&rdquo;는 은유가 시간에 대한 사고를 구조화한다.</p>
+
+    <p>mcp-memory에서 Metaphor가 L2 타입으로 존재하고, transfers_to, mirrors, analogous_to 같은 cross-domain relation이 정의되어 있는 이유다. &ldquo;Context as Currency&rdquo; 자체가 개념적 은유 &mdash; 컨텍스트를 화폐의 프레임으로 이해한다. 이 은유가 구체적 설계 결정(토큰 예산, 비용/가치 비율)을 낳았다.</p>
+  </div>
+
+  <div class="quote-block">
+    <p>cross-domain transfer는 한 도메인의 구조를 다른 도메인으로 옮기는 것이다. 이건 은유의 작동 방식과 동일하다. 새로운 문제를 만났을 때, 기존 도메인의 구조를 이전하는 능력이 전문성의 핵심이기 때문이다.</p>
+  </div>
+
+  <!-- DIAGRAM 6: Radial — Metaphor and Transfer -->
+  <div style="position: absolute; right: 12mm; top: 35mm; width: 58mm;">
+    <svg viewBox="-5 -5 218 286" width="58mm" xmlns="http://www.w3.org/2000/svg">
+      <text x="0" y="10" font-family="Inter, sans-serif" font-size="8" font-weight="200" fill="#999999" letter-spacing="2">METAPHOR TRANSFER</text>
+
+      <circle cx="104" cy="132" r="24" fill="none" stroke="#000000" stroke-width="0.6"/>
+      <text x="104" y="129" text-anchor="middle" font-family="Inter, sans-serif" font-size="8.5" font-weight="300" fill="#000000" letter-spacing="1">METAPHOR</text>
+      <text x="104" y="140" text-anchor="middle" font-family="Inter, sans-serif" font-size="7.5" font-weight="200" fill="#666666">STRUCTURE TRANSFER</text>
+
+      <line x1="104" y1="108" x2="104" y2="58" stroke="#000000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="128" y1="132" x2="182" y2="132" stroke="#000000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="104" y1="156" x2="104" y2="208" stroke="#000000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="80" y1="132" x2="26" y2="132" stroke="#000000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+
+      <rect x="62" y="28" width="84" height="22" fill="#CC0000" stroke="#CC0000" stroke-width="0.6" stroke-linejoin="miter"/>
+      <text x="104" y="42" text-anchor="middle" font-family="Inter, sans-serif" font-size="8" font-weight="300" fill="#FFFFFF" letter-spacing="1">CONTEXT = CURRENCY</text>
+
+      <rect x="150" y="120" width="58" height="24" fill="none" stroke="#000000" stroke-width="0.6" stroke-linejoin="miter"/>
+      <text x="179" y="135" text-anchor="middle" font-family="Inter, sans-serif" font-size="8" font-weight="300" fill="#000000" letter-spacing="1">ARCHITECTURE</text>
+
+      <rect x="66" y="214" width="76" height="24" fill="none" stroke="#000000" stroke-width="0.6" stroke-linejoin="miter"/>
+      <text x="104" y="229" text-anchor="middle" font-family="Inter, sans-serif" font-size="8" font-weight="300" fill="#000000" letter-spacing="1">NAVIGATION</text>
+
+      <rect x="0" y="120" width="52" height="24" fill="none" stroke="#000000" stroke-width="0.6" stroke-linejoin="miter"/>
+      <text x="26" y="135" text-anchor="middle" font-family="Inter, sans-serif" font-size="8" font-weight="300" fill="#000000" letter-spacing="1">ECOLOGY</text>
+
+      <text x="104" y="64" text-anchor="middle" font-family="Inter, sans-serif" font-size="7" font-weight="200" fill="#999999">budget / value / scarcity</text>
+      <text x="179" y="156" text-anchor="middle" font-family="Inter, sans-serif" font-size="7" font-weight="200" fill="#999999">scaffold / layer / support</text>
+      <text x="104" y="252" text-anchor="middle" font-family="Inter, sans-serif" font-size="7" font-weight="200" fill="#999999">path / route / transfer</text>
+      <text x="26" y="156" text-anchor="middle" font-family="Inter, sans-serif" font-size="7" font-weight="200" fill="#999999">growth / feedback</text>
+    </svg>
+    <div style="font-size: 6px; color: #BBB; letter-spacing: 1px; text-transform: uppercase; margin-top: 2mm;">FIG. 6 &mdash; CONCEPTUAL METAPHOR AS STRUCTURE TRANSFER</div>
+  </div>
+
+  <div class="page-number">08</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     FACET 06 — 텍스트 응집성과 그래프 연결성
+     ══════════════════════════════════════════════════ -->
+<div class="page">
+  <div class="page-label">lens e &mdash; 언어학/의미론</div>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">facet <span class="accent-num">06</span></span>
+    <h2>텍스트 응집성과 그래프 연결성</h2>
+  </div>
+  <div class="accent-line"></div>
+
+  <div class="body-serif" style="margin-top:8mm;">
+    <p>텍스트 언어학의 응집성(coherence): 텍스트가 의미적으로 연결되어 있다는 성질. 지시(reference), 접속(conjunction), 어휘적 응집(lexical cohesion) 등의 수단으로 달성된다.</p>
+
+    <p>LLM은 텍스트 수준의 응집성은 잘 만든다. 그러나 지식 수준의 응집성 &mdash; &ldquo;이 판단은 저 원칙에서 나왔고, 저 원칙은 이 실패에서 배운 것이다&rdquo; &mdash; 은 보장하지 않는다. mcp-memory의 그래프 연결성(6,765 edges)이 지식 수준의 응집성을 제공한다. 노드 사이의 edge가 텍스트의 접속사 역할을 한다.</p>
+
+    <p>다만 이 비유에는 한계가 있다. 접속사는 선형적이다 &mdash; 앞 문장과 뒤 문장을 잇는다. Edge는 비선형적이다 &mdash; 그래프의 임의 두 노드를 잇는다. 따라서 edge는 접속사보다 하이퍼링크에 가깝다. 그러나 핵심 기능은 공유한다: 분리된 단위들 사이에 의미적 연결을 명시적으로 만드는 것.</p>
+  </div>
+
+  <!-- DIAGRAM 7: Network — Coherence as Connectivity -->
+  <div style="margin-top: 6mm; max-width: 145mm;">
+    <svg viewBox="-5 -5 558 176" width="145mm" xmlns="http://www.w3.org/2000/svg">
+      <text x="0" y="10" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#999999" letter-spacing="2">COHERENCE AS CONNECTIVITY</text>
+
+      <line x1="52" y1="112" x2="160" y2="74" stroke="#000000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="52" y1="112" x2="160" y2="148" stroke="#000000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="166" y1="74" x2="278" y2="108" stroke="#000000" stroke-width="0.7" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="166" y1="148" x2="278" y2="108" stroke="#000000" stroke-width="0.7" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="286" y1="108" x2="404" y2="64" stroke="#000000" stroke-width="0.6" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="286" y1="108" x2="404" y2="146" stroke="#000000" stroke-width="0.6" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="166" y1="74" x2="404" y2="146" stroke="#BBBBBB" stroke-width="0.3" stroke-linecap="butt" stroke-dasharray="2,2" shape-rendering="crispEdges"/>
+      <line x1="166" y1="148" x2="404" y2="64" stroke="#BBBBBB" stroke-width="0.3" stroke-linecap="butt" stroke-dasharray="2,2" shape-rendering="crispEdges"/>
+      <line x1="404" y1="64" x2="514" y2="106" stroke="#000000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="404" y1="146" x2="514" y2="106" stroke="#000000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+
+      <circle cx="48" cy="112" r="10" fill="none" stroke="#000000" stroke-width="0.6"/>
+      <text x="48" y="94" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000000">OBSERVATION</text>
+
+      <circle cx="160" cy="74" r="8" fill="none" stroke="#000000" stroke-width="0.6"/>
+      <text x="160" y="58" text-anchor="middle" font-family="Inter, sans-serif" font-size="8.5" font-weight="300" fill="#000000">DECISION</text>
+
+      <circle cx="160" cy="148" r="8" fill="none" stroke="#000000" stroke-width="0.6"/>
+      <text x="160" y="166" text-anchor="middle" font-family="Inter, sans-serif" font-size="8.5" font-weight="300" fill="#000000">FAILURE</text>
+
+      <circle cx="280" cy="108" r="12" fill="#CC0000" stroke="#CC0000" stroke-width="0.6"/>
+      <text x="280" y="91" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#CC0000">PATTERN</text>
+      <text x="280" y="128" text-anchor="middle" font-family="Inter, sans-serif" font-size="8" font-weight="200" fill="#FFFFFF">shared link</text>
+
+      <circle cx="404" cy="64" r="8" fill="none" stroke="#000000" stroke-width="0.6"/>
+      <text x="404" y="48" text-anchor="middle" font-family="Inter, sans-serif" font-size="8.5" font-weight="300" fill="#000000">PRINCIPLE</text>
+
+      <circle cx="404" cy="146" r="8" fill="none" stroke="#000000" stroke-width="0.6"/>
+      <text x="404" y="164" text-anchor="middle" font-family="Inter, sans-serif" font-size="8.5" font-weight="300" fill="#000000">NARRATIVE</text>
+
+      <circle cx="514" cy="106" r="8" fill="none" stroke="#000000" stroke-width="0.6"/>
+      <text x="514" y="89" text-anchor="middle" font-family="Inter, sans-serif" font-size="8.5" font-weight="300" fill="#000000">RECALL</text>
+
+      <line x1="0" y1="154" x2="132" y2="154" stroke="#000000" stroke-width="0.3" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <text x="142" y="157" font-family="Inter, sans-serif" font-size="8" font-weight="200" fill="#999999" letter-spacing="0.5">EDGE = EXPLICIT COHESIVE DEVICE</text>
+    </svg>
+    <div style="font-size: 6px; color: #BBB; letter-spacing: 1px; text-transform: uppercase; margin-top: 2mm;">FIG. 7 &mdash; COHERENCE AS GRAPH CONNECTIVITY</div>
+  </div>
+
+  <div class="page-number">09</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     FACET 07 — 담화 구조와 Narrative 타입
+     ══════════════════════════════════════════════════ -->
+<div class="page">
+  <div class="page-label">lens e &mdash; 언어학/의미론</div>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">facet <span class="accent-num">07</span></span>
+    <h2>담화 구조와 Narrative 타입</h2>
+  </div>
+  <div class="accent-line"></div>
+
+  <div class="body-serif" style="margin-top:8mm;">
+    <p>Mann &amp; Thompson의 수사 구조 이론(Rhetorical Structure Theory): 텍스트는 핵(nucleus)과 위성(satellite)의 계층적 구조로 이루어진다. 원인-결과, 증거-주장, 배경-전경 같은 수사 관계가 담화를 구성한다.</p>
+  </div>
+
+  <div class="quote-block">
+    <p>Narrative 타입(271개)이 이 담화 구조의 저장 단위다. 개별 사실(Observation)이나 판단(Decision)이 아니라, 사건의 전후 맥락과 의미를 포함하는 이야기 단위. 그리고 relation의 인과 군(caused_by, led_to, resulted_in)이 수사 관계의 일부를 명시적으로 표현한다.</p>
+  </div>
+
+  <!-- DIAGRAM 8: Hierarchy — Discourse Structure -->
+  <div style="position: absolute; right: 12mm; top: 35mm; width: 58mm;">
+    <svg viewBox="-5 -5 218 286" width="58mm" xmlns="http://www.w3.org/2000/svg">
+      <text x="0" y="10" font-family="Inter, sans-serif" font-size="8" font-weight="200" fill="#999999" letter-spacing="2">DISCOURSE HIERARCHY</text>
+
+      <rect x="54" y="28" width="100" height="24" fill="#CC0000" stroke="#CC0000" stroke-width="0.6" stroke-linejoin="miter"/>
+      <text x="104" y="43" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#FFFFFF" letter-spacing="1">NARRATIVE</text>
+
+      <line x1="104" y1="52" x2="104" y2="72" stroke="#000000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="46" y1="72" x2="162" y2="72" stroke="#000000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="64" y1="72" x2="64" y2="92" stroke="#000000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="144" y1="72" x2="144" y2="92" stroke="#000000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+
+      <rect x="22" y="92" width="84" height="24" fill="none" stroke="#000000" stroke-width="0.6" stroke-linejoin="miter"/>
+      <rect x="112" y="92" width="84" height="24" fill="none" stroke="#000000" stroke-width="0.6" stroke-linejoin="miter"/>
+      <text x="64" y="107" text-anchor="middle" font-family="Inter, sans-serif" font-size="8" font-weight="300" fill="#000000" letter-spacing="1">NUCLEUS</text>
+      <text x="154" y="107" text-anchor="middle" font-family="Inter, sans-serif" font-size="8" font-weight="300" fill="#000000" letter-spacing="1">SATELLITE</text>
+
+      <line x1="64" y1="116" x2="64" y2="136" stroke="#000000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="34" y1="136" x2="94" y2="136" stroke="#000000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="44" y1="136" x2="44" y2="156" stroke="#000000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="84" y1="136" x2="84" y2="156" stroke="#000000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+
+      <line x1="154" y1="116" x2="154" y2="136" stroke="#000000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="120" y1="136" x2="188" y2="136" stroke="#000000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="128" y1="136" x2="128" y2="156" stroke="#000000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="154" y1="136" x2="154" y2="156" stroke="#000000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="180" y1="136" x2="180" y2="156" stroke="#000000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+
+      <rect x="14" y="156" width="60" height="22" fill="none" stroke="#BBBBBB" stroke-width="0.5" stroke-linejoin="miter"/>
+      <rect x="74" y="156" width="60" height="22" fill="none" stroke="#BBBBBB" stroke-width="0.5" stroke-linejoin="miter"/>
+      <rect x="98" y="156" width="60" height="22" fill="none" stroke="#BBBBBB" stroke-width="0.5" stroke-linejoin="miter"/>
+      <rect x="148" y="156" width="60" height="22" fill="none" stroke="#BBBBBB" stroke-width="0.5" stroke-linejoin="miter"/>
+      <rect x="123" y="186" width="60" height="22" fill="none" stroke="#BBBBBB" stroke-width="0.5" stroke-linejoin="miter"/>
+
+      <text x="44" y="170" text-anchor="middle" font-family="Inter, sans-serif" font-size="7.5" font-weight="300" fill="#666666">DECISION</text>
+      <text x="104" y="170" text-anchor="middle" font-family="Inter, sans-serif" font-size="7.5" font-weight="300" fill="#666666">TURNING POINT</text>
+      <text x="128" y="170" text-anchor="middle" font-family="Inter, sans-serif" font-size="7.5" font-weight="300" fill="#666666">BACKGROUND</text>
+      <text x="178" y="170" text-anchor="middle" font-family="Inter, sans-serif" font-size="7.5" font-weight="300" fill="#666666">EVIDENCE</text>
+      <text x="153" y="200" text-anchor="middle" font-family="Inter, sans-serif" font-size="7.5" font-weight="300" fill="#666666">CAUSE</text>
+
+      <line x1="0" y1="232" x2="208" y2="232" stroke="#000000" stroke-width="0.4" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <text x="0" y="248" font-family="Inter, sans-serif" font-size="7.5" font-weight="200" fill="#999999" letter-spacing="0.5">NARRATIVE STORES FACT PLUS RHETORICAL POSITION.</text>
+      <text x="0" y="258" font-family="Inter, sans-serif" font-size="7.5" font-weight="200" fill="#999999" letter-spacing="0.5">271 UNITS HOLD CONTEXT, SEQUENCE, AND WEIGHT.</text>
+    </svg>
+    <div style="font-size: 6px; color: #BBB; letter-spacing: 1px; text-transform: uppercase; margin-top: 2mm;">FIG. 8 &mdash; NARRATIVE AS DISCOURSE HIERARCHY</div>
+  </div>
+
+  <div class="page-number">10</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     FACET 08 — 다의성과 맥락 의존
+     ══════════════════════════════════════════════════ -->
+<div class="page">
+  <div class="page-label">lens e &mdash; 언어학/의미론</div>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">facet <span class="accent-num">08</span></span>
+    <h2>다의성과 맥락 의존</h2>
+  </div>
+  <div class="accent-line"></div>
+
+  <div class="body-serif" style="margin-top:8mm;">
+    <p>자연어의 근본적 속성: 대부분의 단어는 다의적이다. &ldquo;bank&rdquo;는 은행일 수도, 강둑일 수도 있다. LLM은 문맥에서 의미를 추론하지만, 이 추론이 항상 정확하지 않다.</p>
+  </div>
+
+  <div class="quote-block">
+    <p>mcp-memory의 project 필드와 tags가 다의성을 해소한다. 같은 &ldquo;최적화&rdquo;라는 단어가 project=portfolio에서는 &ldquo;로딩 속도 개선&rdquo;이고, project=mcp-memory에서는 &ldquo;NDCG 향상&rdquo;이다. 프로젝트 컨텍스트가 다의성 해소의 메커니즘.</p>
+  </div>
+
+  <div class="page-number">11</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     FACET 09 — 언어 상대성과 온톨로지의 프레이밍 효과
+     ══════════════════════════════════════════════════ -->
+<div class="page">
+  <div class="page-label">lens e &mdash; 언어학/의미론</div>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">facet <span class="accent-num">09</span></span>
+    <h2>언어 상대성과 온톨로지의 프레이밍 효과</h2>
+  </div>
+  <div class="accent-line"></div>
+
+  <div class="body-serif" style="margin-top:8mm;">
+    <p>Sapir-Whorf 가설의 약한 버전(언어적 상대성): 언어가 사고를 결정하지는 않지만, 사고의 방향을 형성한다. 색상 어휘가 풍부한 언어의 화자가 색상 구분을 더 잘 한다.</p>
+  </div>
+
+  <div class="quote-block">
+    <p>mcp-memory의 타입 체계가 사고를 프레이밍한다. Failure 타입이 존재하기 때문에 실패를 기록하게 된다. Tension 타입이 존재하기 때문에 해결되지 않은 긴장을 인식하게 된다. Aporia 타입이 존재하기 때문에 해결 불가능한 질문을 보존하게 된다. 타입이 없었다면 이 경험들은 이름 없이 흘러갔을 것이다. 온톨로지가 언어처럼 사고를 형성한다.</p>
+  </div>
+
+  <div class="page-number">12</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     FACET 10 — LLM은 언어를 다루고, 온톨로지는 언어가 가리키는 것을 다룬다
+     ══════════════════════════════════════════════════ -->
+<div class="page">
+  <div class="page-label">lens e &mdash; 언어학/의미론</div>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">facet <span class="accent-num">10</span></span>
+    <h2>LLM은 언어를 다루고, 온톨로지는 언어가 가리키는 것을 다룬다</h2>
+  </div>
+  <div class="accent-line"></div>
+
+  <div class="body-serif" style="margin-top:8mm;">
+    <p>이 Lens의 핵심 논제를 요약한다.</p>
+
+    <p>LLM은 언어의 세 층위 &mdash; 형태론(토큰), 통사론(어텐션), 화용론(프롬프트) &mdash; 에서 인상적인 성과를 보인다. 그러나 의미론의 핵심 &mdash; 관계의 타입, 의미의 계층, 논리적 구조 &mdash; 에서 구조적 결핍이 있다.</p>
+
+    <p>mcp-memory의 온톨로지는 이 결핍을 정확히 메운다. 타입 체계가 의미의 단위를 정의하고, relation 체계가 관계의 타입을 명시하고, 레이어 구조가 의미의 계층을 표현한다.</p>
+  </div>
+
+  <div class="quote-block">
+    <p>LLM이 &ldquo;언어의 표면&rdquo;을 다룬다면, 온톨로지는 &ldquo;언어가 가리키는 구조&rdquo;를 다룬다. 이 둘이 결합될 때 비로소 &mdash; 유창하게 말할 수 있으면서(LLM), 동시에 말의 구조를 알고 있는(온톨로지) &mdash; 시스템이 만들어진다.</p>
+  </div>
+
+  <div class="body-serif">
+    <p>이 Lens는 언어학 이론을 소프트웨어 시스템에 매핑하는데, 이 매핑이 항상 정밀하지는 않다. 소쉬르, 촘스키, Fillmore의 이론은 자연 언어 분석을 위해 만들어졌지, 지식 그래프 설계를 위해 만들어지지 않았다. 이 대응들의 가치는 정밀한 이론 적용이 아니라, &ldquo;LLM이 어디까지 언어를 다루고 어디서 멈추는가&rdquo;를 진단하는 렌즈로서의 유용성에 있다. 또한 이 분석은 영어 중심 언어학에 편향되어 있다 &mdash; 한국어(교착어), 중국어(고립어) 등 다른 유형의 언어에서 토큰-의미 간극은 다른 양상을 보일 수 있다.</p>
+  </div>
+
+  <div class="page-number">13</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     COLOPHON
+     ══════════════════════════════════════════════════ -->
+<div class="page">
+  <div class="colophon">
+    <div class="colophon-title">colophon</div>
+    <div class="colophon-body">
+      Lens E &mdash; 언어학/의미론<br>
+      MCP-Memory System Analysis<br>
+      Paul Park &times; Claude
+    </div>
+    <div class="colophon-rule"></div>
+    <div class="colophon-body">
+      Typeset in Inter + Noto Serif KR<br>
+      247 &times; 340 mm &middot; El Croquis format<br>
+      2026-03-28
+    </div>
+  </div>
+  <div class="page-number">14</div>
+</div>
+
+</body>
+</html>

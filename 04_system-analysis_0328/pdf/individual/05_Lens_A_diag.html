@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>Lens A — 인지과학</title>
+<link rel="stylesheet" href="el-croquis.css">
+<style>
+.quote-block {
+  border-left: none;
+  position: relative;
+}
+.quote-block::before {
+  content: '';
+  position: absolute;
+  left: calc(var(--quote-indent) - 4mm);
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--accent);
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════
+     COVER
+     ══════════════════════════════════════════════════ -->
+<div class="page" style="padding: 0;">
+  <div style="position: absolute; top: 15.5mm; left: 10mm; right: 20mm; height: 0.9px; background: var(--fg);"></div>
+  <div style="padding: 32mm 78mm 15mm 25mm;">
+    <div style="margin-top: 0; font-size: 7pt; font-weight: 300; letter-spacing: 3px; text-transform: uppercase; color: var(--fg-light);">
+      LENS A &middot; COGNITIVE SCIENCE &middot; 05 OF 09
+    </div>
+    <div style="margin-top: 21mm; font-size: 39px; font-weight: 300; line-height: 1.25; color: var(--fg); max-width: 550px;">
+      mcp-memory는 인간 인지의<br>어떤 메커니즘을<br><span style="color: var(--accent);">구현</span>하고 있는가
+    </div>
+    <div style="margin-top: 8mm; font-size: 13.5px; font-weight: 300; line-height: 1.8; color: var(--fg-mid); max-width: 340px;">
+      인지과학 렌즈로 본 외부 기억 시스템의 설계 원리
+    </div>
+  </div>
+  <div style="position: absolute; bottom: 171mm; left: 10mm; right: 20mm;">
+    <div style="width: 100%; height: 0.9px; background: var(--accent);"></div>
+    <div style="display: flex; justify-content: space-between; padding: 3mm 0 0 0;">
+      <span style="font-size: 7.5pt; font-weight: 300; letter-spacing: 2.5px; text-transform: uppercase; color: var(--fg-faint);">인지과학 &middot; 외부 기억 &middot; 메타인지 &middot; 이중 부호화 &middot; 11 Facets</span>
+      <span style="font-size: 7.5pt; font-weight: 300; letter-spacing: 2px; color: var(--fg-faint);">2026</span>
+    </div>
+  </div>
+  <span class="page-number">1</span>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     SECTION OVERVIEW
+     ══════════════════════════════════════════════════ -->
+<div class="page" id="overview">
+  <div class="page-label">lens a</div>
+
+  <div class="section-header" style="margin-top:20mm;">
+    <span class="section-label">contents</span>
+    <h2>11 Facets</h2>
+    <div class="section-sub">인지과학의 주요 이론과 mcp-memory 구현의 구조적 대응.</div>
+  </div>
+  <div class="accent-line"></div>
+
+  <div class="body-sans" style="margin-top:12mm; line-height:22pt;">
+    <p style="color:var(--fg-mid); font-size:9pt;">
+      <span style="color:var(--accent);">0</span> &mdash; CLS와 mcp-memory의 구조적 대응<br>
+      <span style="color:var(--accent);">1</span> &mdash; 작업기억과 세션 컨텍스트<br>
+      <span style="color:var(--accent);">2</span> &mdash; 스키마 이론과 타입 계층<br>
+      <span style="color:var(--accent);">3</span> &mdash; BCM 가소성과 승격 게이트<br>
+      <span style="color:var(--accent);">4</span> &mdash; 메타인지와 Correction<br>
+      <span style="color:var(--accent);">5</span> &mdash; 예측 코딩과 역방향 흐름<br>
+      <span style="color:var(--accent);">6</span> &mdash; 기억 응고와 레이어 성숙<br>
+      <span style="color:var(--accent);">7</span> &mdash; 인지 부하와 Context as Currency<br>
+      <span style="color:var(--accent);">8</span> &mdash; 전문성과 패턴 인식<br>
+      <span style="color:var(--accent);">9</span> &mdash; 이중 과정 이론과 레이어 분리<br>
+      <span style="color:var(--accent);">10</span> &mdash; 뇌는 하나, 시스템은 여럿: 분산 인지
+    </p>
+  </div>
+
+  <div class="page-number">02</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     FACET 0 — CLS
+     ══════════════════════════════════════════════════ -->
+<div class="page" id="facet0">
+  <div class="page-label">lens a</div>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">facet <span class="accent-num">0</span></span>
+    <h2>CLS와 mcp-memory의 구조적 대응</h2>
+  </div>
+  <div class="accent-line"></div>
+
+  <div class="body-serif" style="margin-top:8mm;">
+    <p>상보적 학습 시스템(Complementary Learning Systems, CLS) 이론은 기억이 두 시스템으로 작동한다고 주장한다. 해마(hippocampus)는 개별 경험을 빠르게 저장하고, 신피질(neocortex)은 반복 노출을 통해 천천히 일반화한다.</p>
+
+    <div class="quote-block">
+      <p>mcp-memory에서 Session injection이 해마에 대응한다 &mdash; 최근 Observation과 Signal을 빠르게 의식에 올린다. 온톨로지의 승격 메커니즘(L0&rarr;L2&rarr;L3)이 신피질에 대응한다 &mdash; 반복적으로 활성화된 패턴만 천천히 상위 구조로 통합된다.</p>
+    </div>
+
+    <p>해마의 빠른 학습이 신피질의 기존 구조를 덮어쓰지 않듯, 세션의 최근 데이터가 온톨로지의 Principle을 직접 수정하지 않는다.</p>
+  </div>
+
+  <div class="page-number">03</div>
+
+  <!-- DIAGRAM 1: Comparison — CLS Parallel -->
+  <div style="position: absolute; right: 12mm; top: 35mm; width: 58mm;">
+    <svg viewBox="-5 -5 218 272" width="58mm" xmlns="http://www.w3.org/2000/svg">
+      <text x="0" y="10" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#999999" letter-spacing="2">CLS PARALLEL</text>
+      <line x1="0" y1="20" x2="208" y2="20" stroke="#000000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <text x="46" y="36" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000000" letter-spacing="1.2">BIOLOGY</text>
+      <text x="162" y="36" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000000" letter-spacing="1.2">SYSTEM</text>
+      <line x1="104" y1="30" x2="104" y2="182" stroke="#BBBBBB" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+
+      <rect x="0" y="46" width="92" height="40" fill="none" stroke="#000000" stroke-width="0.5"/>
+      <text x="46" y="60" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000000" letter-spacing="1">HIPPOCAMPUS</text>
+      <text x="46" y="73" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666666">FAST EPISODIC</text>
+      <text x="46" y="84" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666666">STORE</text>
+
+      <rect x="116" y="46" width="92" height="40" fill="none" stroke="#000000" stroke-width="0.5"/>
+      <text x="162" y="60" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000000" letter-spacing="1">SESSION</text>
+      <text x="162" y="73" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666666">INJECTION</text>
+      <text x="162" y="84" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666666">RECENT OBS/SIG</text>
+
+      <line x1="0" y1="102" x2="208" y2="102" stroke="#D8D8D8" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+
+      <rect x="0" y="114" width="92" height="40" fill="none" stroke="#000000" stroke-width="0.5"/>
+      <text x="46" y="128" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000000" letter-spacing="1">NEOCORTEX</text>
+      <text x="46" y="141" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666666">SLOW</text>
+      <text x="46" y="152" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666666">GENERALIZATION</text>
+
+      <rect x="116" y="114" width="92" height="40" fill="none" stroke="#000000" stroke-width="0.5"/>
+      <text x="162" y="128" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000000" letter-spacing="1">PROMOTION</text>
+      <text x="162" y="141" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666666">L0 TO L3</text>
+      <text x="162" y="152" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666666">REPEATED PATTERN</text>
+
+      <line x1="0" y1="170" x2="208" y2="170" stroke="#000000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <rect x="0" y="186" width="208" height="20" fill="none" stroke="#CC0000" stroke-width="0.75" stroke-dasharray="2,2"/>
+      <text x="104" y="199" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#CC0000" letter-spacing="1">NO DIRECT PRINCIPLE EDIT</text>
+
+      <text x="0" y="226" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666666">FAST STORAGE AND SLOW INTEGRATION</text>
+      <text x="0" y="238" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666666">ARE SPLIT SO RECENT DATA DOES NOT</text>
+      <text x="0" y="250" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666666">DESTABILIZE HIGHER-ORDER STRUCTURE.</text>
+    </svg>
+    <div style="font-size: 6px; color: #BBB; letter-spacing: 1px; text-transform: uppercase; margin-top: 2mm;">FIG. 1 &mdash; CLS PARALLEL: SESSION VS PROMOTION</div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     FACET 1 — 작업기억
+     ══════════════════════════════════════════════════ -->
+<div class="page" id="facet1">
+  <div class="page-label">lens a</div>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">facet <span class="accent-num">1</span></span>
+    <h2>작업기억과 세션 컨텍스트</h2>
+  </div>
+  <div class="accent-line"></div>
+
+  <div class="body-serif" style="margin-top:8mm;">
+    <p>Baddeley의 작업기억 모델 &mdash; 중앙집행장치가 음운 루프, 시공간 스케치패드, 일화적 버퍼를 관리한다. 용량은 약 4&plusmn;1 청크.</p>
+
+    <p>LLM의 컨텍스트 윈도우가 작업기억이다. 200K 토큰은 인간보다 넓지만, 무한하지 않다. 그리고 인간 작업기억과 마찬가지로 "무엇을 올리느냐"가 처리 품질을 결정한다. mcp-memory의 injection policy &mdash; L2+ 우선, Signal 보조, Observation 현장성 &mdash; 는 작업기억에 올릴 청크를 선택하는 중앙집행장치의 구현이다. Context as Currency가 작업기억의 경제학.</p>
+
+    <p>양적 차이가 질적 차이를 만드는가? 인간 작업기억은 4개 청크로도 복잡한 추론을 하는데, 이건 청크가 고도로 압축되어 있기 때문이다(전문가의 청킹). 200K 토큰은 양적으로 압도적이지만, 토큰은 압축되지 않은 원시 텍스트다. 따라서 "200K 토큰 = 인간보다 큰 작업기억"이라는 단순 비교는 오해를 낳는다.</p>
+
+    <div class="quote-block">
+      <p>더 정확한 대응: injection policy가 200K 토큰을 소수의 고밀도 청크로 조직하는 것이 인간 작업기억의 청킹에 대응한다. L2+ 15개를 주입하는 건 200K를 그대로 쓰는 게 아니라 15개 "청크"로 압축하는 행위다.</p>
+    </div>
+  </div>
+
+  <div class="page-number">04</div>
+
+  <!-- DIAGRAM 2: Statistics — Working Memory Economy -->
+  <div style="position: absolute; right: 12mm; top: 35mm; width: 58mm;">
+    <svg viewBox="-5 -5 218 304" width="58mm" xmlns="http://www.w3.org/2000/svg">
+      <text x="0" y="10" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#999999" letter-spacing="2">WORKING MEMORY</text>
+      <line x1="0" y1="20" x2="208" y2="20" stroke="#000000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+
+      <text x="0" y="58" font-family="Inter, sans-serif" font-size="28" font-weight="200" fill="#000000">4±1</text>
+      <text x="0" y="76" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000000" letter-spacing="1.5">HUMAN WM CHUNKS</text>
+      <text x="0" y="89" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666666">BADDELEY-SCALE CAPACITY</text>
+
+      <line x1="0" y1="106" x2="208" y2="106" stroke="#D8D8D8" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+
+      <text x="0" y="150" font-family="Inter, sans-serif" font-size="28" font-weight="200" fill="#000000">200K</text>
+      <text x="0" y="168" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000000" letter-spacing="1.5">RAW TOKEN WINDOW</text>
+      <text x="0" y="181" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666666">WIDE BUT UNCURATED</text>
+
+      <line x1="0" y1="198" x2="208" y2="198" stroke="#D8D8D8" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+
+      <text x="0" y="244" font-family="Inter, sans-serif" font-size="28" font-weight="200" fill="#CC0000">15</text>
+      <text x="0" y="262" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000000" letter-spacing="1.5">L2+ CURATED CHUNKS</text>
+      <text x="0" y="275" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666666">EXECUTIVE SELECTION</text>
+
+      <line x1="124" y1="40" x2="124" y2="272" stroke="#BBBBBB" stroke-width="0.5" stroke-dasharray="2,2" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <text x="132" y="232" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666666">QUALITY COMES FROM</text>
+      <text x="132" y="244" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666666">COMPRESSION, NOT</text>
+      <text x="132" y="256" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666666">SHEER WINDOW SIZE.</text>
+    </svg>
+    <div style="font-size: 6px; color: #BBB; letter-spacing: 1px; text-transform: uppercase; margin-top: 2mm;">FIG. 2 &mdash; WORKING MEMORY AS CURATED CHUNKING</div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     FACET 2 — 스키마 이론
+     ══════════════════════════════════════════════════ -->
+<div class="page" id="facet2">
+  <div class="page-label">lens a</div>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">facet <span class="accent-num">2</span></span>
+    <h2>스키마 이론과 타입 계층</h2>
+  </div>
+  <div class="accent-line"></div>
+
+  <div class="body-serif" style="margin-top:8mm;">
+    <p>Piaget의 스키마 이론: 인간은 경험을 기존 스키마에 동화(assimilation)하거나, 스키마 자체를 수정(accommodation)한다.</p>
+
+    <p>mcp-memory의 타입 체계(L0-L5)가 스키마에 해당한다. 새로운 경험이 기존 타입에 맞으면 동화(해당 타입으로 저장). 기존 타입으로 분류할 수 없으면 &mdash; Unclassified로 보존하거나, 새 타입을 추가한다(Correction이 사후 추가된 것).</p>
+
+    <div class="quote-block">
+      <p>schema.yaml의 진화 자체가 accommodation의 기록이다.</p>
+    </div>
+  </div>
+
+  <div class="page-number">05</div>
+
+  <!-- DIAGRAM 3: Classification — Schema Responses -->
+  <div style="position: absolute; right: 12mm; top: 35mm; width: 58mm;">
+    <svg viewBox="-5 -5 218 286" width="58mm" xmlns="http://www.w3.org/2000/svg">
+      <text x="0" y="10" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#999999" letter-spacing="2">SCHEMA RESPONSES</text>
+      <line x1="0" y1="20" x2="208" y2="20" stroke="#000000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+
+      <rect x="0" y="34" width="72" height="28" fill="none" stroke="#000000" stroke-width="0.5"/>
+      <text x="8" y="51" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000000" letter-spacing="1">ASSIMILATION</text>
+      <text x="82" y="47" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666666">FITS EXISTING TYPE</text>
+      <text x="82" y="59" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666666">STORE WITHOUT CHANGE</text>
+
+      <line x1="0" y1="76" x2="208" y2="76" stroke="#D8D8D8" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+
+      <rect x="0" y="90" width="72" height="28" fill="none" stroke="#000000" stroke-width="0.5"/>
+      <text x="8" y="107" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000000" letter-spacing="1">UNCLASSIFIED</text>
+      <text x="82" y="103" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666666">MISMATCH IS KEPT</text>
+      <text x="82" y="115" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666666">WITHOUT FORCED LOSS</text>
+
+      <line x1="0" y1="132" x2="208" y2="132" stroke="#D8D8D8" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+
+      <rect x="0" y="146" width="72" height="28" fill="none" stroke="#CC0000" stroke-width="0.75"/>
+      <text x="8" y="163" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#CC0000" letter-spacing="1">ACCOMMODATION</text>
+      <text x="82" y="159" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666666">REPEATED MISMATCH</text>
+      <text x="82" y="171" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666666">ADDS OR REVISES TYPE</text>
+
+      <line x1="0" y1="188" x2="208" y2="188" stroke="#D8D8D8" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+
+      <rect x="0" y="202" width="72" height="28" fill="none" stroke="#000000" stroke-width="0.5"/>
+      <text x="8" y="219" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000000" letter-spacing="1">SCHEMA LOG</text>
+      <text x="82" y="215" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666666">TYPE HISTORY BECOMES</text>
+      <text x="82" y="227" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666666">ACCOMMODATION RECORD</text>
+
+      <line x1="0" y1="246" x2="208" y2="246" stroke="#000000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <text x="0" y="264" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666666">TYPE EVOLUTION IS NOT NOISE.</text>
+      <text x="0" y="276" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666666">IT IS THE MEMORY OF LEARNING.</text>
+    </svg>
+    <div style="font-size: 6px; color: #BBB; letter-spacing: 1px; text-transform: uppercase; margin-top: 2mm;">FIG. 3 &mdash; ASSIMILATION, ACCOMMODATION, AND TYPE CHANGE</div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     FACET 3 — BCM 가소성
+     ══════════════════════════════════════════════════ -->
+<div class="page" id="facet3">
+  <div class="page-label">lens a</div>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">facet <span class="accent-num">3</span></span>
+    <h2>BCM 가소성과 승격 게이트</h2>
+  </div>
+  <div class="accent-line"></div>
+
+  <div class="body-serif" style="margin-top:8mm;">
+    <p>BCM(Bienenstock-Cooper-Munro) 규칙: 시냅스 가중치는 사전 활동 수준에 따라 변하는 수정 임계값(&theta;_M)에 의해 강화 또는 약화된다. 활성화가 임계값을 넘으면 강화, 밑이면 약화. 이건 frequency-dependent selectivity를 만든다.</p>
+
+    <p>mcp-memory의 confidence 필드 + 참조 횟수가 BCM의 단순화된 구현이다. 자주 참조되는 노드의 confidence가 올라가고, 임계값을 넘으면 승격 후보가 된다. 정밀한 수학적 BCM이 아니라, 핵심 원리 &mdash; "반복 활성화가 선택적 강화를 낳는다" &mdash; 의 실용적 적용이다.</p>
+
+    <p>현재 mcp-memory의 confidence 증가는 단조롭다 &mdash; 참조될 때마다 올라간다. BCM의 핵심인 "임계값의 동적 변화"(높은 활성화가 임계값 자체를 올려 승격을 더 어렵게 만드는 항상성)는 아직 구현되지 않았다.</p>
+
+    <div class="quote-block">
+      <p>따라서 현재 구현은 BCM에서 영감을 받은 단순화된 빈도 기반 모델이 정확한 기술이다. BCM의 핵심 속성은 향후 구현 목표이지, 현재 상태가 아니다.</p>
+    </div>
+  </div>
+
+  <div class="page-number">06</div>
+
+  <!-- DIAGRAM 4: Transformation — BCM-Inspired Gate -->
+  <div style="position: absolute; right: 12mm; top: 35mm; width: 58mm;">
+    <svg viewBox="-5 -5 218 286" width="58mm" xmlns="http://www.w3.org/2000/svg">
+      <text x="0" y="10" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#999999" letter-spacing="2">BCM-INSPIRED GATE</text>
+      <line x1="0" y1="20" x2="208" y2="20" stroke="#000000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+
+      <rect x="8" y="36" width="78" height="34" fill="none" stroke="#000000" stroke-width="0.5"/>
+      <text x="47" y="50" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000000" letter-spacing="1">REFERENCE</text>
+      <text x="47" y="62" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666666">REPEATED USE</text>
+
+      <rect x="122" y="36" width="78" height="34" fill="none" stroke="#000000" stroke-width="0.5"/>
+      <text x="161" y="50" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000000" letter-spacing="1">CONFIDENCE</text>
+      <text x="161" y="62" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666666">CURRENT WEIGHT</text>
+
+      <line x1="47" y1="70" x2="88" y2="106" stroke="#000000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="161" y1="70" x2="120" y2="106" stroke="#000000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <circle cx="104" cy="118" r="22" fill="none" stroke="#CC0000" stroke-width="0.75"/>
+      <text x="104" y="114" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="300" fill="#CC0000" letter-spacing="1">THETA_M</text>
+      <text x="104" y="126" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#666666">GATE</text>
+
+      <line x1="90" y1="134" x2="48" y2="162" stroke="#000000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="118" y1="134" x2="160" y2="162" stroke="#000000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+
+      <rect x="8" y="164" width="78" height="38" fill="none" stroke="#000000" stroke-width="0.5"/>
+      <text x="47" y="179" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000000" letter-spacing="1">RETAIN</text>
+      <text x="47" y="191" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666666">STAY BELOW</text>
+      <text x="47" y="202" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666666">PROMOTION LINE</text>
+
+      <rect x="122" y="164" width="78" height="38" fill="none" stroke="#000000" stroke-width="0.5"/>
+      <text x="161" y="179" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000000" letter-spacing="1">PROMOTE</text>
+      <text x="161" y="191" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666666">CANDIDATE FOR</text>
+      <text x="161" y="202" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666666">HIGHER LAYER</text>
+
+      <rect x="0" y="222" width="208" height="22" fill="none" stroke="#BBBBBB" stroke-width="0.5" stroke-dasharray="2,2"/>
+      <text x="104" y="236" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#666666" letter-spacing="1">NO DYNAMIC THRESHOLD YET</text>
+
+      <text x="0" y="262" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666666">SELECTIVE REINFORCEMENT ONLY.</text>
+      <text x="0" y="274" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666666">NO BCM HOMEOSTASIS YET.</text>
+    </svg>
+    <div style="font-size: 6px; color: #BBB; letter-spacing: 1px; text-transform: uppercase; margin-top: 2mm;">FIG. 4 &mdash; REPETITION TO PROMOTION GATE</div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     FACET 4 — 메타인지
+     ══════════════════════════════════════════════════ -->
+<div class="page" id="facet4">
+  <div class="page-label">lens a</div>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">facet <span class="accent-num">4</span></span>
+    <h2>메타인지와 Correction</h2>
+  </div>
+  <div class="accent-line"></div>
+
+  <div class="body-serif" style="margin-top:8mm;">
+    <p>메타인지(metacognition)는 "자기가 어떻게 생각하는지에 대해 생각하는 것"이다. Flavell이 1979년에 정의한 이래, 학습의 핵심 요소로 인정받는다.</p>
+
+    <p>Correction 타입이 recall 최우선이라는 건 메타인지의 외부화다. "이전에 이런 판단 패턴으로 틀렸다"를 시스템이 자동으로 떠올린다.</p>
+
+    <div class="quote-block">
+      <p>인간의 메타인지가 불안정하고 편향되기 쉬운 반면(자기과신, 확증편향), 외부화된 메타인지는 DB에 기록된 그대로 재현된다. 이건 메타인지의 정확성을 높이는 메커니즘이다.</p>
+    </div>
+  </div>
+
+  <div class="page-number">07</div>
+
+  <!-- DIAGRAM 5: Cycle — Externalized Metacognition -->
+  <div style="position: absolute; right: 12mm; top: 35mm; width: 58mm;">
+    <svg viewBox="-5 -5 218 276" width="58mm" xmlns="http://www.w3.org/2000/svg">
+      <text x="0" y="10" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#999999" letter-spacing="2">METACOGNITIVE CYCLE</text>
+      <line x1="0" y1="20" x2="208" y2="20" stroke="#000000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+
+      <circle cx="104" cy="52" r="18" fill="none" stroke="#000000" stroke-width="0.5"/>
+      <text x="104" y="49" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000000" letter-spacing="1">JUDGMENT</text>
+      <text x="104" y="61" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666666">ACTION</text>
+
+      <circle cx="158" cy="110" r="18" fill="none" stroke="#000000" stroke-width="0.5"/>
+      <text x="158" y="107" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000000" letter-spacing="1">ERROR</text>
+      <text x="158" y="119" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666666">DETECTED</text>
+
+      <circle cx="104" cy="168" r="18" fill="none" stroke="#CC0000" stroke-width="0.75"/>
+      <text x="104" y="165" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#CC0000" letter-spacing="1">CORRECTION</text>
+      <text x="104" y="177" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666666">RECORDED</text>
+
+      <circle cx="50" cy="110" r="18" fill="none" stroke="#000000" stroke-width="0.5"/>
+      <text x="50" y="107" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000000" letter-spacing="1">NEXT</text>
+      <text x="50" y="119" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666666">RECALL</text>
+
+      <line x1="118" y1="66" x2="144" y2="96" stroke="#000000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <polygon points="141,90 147,99 138,96" fill="#000000"/>
+      <line x1="144" y1="124" x2="118" y2="154" stroke="#000000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <polygon points="118,148 121,158 112,153" fill="#000000"/>
+      <line x1="90" y1="154" x2="64" y2="124" stroke="#000000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <polygon points="70,124 61,120 64,129" fill="#000000"/>
+      <line x1="64" y1="96" x2="90" y2="66" stroke="#000000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <polygon points="90,72 93,62 84,67" fill="#000000"/>
+
+      <text x="104" y="108" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666666">EXTERNALIZED</text>
+      <text x="104" y="120" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666666">SELF-MONITORING</text>
+
+      <line x1="0" y1="214" x2="208" y2="214" stroke="#000000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <text x="0" y="232" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666666">RECALL PRIORITY MAKES "HOW I FAIL"</text>
+      <text x="0" y="244" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666666">AS AVAILABLE AS "WHAT I KNOW".</text>
+    </svg>
+    <div style="font-size: 6px; color: #BBB; letter-spacing: 1px; text-transform: uppercase; margin-top: 2mm;">FIG. 5 &mdash; CORRECTION AS STABLE METACOGNITION</div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     FACET 5 — 예측 코딩
+     ══════════════════════════════════════════════════ -->
+<div class="page" id="facet5">
+  <div class="page-label">lens a</div>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">facet <span class="accent-num">5</span></span>
+    <h2>예측 코딩과 역방향 흐름</h2>
+  </div>
+  <div class="accent-line"></div>
+
+  <div class="body-serif" style="margin-top:8mm;">
+    <p>예측 코딩(predictive coding) 이론: 뇌는 상위 영역에서 하위 영역으로 예측 신호를 보내고, 하위 영역은 예측과 실제의 차이(prediction error)만 상위로 보낸다. 인식은 수동적 수신이 아니라 능동적 예측이다.</p>
+
+    <p>mcp-memory의 역방향 흐름 &mdash; Principle과 Lens가 Observation의 해석을 규정하는 것 &mdash; 이 예측 코딩의 구조적 대응이다. WIM 7렌즈가 세션에 주입되면, 새로운 뉴스를 "이 렌즈의 관점에서 중요한가?"로 먼저 판단한다. 이건 top-down prediction이다. 기존 원칙과 맞지 않는 경험만이 주의를 끌고, 새로운 Pattern으로 승격될 가능성을 갖는다.</p>
+
+    <p>다만 예측 코딩의 핵심인 "prediction error만 전파"가 시스템에서 명시적으로 구현되지는 않는다. 모든 새 Observation이 주입되지, "기존 렌즈와 일치하지 않는 것만" 주입되는 건 아니다. 다만 간접적으로: 렌즈와 일치하는 관찰은 "이미 알고 있는 것"으로 처리되어 Decision으로 이어지지 않을 가능성이 높고, 렌즈와 충돌하는 관찰만이 새로운 Decision이나 Failure를 낳는다.</p>
+
+    <div class="quote-block">
+      <p>이 간접적 필터링이 prediction error 전파의 약한 근사치다.</p>
+    </div>
+  </div>
+
+  <div class="page-number">08</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     FACET 6 — 기억 응고
+     ══════════════════════════════════════════════════ -->
+<div class="page" id="facet6">
+  <div class="page-label">lens a</div>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">facet <span class="accent-num">6</span></span>
+    <h2>기억 응고와 레이어 성숙</h2>
+  </div>
+  <div class="accent-line"></div>
+
+  <div class="body-serif" style="margin-top:8mm;">
+    <p>기억 응고(memory consolidation): 새로운 기억은 불안정하고, 시간이 지나면서 안정화된다. 해마에서 신피질로의 점진적 전이. 수면 중 재활성화(replay)가 이 과정을 촉진한다.</p>
+
+    <div class="quote-block">
+      <p>mcp-memory에서 L0 &rarr; L1 &rarr; L2의 이동이 응고에 대응한다. 새로운 Observation은 불안정하다 &mdash; 아직 패턴인지 노이즈인지 모른다. 시간이 지나고 반복 활성화되면서 Pattern으로 응고된다.</p>
+    </div>
+
+    <p>auto-iterate의 주기적 측정이 수면 중 재활성화의 역할 &mdash; 축적된 경험을 주기적으로 검토하고 승격 후보를 발견한다.</p>
+  </div>
+
+  <!-- DIAGRAM 6: Timeline — Consolidation -->
+  <div style="margin-top: 6mm; max-width: 145mm;">
+    <svg viewBox="-5 -5 558 154" width="145mm" xmlns="http://www.w3.org/2000/svg">
+      <text x="0" y="10" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#999999" letter-spacing="2">MEMORY CONSOLIDATION TIMELINE</text>
+      <line x1="20" y1="78" x2="530" y2="78" stroke="#000000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+
+      <line x1="45" y1="78" x2="45" y2="54" stroke="#000000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <circle cx="45" cy="78" r="4" fill="none" stroke="#000000" stroke-width="0.5"/>
+      <rect x="12" y="24" width="66" height="26" fill="none" stroke="#000000" stroke-width="0.5"/>
+      <text x="45" y="36" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000000" letter-spacing="1">DAY 0</text>
+      <text x="45" y="47" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666666">OBSERVATION</text>
+
+      <line x1="170" y1="78" x2="170" y2="102" stroke="#000000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <circle cx="170" cy="78" r="4" fill="none" stroke="#000000" stroke-width="0.5"/>
+      <rect x="136" y="104" width="68" height="26" fill="none" stroke="#000000" stroke-width="0.5"/>
+      <text x="170" y="116" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000000" letter-spacing="1">REPLAY</text>
+      <text x="170" y="127" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666666">REACTIVATE</text>
+
+      <line x1="285" y1="78" x2="285" y2="54" stroke="#000000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <circle cx="285" cy="78" r="4" fill="none" stroke="#000000" stroke-width="0.5"/>
+      <rect x="251" y="24" width="68" height="26" fill="none" stroke="#000000" stroke-width="0.5"/>
+      <text x="285" y="36" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000000" letter-spacing="1">WEEK 1</text>
+      <text x="285" y="47" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666666">SIGNAL</text>
+
+      <line x1="400" y1="78" x2="400" y2="102" stroke="#CC0000" stroke-width="0.75" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <circle cx="400" cy="78" r="4" fill="none" stroke="#CC0000" stroke-width="0.75"/>
+      <rect x="364" y="104" width="72" height="26" fill="none" stroke="#CC0000" stroke-width="0.75"/>
+      <text x="400" y="116" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#CC0000" letter-spacing="1">MONTH 1</text>
+      <text x="400" y="127" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666666">PATTERN</text>
+
+      <line x1="515" y1="78" x2="515" y2="54" stroke="#000000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <circle cx="515" cy="78" r="4" fill="none" stroke="#000000" stroke-width="0.5"/>
+      <rect x="475" y="24" width="80" height="26" fill="none" stroke="#000000" stroke-width="0.5"/>
+      <text x="515" y="36" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000000" letter-spacing="1">L2 STRUCTURE</text>
+      <text x="515" y="47" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666666">STABLE CHUNK</text>
+
+      <line x1="120" y1="144" x2="455" y2="144" stroke="#BBBBBB" stroke-width="0.5" stroke-dasharray="4,4" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <text x="287" y="141" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#666666" letter-spacing="1">AUTO-ITERATE REPLAY DRIVES STABILIZATION</text>
+    </svg>
+    <div style="font-size: 6px; color: #BBB; letter-spacing: 1px; text-transform: uppercase; margin-top: 2mm;">FIG. 6 &mdash; OBSERVATION TO PATTERN CONSOLIDATION</div>
+  </div>
+
+  <div class="page-number">09</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     FACET 7 — 인지 부하
+     ══════════════════════════════════════════════════ -->
+<div class="page" id="facet7">
+  <div class="page-label">lens a</div>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">facet <span class="accent-num">7</span></span>
+    <h2>인지 부하와 Context as Currency</h2>
+  </div>
+  <div class="accent-line"></div>
+
+  <div class="body-serif" style="margin-top:8mm;">
+    <p>인지 부하 이론(Cognitive Load Theory, Sweller): 작업기억의 용량은 제한적이므로, 불필요한 부하(extraneous load)를 줄이고 본질적 부하(intrinsic load)에 자원을 집중해야 한다.</p>
+
+    <p>에이전트 24&rarr;15 축소, 스킬 14&rarr;9 축소의 경험이 이 이론의 실증이다. 15K 토큰 자동 로딩은 extraneous load &mdash; 현재 작업과 무관한 정보가 컨텍스트를 차지한다.</p>
+
+    <div class="quote-block">
+      <p>"빼기가 더하기보다 중요하다"는 발견은 인지 부하 이론의 LLM 컨텍스트 버전이다. Context as Currency는 인지 부하 관리의 경제학적 프레이밍.</p>
+    </div>
+  </div>
+
+  <div class="page-number">10</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     FACET 8 — 전문성과 패턴 인식
+     ══════════════════════════════════════════════════ -->
+<div class="page" id="facet8">
+  <div class="page-label">lens a</div>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">facet <span class="accent-num">8</span></span>
+    <h2>전문성과 패턴 인식</h2>
+  </div>
+  <div class="accent-line"></div>
+
+  <div class="body-serif" style="margin-top:8mm;">
+    <p>Chase &amp; Simon의 체스 전문성 연구: 전문가는 개별 기물이 아니라 패턴(chunk)으로 판을 본다. 초보자에게 무작위 배열은 전문가에게도 어렵지만, 실전 배열은 전문가가 압도적으로 잘 기억한다. 전문성의 본질은 "더 많이 아는 것"이 아니라 "더 큰 단위로 보는 것"이다.</p>
+
+    <p>L0&rarr;L2 승격이 이 과정이다. 개별 Observation은 체스의 개별 기물이다. Pattern은 청킹된 구조다.</p>
+
+    <div class="quote-block">
+      <p>전문성은 L2의 밀도로 측정될 수 있다 &mdash; Pattern, Framework, Heuristic이 풍부할수록 더 큰 단위로 경험을 처리할 수 있다. mcp-memory의 L2 합계(1,096)는 이 시스템 사용자의 전문성이 얼마나 구조화되었는지를 보여주는 지표다.</p>
+    </div>
+  </div>
+
+  <div class="page-number">11</div>
+
+  <!-- DIAGRAM 7: Hierarchy — Expertise as Chunking -->
+  <div style="position: absolute; right: 12mm; top: 35mm; width: 58mm;">
+    <svg viewBox="-5 -5 218 292" width="58mm" xmlns="http://www.w3.org/2000/svg">
+      <text x="0" y="10" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#999999" letter-spacing="2">EXPERTISE HIERARCHY</text>
+      <line x1="0" y1="20" x2="208" y2="20" stroke="#000000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+
+      <rect x="72" y="40" width="64" height="24" fill="none" stroke="#000000" stroke-width="0.5"/>
+      <text x="104" y="55" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000000" letter-spacing="1">HEURISTIC</text>
+
+      <rect x="56" y="80" width="96" height="28" fill="none" stroke="#CC0000" stroke-width="0.75"/>
+      <text x="104" y="96" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#CC0000" letter-spacing="1">PATTERN / L2</text>
+
+      <rect x="38" y="124" width="132" height="30" fill="none" stroke="#000000" stroke-width="0.5"/>
+      <text x="104" y="141" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000000" letter-spacing="1">SIGNAL</text>
+
+      <rect x="18" y="172" width="172" height="34" fill="none" stroke="#000000" stroke-width="0.5"/>
+      <text x="104" y="191" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000000" letter-spacing="1">OBSERVATION</text>
+
+      <line x1="104" y1="64" x2="104" y2="80" stroke="#000000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="104" y1="108" x2="104" y2="124" stroke="#000000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="104" y1="154" x2="104" y2="172" stroke="#000000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+
+      <text x="198" y="56" text-anchor="end" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666666">REUSABLE</text>
+      <text x="198" y="97" text-anchor="end" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666666">CHUNKED</text>
+      <text x="198" y="141" text-anchor="end" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666666">FILTERED</text>
+      <text x="198" y="191" text-anchor="end" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666666">RAW</text>
+
+      <line x1="0" y1="224" x2="208" y2="224" stroke="#000000" stroke-width="0.5" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <text x="0" y="243" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666666">EXPERTISE IS NOT MORE ITEMS.</text>
+      <text x="0" y="255" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666666">IT IS MORE EXPERIENCE PER CHUNK.</text>
+      <text x="0" y="272" font-family="Inter, sans-serif" font-size="10" font-weight="300" fill="#CC0000" letter-spacing="1">L2 DENSITY TRACKS EXPERTISE</text>
+    </svg>
+    <div style="font-size: 6px; color: #BBB; letter-spacing: 1px; text-transform: uppercase; margin-top: 2mm;">FIG. 7 &mdash; EXPERTISE AS CHUNKED LAYERING</div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     FACET 9 — 이중 과정 이론
+     ══════════════════════════════════════════════════ -->
+<div class="page" id="facet9">
+  <div class="page-label">lens a</div>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">facet <span class="accent-num">9</span></span>
+    <h2>이중 과정 이론과 레이어 분리</h2>
+  </div>
+  <div class="accent-line"></div>
+
+  <div class="body-serif" style="margin-top:8mm;">
+    <p>Kahneman의 이중 과정 이론: 시스템 1(빠르고 자동적)과 시스템 2(느리고 의식적). 일상의 대부분은 시스템 1이 처리하고, 어려운 문제만 시스템 2가 개입한다.</p>
+
+    <p>mcp-memory의 세션 주입 정책이 이 이중성을 구현한다. L2+ Principle이 주입되면, 이것은 시스템 2의 역할 &mdash; 의식적 판단 규칙. Signal과 Observation의 주입은 시스템 1의 재료 &mdash; 빠른 상황 파악. 그리고 Correction의 최우선 주입은 시스템 1의 자동성을 시스템 2가 교정하는 메커니즘이다 &mdash; "이 패턴은 자동으로 따르지 마라"는 명시적 경고.</p>
+
+    <p>위의 매핑을 더 정밀하게 다듬을 필요가 있다. 직접적 매핑보다는 구조적 유사성으로 접근해야 한다. 시스템1의 "자동성"은 데이터 주입과 직접 대응하지 않는다 &mdash; 데이터 주입은 자동 처리가 아니기 때문이다.</p>
+
+    <div class="quote-block">
+      <p>더 정확한 대응: session injection policy 자체가 시스템1/2의 분업을 구현한다. L2+ Principle의 자동 주입은 "항상 의식에 올라와 있는 배경 규칙"으로서 시스템1적 역할 &mdash; 매번 의식적으로 떠올릴 필요 없이 판단을 구조화한다. Correction의 최우선 주입은 시스템2의 개입 &mdash; 시스템1의 자동성을 멈추게 한다. 이 대응은 정밀하지 않으며, 구조적 유비(structural analogy)임을 인정한다.</p>
+    </div>
+  </div>
+
+  <div class="page-number">12</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     FACET 10 — 분산 인지
+     ══════════════════════════════════════════════════ -->
+<div class="page" id="facet10">
+  <div class="page-label">lens a</div>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">facet <span class="accent-num">10</span></span>
+    <h2>뇌는 하나, 시스템은 여럿: 분산 인지</h2>
+  </div>
+  <div class="accent-line"></div>
+
+  <div class="body-serif" style="margin-top:8mm;">
+    <p>인지과학의 분산 인지(distributed cognition, Hutchins): 인지는 개인의 머리 안에서만 일어나지 않는다. 항공기 조종석에서 파일럿, 부조종사, 계기판이 함께 인지를 수행한다. 각 요소가 전체 인지의 일부를 담당한다.</p>
+
+    <p>mcp-memory의 12개 프로젝트 에코시스템이 분산 인지의 구현이다. orchestration(조율), mcp-memory(기억), context-cascade(주입), auto-iterate(교정) &mdash; 각 시스템이 인지의 다른 측면을 담당한다. 그리고 이 시스템들 사이의 조율이 인지의 질을 결정한다 &mdash; Hutchins의 조종석에서 파일럿과 계기판 사이의 소통이 비행의 질을 결정하듯.</p>
+
+    <div class="quote-block">
+      <p>이 Lens 전체에서 인지과학 개념과 시스템의 대응은 구조적 유비(structural analogy)이지 동일성(identity)이 아니다. CLS의 해마가 실제로 하는 일과 session injection이 하는 일은 메커니즘이 다르다. BCM의 수학적 모델과 confidence 필드는 정밀도가 다르다. 이 대응들의 가치는 "이 시스템이 뇌와 같다"는 주장이 아니라, "뇌가 해결한 문제와 이 시스템이 해결하려는 문제가 구조적으로 같다"는 통찰에 있다.</p>
+    </div>
+  </div>
+
+  <!-- DIAGRAM 8: Network — Distributed Cognition -->
+  <div style="margin-top: 6mm; max-width: 145mm;">
+    <svg viewBox="-5 -5 558 198" width="145mm" xmlns="http://www.w3.org/2000/svg">
+      <text x="0" y="10" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#999999" letter-spacing="2">DISTRIBUTED COGNITION NETWORK</text>
+
+      <line x1="274" y1="92" x2="80" y2="46" stroke="#000000" stroke-width="0.6" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="274" y1="92" x2="182" y2="34" stroke="#000000" stroke-width="0.6" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="274" y1="92" x2="304" y2="36" stroke="#000000" stroke-width="0.6" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="274" y1="92" x2="172" y2="146" stroke="#000000" stroke-width="0.6" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="274" y1="92" x2="360" y2="146" stroke="#000000" stroke-width="0.6" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="274" y1="92" x2="474" y2="122" stroke="#000000" stroke-width="0.6" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="274" y1="92" x2="472" y2="54" stroke="#000000" stroke-width="0.6" stroke-linecap="butt" shape-rendering="crispEdges"/>
+
+      <line x1="80" y1="46" x2="182" y2="34" stroke="#BBBBBB" stroke-width="0.4" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="182" y1="34" x2="304" y2="36" stroke="#BBBBBB" stroke-width="0.4" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="172" y1="146" x2="360" y2="146" stroke="#BBBBBB" stroke-width="0.4" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="360" y1="146" x2="474" y2="122" stroke="#BBBBBB" stroke-width="0.4" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <line x1="304" y1="36" x2="472" y2="54" stroke="#BBBBBB" stroke-width="0.4" stroke-linecap="butt" shape-rendering="crispEdges"/>
+
+      <circle cx="274" cy="92" r="13" fill="none" stroke="#CC0000" stroke-width="0.75"/>
+      <text x="274" y="88" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="300" fill="#CC0000" letter-spacing="1">TASK</text>
+      <text x="274" y="100" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="200" fill="#666666">COGNITION</text>
+
+      <circle cx="80" cy="46" r="5" fill="none" stroke="#000000" stroke-width="0.5"/>
+      <text x="80" y="31" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000000">USER</text>
+
+      <circle cx="182" cy="34" r="5" fill="none" stroke="#000000" stroke-width="0.5"/>
+      <text x="182" y="19" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000000">LLM SESSION</text>
+
+      <circle cx="304" cy="36" r="5" fill="none" stroke="#000000" stroke-width="0.5"/>
+      <text x="304" y="21" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000000">ORCHESTRATION</text>
+
+      <circle cx="172" cy="146" r="5" fill="none" stroke="#000000" stroke-width="0.5"/>
+      <text x="172" y="162" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000000">MCP-MEMORY</text>
+
+      <circle cx="360" cy="146" r="5" fill="none" stroke="#000000" stroke-width="0.5"/>
+      <text x="360" y="162" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000000">CONTEXT-CASCADE</text>
+
+      <circle cx="474" cy="122" r="5" fill="none" stroke="#000000" stroke-width="0.5"/>
+      <text x="474" y="138" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000000">AUTO-ITERATE</text>
+
+      <circle cx="472" cy="54" r="5" fill="none" stroke="#000000" stroke-width="0.5"/>
+      <text x="472" y="39" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="300" fill="#000000">FOUNDATION DOCS</text>
+
+      <line x1="0" y1="184" x2="176" y2="184" stroke="#000000" stroke-width="0.4" stroke-linecap="butt" shape-rendering="crispEdges"/>
+      <text x="186" y="184" font-family="Inter, sans-serif" font-size="9" font-weight="200" fill="#666666" letter-spacing="1">COORDINATION QUALITY = COGNITIVE QUALITY</text>
+    </svg>
+    <div style="font-size: 6px; color: #BBB; letter-spacing: 1px; text-transform: uppercase; margin-top: 2mm;">FIG. 8 &mdash; COGNITION DISTRIBUTED ACROSS SYSTEMS</div>
+  </div>
+
+  <div class="page-number">13</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     COLOPHON
+     ══════════════════════════════════════════════════ -->
+<div class="page" id="colophon">
+  <div class="page-label">lens a</div>
+
+  <div class="colophon">
+    <div class="colophon-title">colophon</div>
+    <div class="colophon-body">
+      Lens A &mdash; 인지과학<br>
+      mcp-memory는 인간 인지의 어떤 메커니즘을 구현하고 있는가
+    </div>
+    <div class="colophon-rule"></div>
+    <div class="colophon-body">
+      Part 05 of 09 &middot; mcp-memory System Analysis<br>
+      Paul Park &times; Claude &middot; 2026-03-28
+    </div>
+    <div class="colophon-rule"></div>
+    <div class="colophon-body">
+      Typeset in Inter + Noto Serif KR<br>
+      247 &times; 340 mm &middot; El Croquis design system v2.0
+    </div>
+  </div>
+
+  <div class="page-number">14</div>
+</div>
+
+</body>
+</html>

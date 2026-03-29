@@ -1,5 +1,12 @@
 # mcp-memory CHANGELOG
 
+## 2026-03-29 — El Croquis PDF 시스템
+- 9-Lens 분석 보고서 10개 El Croquis 스타일 HTML/PDF 제작
+- Sonnet 스타일 커버 (검정선/빨간선, 39px 타이틀, 위계 통일)
+- Alpha: 10개 SVG 다이어그램 직접 삽입, WYSIWYG contenteditable
+- 9개 _diag 버전: Codex gpt-5.4 xhigh 병렬 생성 (문서별 6-8개 다이어그램)
+- 커버 에디터 (editor.html) + PDF 생성기 (gen.js via Puppeteer)
+
 ## v3.1.0-dev (2026-03-16) — 온톨로지 강화 + PDR
 
 ### PDR (Pipeline DONE Retrospective)

@@ -14,7 +14,7 @@ _Updated: 2026-03-16_
 - **Enrichment**: 3,696/3,696 (100%), Phase 1-6 완료
 - **Orphans**: 0/3,696 (0%)
 - **NDCG@5**: 0.249 (goldset 75개, K=30) — baseline
-- **Pipeline**: 02_interaction-capture_0316 DONE (PDR 스킬 + G6 gate)
+- **Pipeline**: 04_system-analysis_0328 — El Croquis PDF 10개 + 다이어그램 (진행 중)
 - **PDR**: /pdr 스킬 활성, G6 DONE gate 하드블록, 첫 실행 23건 저장
 
 ## Architecture

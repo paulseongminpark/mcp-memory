@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>Omega &mdash; 무엇이 달라져야 하는가</title>
+<link rel="stylesheet" href="el-croquis.css">
+<style>
+.quote-block {
+  border-left: none;
+  position: relative;
+}
+.quote-block::before {
+  content: '';
+  position: absolute;
+  left: calc(var(--quote-indent) - 4mm);
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--accent);
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════
+     COVER
+     ══════════════════════════════════════════════════ -->
+<div class="page" style="padding: 0;">
+  <div style="position: absolute; top: 15.5mm; left: 10mm; right: 20mm; height: 0.9px; background: var(--fg);"></div>
+  <div style="padding: 32mm 78mm 15mm 25mm;">
+    <div style="margin-top: 0; font-size: 7pt; font-weight: 300; letter-spacing: 3px; text-transform: uppercase; color: var(--fg-light);">
+      OMEGA &mdash; TRILOGY III OF III &middot; 삼부작의 세 번째
+    </div>
+    <div style="margin-top: 21mm; font-size: 39px; font-weight: 300; line-height: 1.25; color: var(--fg); max-width: 550px;">
+      자기개선 인지 엔진이<br>요구하는 새로운 <span style="color: var(--accent);">이론</span>
+    </div>
+    <div style="margin-top: 8mm; font-size: 13.5px; font-weight: 300; line-height: 1.8; color: var(--fg-mid); max-width: 340px;">
+      삼부작의 세 번째 &mdash; 발견에서 새로운 이론으로의 귀추적 제안
+    </div>
+  </div>
+  <div style="position: absolute; bottom: 171mm; left: 10mm; right: 20mm;">
+    <div style="width: 100%; height: 0.9px; background: var(--accent);"></div>
+    <div style="display: flex; justify-content: space-between; padding: 3mm 0 0 0;">
+      <span style="font-size: 7.5pt; font-weight: 300; letter-spacing: 2.5px; text-transform: uppercase; color: var(--fg-faint);">귀추 &middot; 이론 &middot; 자기개선 &middot; 인지 엔진 &middot; 11 제안</span>
+      <span style="font-size: 7.5pt; font-weight: 300; letter-spacing: 2px; color: var(--fg-faint);">2026</span>
+    </div>
+  </div>
+  <span class="page-number">1</span>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     SECTION OVERVIEW
+     ══════════════════════════════════════════════════ -->
+<div class="page" id="overview">
+  <div class="page-label">omega &mdash; overview</div>
+
+  <div class="section-header" style="margin-top:30mm;">
+    <span class="section-label">section overview</span>
+    <h2>11개 이론적 제안</h2>
+  </div>
+  <div class="accent-line" style="margin-bottom:10mm;"></div>
+
+  <div class="body-sans">
+    <p>Proposition 0 &mdash; 기존 이론은 어디서 끊기는가</p>
+    <p>Proposition 1 &mdash; 인지는 도구 사용이 아니라 공동 구성이다</p>
+    <p>Proposition 2 &mdash; 외부 기억은 기억이 아니라 사고의 골격이다</p>
+    <p>Proposition 3 &mdash; 온톨로지는 인식론적 도구다</p>
+    <p>Proposition 4 &mdash; 승격은 학습의 새로운 모델이다</p>
+    <p>Proposition 5 &mdash; 실패는 지식의 가장 순도 높은 형태다</p>
+    <p>Proposition 6 &mdash; Context는 제4의 컴퓨팅 자원이다</p>
+    <p>Proposition 7 &mdash; 프로토콜은 언어가 아니라 구조다</p>
+    <p>Proposition 8 &mdash; 자기참조 시스템은 불안정하지만 그래서 살아있다</p>
+    <p>Proposition 9 &mdash; 인간-AI 인지 아키텍처의 설계 원리 7가지</p>
+    <p>Proposition 10 &mdash; 내가 구조를 만들고, 구조가 나를 만든다</p>
+  </div>
+
+  <div class="page-number">02</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     PROPOSITION 00
+     ══════════════════════════════════════════════════ -->
+<div class="page" id="p00">
+  <div class="page-label">omega</div>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">proposition <span class="accent-num">00</span></span>
+    <h2>기존 이론은 어디서 끊기는가</h2>
+  </div>
+  <div class="accent-line" style="margin-bottom:8mm;"></div>
+
+  <div class="body-serif">
+    <p>Alpha에서 사용한 이론들 &mdash; 들뢰즈의 잠재성/현실화, CLS(상보적 학습 시스템), BCM 가소성, BFO/DOLCE &mdash; 은 각각 mcp-memory의 일부를 설명한다. 그러나 전부를 설명하는 이론은 하나도 없다.</p>
+
+    <p>들뢰즈는 승격과 역방향 흐름(현실화와 반-현실화)을 잘 포착한다. 그러나 들뢰즈의 철학에는 &ldquo;실패의 적극적 기록&rdquo;이라는 개념이 없다. 차이와 반복은 말하지만, 오류의 체계적 축적은 다루지 않는다.</p>
+
+    <p>CLS는 빠른 학습(해마)과 느린 통합(신피질)의 이중 구조를 잘 설명한다. Session injection과 ontology 승격이 이에 대응한다. 그러나 CLS는 자기교정 루프를 설명하지 않는다. 뇌의 기억 통합에 &ldquo;지난번에 이 패턴으로 틀렸으니 이번에는 이 패턴을 먼저 떠올린다&rdquo;는 메커니즘은 CLS 모델에 없다.</p>
+
+    <p>BCM은 승격의 게이트를 잘 설명한다. 활성화 빈도에 따라 시냅스 가중치가 변하는 모델. 그러나 BCM은 단일 시냅스 수준의 모델이고, &ldquo;경험 &rarr; 판단 &rarr; 원칙 &rarr; 세계관&rdquo;이라는 다층적 승격은 포착하지 못한다.</p>
+
+    <div class="quote-block">
+      <p>이 간극들은 기존 이론의 실패가 아니라, 이 시스템이 기존 이론의 적용 범위를 넘어선다는 뜻이다. 새로운 이론적 프레이밍이 필요하다.</p>
+    </div>
+  </div>
+
+  <div class="page-number">03</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     PROPOSITION 01  (long — spans 2 pages)
+     ══════════════════════════════════════════════════ -->
+<div class="page" id="p01a">
+  <div class="page-label">omega</div>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">proposition <span class="accent-num">01</span></span>
+    <h2>인지는 도구 사용이 아니라 공동 구성이다</h2>
+  </div>
+  <div class="accent-line" style="margin-bottom:8mm;"></div>
+
+  <div class="body-serif">
+    <p>기존 HCI(인간-컴퓨터 상호작용)와 HAI(인간-AI 상호작용) 프레임은 &ldquo;인간이 도구를 사용한다&rdquo;는 모델에 기반한다. 사용자가 의도를 갖고, 도구가 실행하고, 결과를 사용자가 평가한다. 주체는 항상 인간이다.</p>
+
+    <p>Beta의 발견들은 이 모델을 넘어선다. Decision 987개 중 상당수는 &ldquo;Paul이 결정한 것&rdquo;이 아니라 &ldquo;Paul과 Claude가 대화 속에서 함께 도달한 것&rdquo;이다. Phase v3의 Diagnose 단계에서 Claude가 문제를 구조화하고, Paul이 선택지를 좁히고, Claude가 트레이드오프를 분석하고, Paul이 최종 결정한다. 판단의 주체가 명확하지 않은 순간들이 있다.</p>
+
+    <p>foundation/(philosophy + principles + workflow)를 매 프로젝트마다 쓴다는 것 자체가 이 공동 구성의 증거다. 이건 AI에게 판단의 전제를 공유하는 행위 &mdash; &ldquo;나는 이런 가치로 판단하니, 너도 이 가치를 전제하고 판단해라.&rdquo; 도구에게는 가치를 공유하지 않는다. 가치를 공유하는 대상은 협력자다.</p>
+  </div>
+
+  <div class="page-number">04</div>
+</div>
+
+<div class="page" id="p01b">
+  <div class="page-label">omega</div>
+
+  <div class="body-serif">
+    <p>Suchman의 situated action은 인간 행동이 계획보다 상황에 의해 결정된다고 봤고, Nardi의 activity theory는 도구가 활동을 매개한다고 봤다. 이들은 도구-사용자의 이분법은 유지하면서 상호작용의 복잡성을 인정했다. 인지적 공동 구성은 한 발 더 나간다 &mdash; situated action은 상황이 행동을 형성한다고 보지만 행동의 주체는 여전히 인간이다. 인지적 공동 구성에서는 판단의 구조 자체가 인간과 AI의 상호작용에서 창발한다 &mdash; 어느 쪽도 단독으로 도달하지 못했을 판단이 상호작용에서 나온다.</p>
+
+    <div class="quote-block">
+      <p>Human-AI 상호작용을 &ldquo;도구 사용(tool use)&rdquo;이 아니라 &ldquo;인지적 공동 구성(cognitive co-construction)&rdquo;으로 재프레이밍해야 한다.</p>
+    </div>
+  </div>
+
+  <div class="page-number">05</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     PROPOSITION 02  (long — spans 2 pages)
+     ══════════════════════════════════════════════════ -->
+<div class="page" id="p02a">
+  <div class="page-label">omega</div>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">proposition <span class="accent-num">02</span></span>
+    <h2>외부 기억은 기억이 아니라 사고의 골격이다</h2>
+  </div>
+  <div class="accent-line" style="margin-bottom:8mm;"></div>
+
+  <div class="body-serif">
+    <p>Clark &amp; Chalmers의 확장된 마음(Extended Mind, 1998) 이론은 인지가 두개골 안에 갇혀있지 않다고 주장한다. 노트북에 적어둔 정보도 기억의 일부다 &mdash; 기능적으로 동일한 역할을 하기 때문이다.</p>
+
+    <p>mcp-memory의 경험은 이 이론을 넘어선다. 온톨로지에 저장된 것은 &ldquo;기억&rdquo;이 아니다. Decision(판단 구조), Principle(행동 규칙), Lens(해석 렌즈), Correction(자기교정 규칙) &mdash; 이건 &ldquo;내가 뭘 알고 있는가&rdquo;가 아니라 &ldquo;내가 어떻게 생각하는가&rdquo;의 외부화다.</p>
+
+    <p>WIM 7렌즈가 세션에 주입될 때, 이건 기억을 떠올리는 게 아니다. 사고의 구조를 설치하는 것이다. &ldquo;이 뉴스를 시스템 임팩트 관점에서 봐라&rdquo; &mdash; 이건 과거의 기억이 아니라 현재의 인지 틀이다.</p>
+  </div>
+
+  <div class="page-number">06</div>
+</div>
+
+<div class="page" id="p02b">
+  <div class="page-label">omega</div>
+
+  <div class="body-serif">
+    <p>Adams &amp; Aizawa는 coupling-constitution fallacy를 지적한다 &mdash; 노트북과 뇌가 인과적으로 연결(coupled)되어 있다고 해서, 노트북이 인지를 구성(constitute)하는 것은 아니다. mcp-memory가 coupling을 넘어서는 이유: 전통적 노트북은 수동적 저장소 &mdash; 적어두고 찾아보는 것(인과적 coupling). mcp-memory는 세션에 자동 주입되어 AI의 판단 전제를 형성하고(능동적 참여), 판단의 결과가 다시 시스템을 수정한다(쌍방향 구성). Correction이 recall 최우선으로 주입되어 사고의 방향을 바꾸는 것은 coupling이 아니라 constitution에 가깝다. 그러나 이 구분은 논쟁적이며, 최종 판단은 유보한다.</p>
+
+    <div class="quote-block">
+      <p>Extended Mind를 Extended Cognition으로 재정의해야 한다. 외부화되는 것은 기억(content)이 아니라 인지 구조(architecture)다.</p>
+    </div>
+  </div>
+
+  <div class="page-number">07</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     PROPOSITION 03
+     ══════════════════════════════════════════════════ -->
+<div class="page" id="p03">
+  <div class="page-label">omega</div>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">proposition <span class="accent-num">03</span></span>
+    <h2>온톨로지는 인식론적 도구다</h2>
+  </div>
+  <div class="accent-line" style="margin-bottom:8mm;"></div>
+
+  <div class="body-serif">
+    <p>전통 온톨로지(BFO, DOLCE)는 존재론적이다 &mdash; &ldquo;무엇이 존재하는가&rdquo;를 분류한다. Entity, Process, Quality, Disposition 같은 범주로 세계를 나눈다.</p>
+
+    <p>mcp-memory의 온톨로지는 다르다. L4(Belief, Lens, Mental Model)과 L5(Axiom, Value, Wonder, Aporia)의 존재가 핵심 단서다. Belief는 &ldquo;무엇이 존재하는가&rdquo;가 아니라 &ldquo;무엇을 믿는가&rdquo;이고, Lens는 &ldquo;무엇이 있는가&rdquo;가 아니라 &ldquo;어떻게 보는가&rdquo;이며, Aporia는 &ldquo;해결 가능한 문제&rdquo;가 아니라 &ldquo;해결 불가능하지만 사라지지 않는 질문&rdquo;이다.</p>
+
+    <div class="quote-block">
+      <p>&ldquo;무엇이 존재하는가&rdquo;가 아니라 &ldquo;어떻게 알 수 있는가&rdquo;를 구조화하는 것이다. 존재론이 인식론의 도구가 된다.</p>
+    </div>
+
+    <p>전통 철학에서는 이것이 범주 오류(category mistake)다. 존재론과 인식론은 다른 탐구다. 그러나 실천적으로는 작동한다 &mdash; Lens 타입이 실제로 관찰의 해석을 바꾸기 때문이다.</p>
+
+    <p>제안: 개인 인지 시스템을 위한 온톨로지는 존재론적이어서는 안 된다. 인식론적 온톨로지(epistemological ontology) &mdash; 앎의 방식을 구조화하는 온톨로지 &mdash; 가 필요하다.</p>
+  </div>
+
+  <div class="page-number">08</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     PROPOSITION 04  (long — spans 2 pages)
+     ══════════════════════════════════════════════════ -->
+<div class="page" id="p04a">
+  <div class="page-label">omega</div>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">proposition <span class="accent-num">04</span></span>
+    <h2>승격은 학습의 새로운 모델이다</h2>
+  </div>
+  <div class="accent-line" style="margin-bottom:8mm;"></div>
+
+  <div class="body-serif">
+    <p>기존 학습 이론: 행동주의(반복과 강화), 구성주의(경험의 능동적 구성), 연결주의(신경망의 가중치 조정). 어느 것도 mcp-memory의 승격 메커니즘을 정확히 포착하지 못한다.</p>
+
+    <p>Observation &rarr; Pattern &rarr; Principle의 경로는 반복이 아니다 &mdash; 같은 것을 되풀이하는 게 아니라 다른 것에서 같은 구조를 발견한다. 구성이 아니다 &mdash; 개인이 능동적으로 만드는 게 아니라 데이터에서 구조가 드러난다. 연결이 아니다 &mdash; 가중치가 조정되는 게 아니라 질적으로 다른 레이어로 이동한다.</p>
+
+    <div class="quote-block">
+      <p>가장 가까운 비유는 증류(distillation)다. 다량의 저순도 경험에서 소량의 고순도 원칙을 추출하는 과정.</p>
+    </div>
+
+    <p>화학적 증류에서 순도가 높아지면 부피가 줄어들듯, 인지적 증류에서도 노드 수가 줄어든다(L1: 1,227+ &rarr; L2: 1,096 &rarr; L3+: 360+).</p>
+  </div>
+
+  <div class="page-number">09</div>
+</div>
+
+<div class="page" id="p04b">
+  <div class="page-label">omega</div>
+
+  <div class="body-serif">
+    <p>핵심적 차이: 이 증류는 완전 자동이 아니다. human-in-the-loop &mdash; Paul이 &ldquo;이 패턴은 정말 반복되는가?&rdquo;를 판단한다. 이건 기존 학습 이론 어디에도 정확히 대응하지 않는 모델이다.</p>
+
+    <p>Vygotsky의 근접발달영역(ZPD)과도 비교할 수 있다. ZPD는 &ldquo;혼자서는 못하지만 도움받으면 할 수 있는 영역&rdquo;이고, 비계(scaffolding)는 그 영역에서의 지원 구조다. mcp-memory의 human-in-the-loop 승격은 비계와 비슷해 보인다. 그러나 핵심적 차이가 있다. ZPD의 비계는 학습자가 독립적으로 수행할 수 있을 때 제거된다. 인지적 증류의 시스템은 제거되지 않는다 &mdash; 영속적 인프라다. 더 중요한 차이: ZPD는 &ldquo;할 수 없었던 것을 할 수 있게 되는&rdquo; 과정(능력의 확장). 인지적 증류는 &ldquo;많은 경험에서 적은 원칙을 추출하는&rdquo; 과정(지식의 압축). 방향이 다르다.</p>
+
+    <div class="quote-block">
+      <p>인지적 증류(cognitive distillation)를 human-AI 협업 환경에서의 학습 모델로 정의한다.</p>
+    </div>
+  </div>
+
+  <div class="page-number">10</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     PROPOSITION 05  (long — spans 2 pages)
+     ══════════════════════════════════════════════════ -->
+<div class="page" id="p05a">
+  <div class="page-label">omega</div>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">proposition <span class="accent-num">05</span></span>
+    <h2>실패는 지식의 가장 순도 높은 형태다</h2>
+  </div>
+  <div class="accent-line" style="margin-bottom:8mm;"></div>
+
+  <div class="body-serif">
+    <p>Failure 141개가 시스템에서 하는 역할. Correction이 recall 최우선이라는 설계 결정. 이것이 함의하는 것:</p>
+
+    <div class="quote-block">
+      <p>&ldquo;틀렸던 것을 기억하는 것이 맞았던 것을 기억하는 것보다 더 가치 있다.&rdquo;</p>
+    </div>
+
+    <p>포퍼의 반증주의와 공명한다. 과학은 이론을 확증하는 것이 아니라 반증하려는 시도를 통해 진보한다. 그러나 포퍼는 이것을 과학적 방법론으로만 봤다. mcp-memory는 이것을 개인 인지의 운영 원칙으로 구현한다.</p>
+
+    <p>왜 실패가 더 순도 높은 지식인가? 성공은 다양한 원인으로 발생한다 &mdash; 실력, 운, 환경, 타이밍. 성공에서 원인을 분리하기 어렵다. 반면 실패는 원인이 선명하다. &ldquo;문제 정의를 생략해서 구현 후 재작업했다&rdquo;(#5369) &mdash; 이건 원인과 결과가 명확하다. 이 명확성이 높은 순도를 만든다.</p>
+  </div>
+
+  <div class="page-number">11</div>
+</div>
+
+<div class="page" id="p05b">
+  <div class="page-label">omega</div>
+
+  <div class="body-serif">
+    <p>&ldquo;실패는 원인이 선명하다&rdquo;는 주장이 과도할 수 있다. 실패도 다중 원인을 가질 수 있고, 사후 합리화(hindsight bias)의 위험이 있다. 이 시스템이 귀인 오류를 방지하는 메커니즘: (1) Failure 노드는 사건 직후 기록된다 &mdash; 사후 합리화 시간을 줄인다. (2) caused_by relation으로 원인을 명시적으로 연결해야 한다 &mdash; 모호한 귀인을 구조적으로 방지한다. (3) 반복되는 Failure에서 Pattern을 추출할 때, 단일 사건이 아니라 복수 사건의 공통 구조를 찾는다 &mdash; 단일 원인 착각을 완화한다. 완전한 방어는 아니지만, 기록 없이 기억에만 의존하는 것보다 구조적으로 낫다.</p>
+
+    <div class="quote-block">
+      <p>지식 관리 시스템에서 실패를 1급 시민(first-class citizen)으로 대우해야 한다. 성공 기록보다 실패 기록이 더 높은 recall 우선순위를 가져야 한다.</p>
+    </div>
+  </div>
+
+  <div class="page-number">12</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     PROPOSITION 06
+     ══════════════════════════════════════════════════ -->
+<div class="page" id="p06">
+  <div class="page-label">omega</div>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">proposition <span class="accent-num">06</span></span>
+    <h2>Context는 제4의 컴퓨팅 자원이다</h2>
+  </div>
+  <div class="accent-line" style="margin-bottom:8mm;"></div>
+
+  <div class="body-serif">
+    <p>전통적 컴퓨팅 자원: CPU(연산), Memory(임시 저장), Storage(영구 저장). LLM 시대에 네 번째 자원이 등장한다: Context(맥락).</p>
+
+    <p>Context as Currency 원칙은 컨텍스트가 기존 자원과 동급의 관리 대상이라는 주장이다. CPU 시간을 최적화하듯, 컨텍스트 토큰을 최적화해야 한다. 메모리 누수를 막듯, 컨텍스트 오염(Context Rot)을 막아야 한다. 스토리지를 계층화하듯(SSD/HDD/Archive), 컨텍스트도 계층화해야 한다(L2+ 우선 / Signal 보조 / Observation 현장성).</p>
+
+    <p>이건 프롬프트 최적화가 아니다. 자원 관리의 새로운 분야다. CPU에 운영체제의 스케줄러가 있듯, Context에는 injection policy가 있다. Memory에 garbage collector가 있듯, Context에는 auto-compact가 있다.</p>
+
+    <p>Anthropic, LangChain 등에서 이미 &ldquo;Context Engineering&rdquo;이 논의된다. 이 제안의 고유 기여는 프레이밍 자체가 아니라 자원 관리 패러다임으로의 격상이다. 기존 Context Engineering 논의는 주로 &ldquo;프롬프트를 잘 구성하는 방법&rdquo;에 초점. 이 제안은 컨텍스트를 CPU/Memory/Storage와 동급의 자원으로 보고, 스케줄링(injection policy), GC(auto-compact), 계층화(L2+ 우선)를 적용한다.</p>
+
+    <div class="quote-block">
+      <p>Context Engineering을 자원 관리 패러다임으로 정립한다. 프롬프트 엔지니어링(어떻게 말하는가)의 상위 개념으로, 컨텍스트 엔지니어링(무엇을 의식에 올려놓는가)을 정의한다.</p>
+    </div>
+  </div>
+
+  <div class="page-number">13</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     PROPOSITION 07
+     ══════════════════════════════════════════════════ -->
+<div class="page" id="p07">
+  <div class="page-label">omega</div>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">proposition <span class="accent-num">07</span></span>
+    <h2>프로토콜은 언어가 아니라 구조다</h2>
+  </div>
+  <div class="accent-line" style="margin-bottom:8mm;"></div>
+
+  <div class="body-serif">
+    <p>프롬프트 엔지니어링은 &ldquo;어떻게 말하면 AI가 잘 이해하는가&rdquo;에 집중한다. Beta의 발견은 다르다: 프롬프트의 단어보다 컨텍스트의 구조가 결정적이다.</p>
+
+    <p>Phase v3(Diagnose/Architect/Build/Harden), foundation 3문서, PDR &mdash; 이건 전부 &ldquo;잘 말하기&rdquo;가 아니라 &ldquo;판단의 전제를 구조화하기&rdquo;다. Claude에게 &ldquo;꼼꼼하게 해줘&rdquo;라고 말하는 것(프롬프트)과, Phase v3의 Diagnose 단계에서 문제 정의 템플릿을 주입하는 것(프로토콜)은 효과가 다르다. 전자는 희망이고, 후자는 강제다.</p>
+
+    <p>화용론이 &ldquo;발화 맥락이 의미를 바꾼다&rdquo;고 말한다면, 이건 그 맥락 자체를 설계하는 행위다. 화용론을 넘어서 인지적 프로토콜 디자인(cognitive protocol design)이라는 새로운 영역이 된다.</p>
+
+    <div class="quote-block">
+      <p>AI 협업의 품질은 프롬프트가 아니라 프로토콜에 의해 결정된다. 프로토콜은 언어적이 아니라 구조적이다.</p>
+    </div>
+  </div>
+
+  <div class="page-number">14</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     PROPOSITION 08
+     ══════════════════════════════════════════════════ -->
+<div class="page" id="p08">
+  <div class="page-label">omega</div>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">proposition <span class="accent-num">08</span></span>
+    <h2>자기참조 시스템은 불안정하지만 그래서 살아있다</h2>
+  </div>
+  <div class="accent-line" style="margin-bottom:8mm;"></div>
+
+  <div class="body-serif">
+    <p>mcp-memory는 자기참조적이다. 시스템이 자기 규칙을 저장하고(Principle), 그 규칙을 참조해서 새 규칙을 만들고(승격), 규칙이 틀렸으면 규칙을 수정한다(Correction). 논리적으로 이것은 불안정하다 &mdash; 괴델의 불완전성 정리가 비유적으로 환기하듯, 자기 자신을 완전히 기술하는 시스템은 일관성을 보장하기 어렵다. 괴델의 정리 자체는 충분히 강한 형식 체계에 적용되며 mcp-memory는 형식 체계가 아니므로 엄밀한 적용은 아니다. 더 적합한 프레임은 루만의 자기생산이다.</p>
+
+    <p>그러나 생물학에서는 이 자기참조가 생명의 조건이다. 루만의 자기생산(autopoiesis) &mdash; 시스템이 자기 자신의 구성 요소를 생산하는 것. 세포가 자기 막을 만들고, 그 막이 세포 내부의 화학 반응을 가능하게 하고, 그 화학 반응이 다시 막을 만드는 순환.</p>
+
+    <p>schema의 주석-본문 불일치, 설계 드리프트, 타입의 사후 추가 &mdash; 이 &ldquo;불안정&rdquo;은 괴델적 의미에서의 비일관성이 아니라, 루만적 의미에서의 자기생산이다. 시스템이 자기 자신을 끊임없이 재구성하고 있다.</p>
+
+    <div class="quote-block">
+      <p>인지 시스템 설계에서 완전성보다 진화 가능성을 우선해야 한다. 완벽한 정적 설계보다 불완전하지만 자기수정 가능한 동적 설계가 낫다.</p>
+    </div>
+  </div>
+
+  <div class="page-number">15</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     PROPOSITION 09
+     ══════════════════════════════════════════════════ -->
+<div class="page" id="p09">
+  <div class="page-label">omega</div>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">proposition <span class="accent-num">09</span></span>
+    <h2>인간-AI 인지 아키텍처의 설계 원리 7가지</h2>
+  </div>
+  <div class="accent-line" style="margin-bottom:8mm;"></div>
+
+  <div class="body-serif">
+    <p>Alpha의 논증과 Beta의 발견에서 추출한 설계 원리를 명시적으로 정리한다.</p>
+
+    <p>1. 구조가 먼저다. 내용을 많이 저장하는 것보다, 다시 꺼낼 수 있는 구조로 넣는 것이 우선이다.</p>
+
+    <p>2. 승격은 저장보다 중요하다. 경험을 쌓는 것보다, 경험에서 원칙을 추출하는 것이 시스템의 핵심 가치다.</p>
+
+    <p>3. 역방향 흐름이 있어야 산다. 상위 추상화가 하위 경험의 해석을 바꾸는 순환이 없으면 정적 피라미드에 불과하다.</p>
+
+    <p>4. 실패는 1급 시민이다. 성공보다 실패가 더 순도 높은 지식이다. Correction은 recall 최우선이어야 한다.</p>
+
+    <p>5. 컨텍스트는 화폐다. 모든 토큰에 비용이 있다. 비용 이상의 가치를 내지 않는 토큰은 제거한다.</p>
+
+    <p>6. 프로토콜은 언어가 아니라 구조다. AI 협업의 품질은 프롬프트가 아니라 판단의 전제를 구조화하는 프로토콜에 달렸다.</p>
+
+    <p>7. 완전성보다 진화 가능성이다. 빈 타입 자리를 예비하되, 채우는 건 경험에 맡긴다. schema의 Unclassified가 이 원칙의 구현이다.</p>
+  </div>
+
+  <div class="page-number">16</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     PROPOSITION 10  (long — spans 2 pages)
+     ══════════════════════════════════════════════════ -->
+<div class="page" id="p10a">
+  <div class="page-label">omega</div>
+
+  <div class="section-sep"></div>
+  <div class="section-header">
+    <span class="section-label">proposition <span class="accent-num">10</span></span>
+    <h2>내가 구조를 만들고, 구조가 나를 만든다</h2>
+  </div>
+  <div class="accent-line" style="margin-bottom:8mm;"></div>
+
+  <div class="body-serif">
+    <p>이 문장은 포트폴리오의 닫는 문장으로 쓰였다. 여기서는 이것이 왜 수사가 아니라 이 삼부작 전체의 정확한 요약인지를 논증한다.</p>
+
+    <p>&ldquo;내가 구조를 만든다&rdquo; &mdash; Alpha. 이론적 필연성에서 출발해 L0-L5 계층, 8개 relation 군, 승격 경로, 세션 주입 정책을 설계했다.</p>
+
+    <p>&ldquo;구조가 나를 만든다&rdquo; &mdash; Beta. 시스템을 운영하면서 판단의 분포가 보였고(Decision 987), 실패의 패턴이 보였고(Failure 141), 사고의 편향이 측정 가능해졌다. 시스템이 사용자를 비추는 거울이 되었다.</p>
+
+    <p>그리고 Omega &mdash; 이 거울에서 새로운 이론이 나온다. 인지적 공동 구성, 인식론적 온톨로지, 인지적 증류, Context as 자원. 이 이론들은 시스템을 만들기 전에는 존재하지 않았다. 구현이 이해를 바꿨다.</p>
+  </div>
+
+  <div class="page-number">17</div>
+</div>
+
+<div class="page" id="p10b">
+  <div class="page-label">omega</div>
+
+  <div class="body-serif">
+    <p>Alpha &rarr; Beta &rarr; Omega. 이론 &rarr; 실천 &rarr; 새로운 이론. 이 삼부작 자체가 승격 메커니즘과 동형이다. L0(관찰과 이론) &rarr; L2(패턴과 발견) &rarr; L4(세계관과 새 이론). 그리고 Omega의 마지막 Proposition은 다시 Alpha의 Thesis 0으로 돌아간다 &mdash; 새로운 이론이 새로운 실천을 낳고, 새로운 실천이 새로운 발견을 낳는다.</p>
+
+    <div class="quote-block">
+      <p>오메가는 끝이 아니다. 다음 알파의 시작이다.</p>
+    </div>
+
+    <p>한계도 있다. 첫째, 이 제안들은 &ldquo;새로운 이론&rdquo;이라기보다 기존 이론의 재조합에 가깝다는 비판이 가능하다 &mdash; Extended Cognition은 Clark의 확장, 인지적 증류는 Vygotsky의 변형, Context as 자원은 기존 CE 논의의 격상. 이 비판에 대한 응답: 재조합 자체가 기여다. 이 개념들을 하나의 구현 안에서 통합한 것이 새로운 점이다. 둘째, N=1 시스템에서 추출한 보편 원리의 타당성이 검증되지 않았다. 다른 사용자가 같은 시스템을 쓸 때 같은 패턴이 나타나는지는 미확인이다. 셋째, 역방향 흐름이 확증 편향을 강화할 위험이 있다.</p>
+  </div>
+
+  <div class="page-number">18</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     COLOPHON
+     ══════════════════════════════════════════════════ -->
+<div class="page" id="colophon">
+  <div class="page-label">omega &mdash; colophon</div>
+
+  <div class="colophon">
+    <div class="colophon-title">colophon</div>
+    <div class="colophon-body">
+      Omega &mdash; 무엇이 달라져야 하는가<br>
+      mcp-memory System Analysis, Part III of III
+    </div>
+    <div class="colophon-rule"></div>
+    <div class="colophon-body">
+      Paul Park &times; Claude<br>
+      2026-03-28
+    </div>
+    <div class="colophon-rule"></div>
+    <div class="colophon-body">
+      Typeset in Inter, Noto Sans KR, and Noto Serif KR.<br>
+      Body 10.5pt / 16pt leading on 145mm measure.<br>
+      Page format 247 &times; 340mm.
+    </div>
+    <div class="colophon-rule"></div>
+    <div class="colophon-body">
+      El Croquis Design System &mdash; Digital PDF v2.0
+    </div>
+  </div>
+
+  <div class="page-number">19</div>
+</div>
+
+</body>
+</html>
