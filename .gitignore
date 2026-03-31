@@ -5,19 +5,18 @@ __pycache__/
 .venv/
 venv/
 
-# Data (DB, embeddings - too large for git)
-data/memory.db
-data/memory.db-shm
-data/memory.db-wal
-data/chroma/
-null
+# Data (DB, embeddings, reports, batches)
+data/
 
 # Environment
 .env
+.env.local
 
 # IDE
 .vscode/
 .idea/
+*.swp
+*.swo
 
 # OS
 .DS_Store
@@ -28,3 +27,27 @@ data/reports/token_log/
 
 # Backup
 data/backup/
+
+# Internal (pipeline, analysis, agent configs)
+0[0-9]_*/
+00_pending/
+.claude/
+.ctx/
+.impeccable.md
+AGENTS.md
+GEMINI.md
+STATE.md
+CHANGELOG.md
+cx-*.md
+
+# Test runtime
+tests/.runtime_*/
+tests/.scratch_*/
+
+# Misc internal
+docs/research/
+*.draft
+report-*.md
+task-contract-*.md
+memory.db
+null

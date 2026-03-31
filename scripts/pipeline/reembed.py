@@ -15,7 +15,8 @@ BATCH_SIZE = 100  # OpenAI embedding batch limit
 
 
 def build_embed_text(node: dict) -> str:
-    """노드에서 임베딩용 텍스트 생성. 타입 태그 포함."""
+    """노드에서 임베딩용 텍스트 생성. 타입 태그 + hints 포함."""
+    import json as _json
     parts = []
     # 타입 태그를 첫 줄에 추가
     node_type = node.get("type", "")
@@ -27,15 +28,28 @@ def build_embed_text(node: dict) -> str:
         # JSON array or comma-separated
         kc = node["key_concepts"]
         if kc.startswith("["):
-            import json
             try:
-                kc = ", ".join(json.loads(kc))
+                kc = ", ".join(_json.loads(kc))
             except Exception:
                 pass
         parts.append(kc)
     content = node.get("content", "")
     if content:
         parts.append(content[:200])
+    # retrieval_hints: related_queries + context_keys 추가
+    hints = node.get("retrieval_hints")
+    if hints:
+        try:
+            h = _json.loads(hints) if isinstance(hints, str) else hints
+            if isinstance(h, dict):
+                rq = h.get("related_queries", [])
+                ck = h.get("context_keys", [])
+                if rq:
+                    parts.append(", ".join(str(q) for q in rq[:5]))
+                if ck:
+                    parts.append(", ".join(str(k) for k in ck[:5]))
+        except Exception:
+            pass
     return "\n".join(parts)
 
 
@@ -50,7 +64,7 @@ def main():
     # 1. 모든 active 노드 로드
     with _db() as conn:
         rows = conn.execute("""
-            SELECT id, type, layer, content, summary, key_concepts, tags, project
+            SELECT id, type, layer, content, summary, key_concepts, tags, project, retrieval_hints
             FROM nodes WHERE status='active'
             ORDER BY id
         """).fetchall()

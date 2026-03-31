@@ -46,14 +46,15 @@ def swr_readiness(node_id: int) -> tuple[bool, float]:
             vec_hits = sum(1 for r in rows if '"vector"' in (r[0] or ""))
             fts_hits = sum(1 for r in rows if '"fts5"' in (r[0] or ""))
             total = vec_hits + fts_hits
-            vec_ratio = (vec_hits / total) if total > 0 else 0.0
+            # sources 데이터 없으면 neutral fallback (데이터 부재로 페널티 주지 않음)
+            vec_ratio = (vec_hits / total) if total > 0 else 0.5
         except Exception:
-            vec_ratio = 0.0  # recall_log 테이블 미존재 시 fallback
+            vec_ratio = 0.5  # recall_log 테이블 미존재 시 neutral fallback
 
         # cross_ratio: 이웃 노드의 project 다양성
         edge_rows = conn.execute(
             """SELECT source_id, target_id FROM edges
-               WHERE source_id=? OR target_id=?""",
+               WHERE (source_id=? OR target_id=?) AND status='active'""",
             (node_id, node_id),
         ).fetchall()
         if not edge_rows:

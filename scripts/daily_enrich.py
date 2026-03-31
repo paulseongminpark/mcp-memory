@@ -77,7 +77,7 @@ def phase1(conn: sqlite3.Connection, ne: NodeEnricher,
         WHERE summary IS NOT NULL AND key_concepts IS NOT NULL
           AND enrichment_status NOT LIKE '%"E7"%'
           AND status='active'
-        LIMIT 100
+        LIMIT 500
     """).fetchall()
     e7_ids = [r[0] for r in rows]
     if e7_ids and not budget.budget_exhausted("small"):
