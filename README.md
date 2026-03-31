@@ -35,14 +35,6 @@ MCP Server (server.py)
 | `analyze_signals` | Pattern detection across recent observations |
 | `inspect` | Deep-dive into node relationships |
 
-## Setup
-
-```bash
-pip install -r requirements.txt
-cp .env.example .env  # Add your API keys
-python server.py
-```
-
 ## Stack
 
 Python · SQLite · FTS5 · ChromaDB · NetworkX · MCP Protocol
