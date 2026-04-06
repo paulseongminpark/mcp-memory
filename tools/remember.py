@@ -248,6 +248,8 @@ def remember(
     confidence: float = 1.0,
     source: str = "claude",
     retrieval_hints: dict | None = None,
+    parent_id: int | None = None,
+    parent_relation: str = "contains",
 ) -> dict:
     """기억을 저장하고 자동으로 관계를 생성한다.
 
@@ -261,6 +263,8 @@ def remember(
         metadata: 추가 메타데이터
         confidence: 확신도 0.0-1.0
         source: 생성 주체
+        parent_id: 부모 노드 ID — 지정 시 parent→child edge 자동 생성
+        parent_relation: 부모-자식 관계 타입 (default: contains)
 
     Returns:
         {"node_id", "type", "project", "auto_edges", "message"}
@@ -289,22 +293,50 @@ def remember(
 
     node_id = store_result["node_id"]
 
+    # 2-b. parent_id 명시적 edge 생성 (ChromaDB 무관, 항상 실행)
+    parent_edge = None
+    if parent_id is not None:
+        try:
+            edge_id = sqlite_store.insert_edge(
+                source_id=parent_id,
+                target_id=node_id,
+                relation=parent_relation,
+                strength=0.85,
+            )
+            parent_edge = {
+                "edge_id": edge_id,
+                "source_id": parent_id,
+                "target_id": node_id,
+                "relation": parent_relation,
+            }
+        except Exception:
+            pass  # parent edge 실패가 저장을 막으면 안됨
+
     # 3. ChromaDB 실패 시 edge 생성 스킵
     if "warning" in store_result:
-        return {
+        result = {
             "node_id": node_id,
             "type": cls.type,
             "project": project,
-            "auto_edges": [],
+            "auto_edges": [parent_edge] if parent_edge else [],
             "warning": store_result["warning"],
             "message": f"Stored as node #{node_id} (embedding failed)",
         }
+        return result
 
     # 4. 자동 edge 생성 (방화벽 F3 적용)
     auto_edges = link(
         node_id, content,
         type=cls.type, layer=cls.layer, project=project,
     )
+    if parent_edge:
+        auto_edges.insert(0, parent_edge)
+
+    # wiki-compiler dirty flag
+    try:
+        sqlite_store.mark_dirty(project, node_id)
+    except Exception:
+        pass  # wiki-compiler 없어도 remember()는 동작해야 함
 
     return {
         "node_id": node_id,

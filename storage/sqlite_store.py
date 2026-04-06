@@ -354,6 +354,64 @@ def init_db() -> None:
         except Exception:
             pass
 
+    # --- dirty_topics (wiki-compiler 연동) ---
+    with _db() as conn:
+        try:
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS dirty_topics (
+                    topic TEXT PRIMARY KEY,
+                    dirty_since TEXT NOT NULL,
+                    node_ids TEXT NOT NULL DEFAULT '[]'
+                )
+            """)
+            conn.commit()
+        except Exception:
+            pass
+
+
+def mark_dirty(project: str, node_id: int) -> None:
+    """wiki-compiler용: 토픽을 dirty로 마킹한다."""
+    import json
+    topic = project.strip().lower() if project else "uncategorized"
+    with _db() as conn:
+        existing = conn.execute(
+            "SELECT node_ids FROM dirty_topics WHERE topic = ?", (topic,)
+        ).fetchone()
+        if existing:
+            ids = json.loads(existing[0])
+            if node_id not in ids:
+                ids.append(node_id)
+            conn.execute(
+                "UPDATE dirty_topics SET node_ids = ?, dirty_since = datetime('now') WHERE topic = ?",
+                (json.dumps(ids), topic),
+            )
+        else:
+            conn.execute(
+                "INSERT INTO dirty_topics (topic, dirty_since, node_ids) VALUES (?, datetime('now'), ?)",
+                (topic, json.dumps([node_id])),
+            )
+        conn.commit()
+
+
+def get_dirty_topics() -> list[dict]:
+    """dirty 토픽 목록을 반환한다."""
+    import json
+    with _db() as conn:
+        rows = conn.execute("SELECT topic, dirty_since, node_ids FROM dirty_topics").fetchall()
+    return [{"topic": r[0], "dirty_since": r[1], "node_ids": json.loads(r[2])} for r in rows]
+
+
+def clear_dirty_topics(topics: list[str] | None = None) -> int:
+    """dirty 토픽을 클리어한다. topics=None이면 전부."""
+    with _db() as conn:
+        if topics:
+            placeholders = ",".join("?" for _ in topics)
+            conn.execute(f"DELETE FROM dirty_topics WHERE topic IN ({placeholders})", topics)
+        else:
+            conn.execute("DELETE FROM dirty_topics")
+        conn.commit()
+        return conn.total_changes
+
 
 def insert_node(
     type: str,
