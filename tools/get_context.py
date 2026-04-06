@@ -28,8 +28,15 @@ def get_context(project: str = "") -> dict:
     # 4. 최근 실패/교훈
     failures = sqlite_store.get_recent_nodes(project=project, limit=2, type_filter="Failure")
 
-    def _fmt(nodes: list[dict]) -> list[str]:
-        return [f"[#{n['id']}] {n['content'][:100]}" for n in nodes]
+    def _fmt(nodes: list[dict]) -> list[dict]:
+        """v3.2: 품질 신호 포함 포맷."""
+        return [{
+            "id": n["id"],
+            "content": n["content"][:120],
+            "layer": n.get("layer", 1),
+            "confidence": round(n.get("confidence") or 0.5, 2),
+            "source": n.get("source", ""),
+        } for n in nodes]
 
     sections = {}
     if decisions:
@@ -40,6 +47,21 @@ def get_context(project: str = "") -> dict:
         sections["recent_insights"] = _fmt(insights)
     if failures:
         sections["recent_failures"] = _fmt(failures)
+
+    # v3.2: 최근 세션 요약 (세션 연속성)
+    try:
+        with sqlite_store._db() as conn:
+            sess = conn.execute(
+                """SELECT session_id, summary, active_pipeline
+                   FROM sessions ORDER BY id DESC LIMIT 1"""
+            ).fetchone()
+            if sess and sess[1]:
+                sections["last_session"] = {
+                    "id": sess[0], "summary": sess[1][:200],
+                    "pipeline": sess[2] or "",
+                }
+    except Exception:
+        pass
 
     if not sections:
         return {"context": "No memories stored yet.", "project": project}

@@ -44,6 +44,7 @@ insert_session_event = None
 query_session_events = None
 resolve_session_event = None
 _export_ontology = None
+_flag_node = None
 
 
 def _init_worker():
@@ -55,7 +56,7 @@ def _init_worker():
     global _promote_node, _get_becoming, _inspect_node
     global _ingest_vault, _ontology_review, _generate_dashboard
     global insert_session_event, query_session_events
-    global resolve_session_event, _export_ontology
+    global resolve_session_event, _export_ontology, _flag_node
 
     from config import OPENAI_API_KEY, PROMOTE_LAYER as _PL
     PROMOTE_LAYER = _PL
@@ -95,6 +96,7 @@ def _init_worker():
     from ingestion.obsidian import ingest_vault as iv
     from scripts.ontology_review import run_review as orv
     from scripts.dashboard import generate_dashboard as gd
+    from tools.flag_node import flag_node as fn
 
     _remember = r
     _recall = rc
@@ -109,6 +111,7 @@ def _init_worker():
     _ingest_vault = iv
     _ontology_review = orv
     _generate_dashboard = gd
+    _flag_node = fn
 
     # DB 초기화 + 스키마 동기화
     init_db()
@@ -138,6 +141,8 @@ def remember(
     source: str = "claude",
     actor: str = "system",
     retrieval_hints: dict | None = None,
+    parent_id: int | None = None,
+    parent_relation: str = "contains",
 ) -> dict:
     """Store a memory node with automatic embedding and relationship detection.
 
@@ -153,6 +158,8 @@ def remember(
         confidence: Confidence level 0.0-1.0 (default 1.0)
         source: Source of memory — claude, user, hook, obsidian (default claude)
         retrieval_hints: Retrieval context hints (when_needed, related_queries, context_keys)
+        parent_id: Parent node ID — creates parent→child edge automatically
+        parent_relation: Relation type for parent edge (default: contains)
     """
     _ready.wait()
     # ── [A-13 통합] 타입 검증 블록 ─────────────────────────────────────────
@@ -214,6 +221,8 @@ def remember(
         confidence=confidence,
         source=source,
         retrieval_hints=retrieval_hints,
+        parent_id=parent_id,
+        parent_relation=parent_relation,
     )
 
     # Deprecated 타입 사용 시 경고 추가
@@ -412,6 +421,26 @@ def get_becoming(
     """
     _ready.wait()
     return _get_becoming(domain=domain, top_k=top_k)
+
+
+@mcp.tool()
+def flag_node(
+    node_id: int,
+    reason: str,
+    action: str = "inaccurate",
+) -> dict:
+    """Flag a memory node as inaccurate, outdated, or irrelevant.
+
+    Creates a Correction node, lowers confidence, and links with contradicts edge.
+    Use this when recall returns wrong or misleading results.
+
+    Args:
+        node_id: The node ID to flag
+        reason: Why this node is wrong (brief explanation)
+        action: Flag type — "inaccurate" (factually wrong), "outdated" (no longer true), "irrelevant" (noise)
+    """
+    _ready.wait()
+    return _flag_node(node_id=node_id, reason=reason, action=action)
 
 
 @mcp.tool()

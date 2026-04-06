@@ -60,6 +60,11 @@ def recall(
     if not results:
         return {"results": [], "message": "No memories found."}
 
+    # v3.2: 최소 점수 필터 — 0.3 미만은 노이즈
+    results = [r for r in results if r.get("score", 0) >= 0.3]
+    if not results:
+        return {"results": [], "message": "No memories above score threshold."}
+
     # B-4: 패치 전환 (Marginal Value Theorem)
     # project 명시 시 전환 생략 (사용자 의도 존중)
     # top_k < 3 시 포화 판단 불가 → 생략
@@ -127,6 +132,11 @@ def recall(
             "tags": r["tags"],
             "score": round(r["score"], 3),
             "created_at": r["created_at"],
+            # v3.2: 품질 신호 — Claude가 신뢰도 판단 가능
+            "layer": r.get("layer", 1),
+            "confidence": round(r.get("confidence") or 0.5, 2),
+            "source": r.get("source", ""),
+            "quality": round(r.get("quality_score") or 0.0, 2),
             "context": context,
         })
 

@@ -21,6 +21,7 @@ from config import (
     TYPE_KEYWORDS, TYPE_CHANNEL_WEIGHT, TYPE_CHANNEL_WEIGHTS, MAX_TYPE_HINTS,
     COMPOSITE_WEIGHT_RRF, COMPOSITE_WEIGHT_DECAY, COMPOSITE_WEIGHT_IMPORTANCE,
     DECAY_LAMBDA, PROMOTED_MULTIPLIER, LAYER_IMPORTANCE,
+    SOURCE_BONUS, SOURCE_BONUS_DEFAULT,
 )
 from storage import sqlite_store, vector_store
 from graph.traversal import build_graph  # traverse 제거 — UCB로 교체
@@ -564,7 +565,10 @@ def hybrid_search(
         )
         tier = node.get("tier", 2)
         tier_bonus = {0: 0.15, 1: 0.05, 2: 0.0}.get(tier, 0.0)
-        node["_base_rrf"] = scores[node_id] + enrichment_bonus + tier_bonus
+        # v3.2: source 품질 가중치
+        src = (node.get("source") or "").split(":")[0]  # "obsidian:..." → "obsidian"
+        src_bonus = SOURCE_BONUS.get(src, SOURCE_BONUS_DEFAULT)
+        node["_base_rrf"] = scores[node_id] + enrichment_bonus + tier_bonus + src_bonus
         node["_sources"] = sorted(source_map.get(node_id, set()))
         candidates.append(node)
 

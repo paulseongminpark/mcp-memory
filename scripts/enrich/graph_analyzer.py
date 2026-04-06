@@ -774,7 +774,8 @@ class GraphAnalyzer:
                         strength=s["strength"],
                     )
                 results.append({"orphan_id": orphan["id"], "suggestions": suggestions})
-                self.stats["orphans_resolved"] += 1
+                if suggestions:
+                    self.stats["orphans_resolved"] += 1
             except BudgetExhausted:
                 break
             except Exception:
@@ -843,8 +844,8 @@ class GraphAnalyzer:
                         description=result["description"],
                         strength=result["confidence"],
                     )
+                    self.stats["contradictions_found"] += 1
                 results.append(result)
-                self.stats["contradictions_found"] += 1
             except BudgetExhausted:
                 break
             except Exception:
@@ -891,8 +892,8 @@ class GraphAnalyzer:
                             description=comp.get("role", ""),
                             strength=0.8,
                         )
+                    self.stats["assemblages_found"] += 1
                 results.append(result)
-                self.stats["assemblages_found"] += 1
             except BudgetExhausted:
                 break
             except Exception:
@@ -963,8 +964,8 @@ class GraphAnalyzer:
                         description=result["key_difference"],
                         strength=0.7,
                     )
+                    self.stats["merges_detected"] += 1
                 results.append(result)
-                self.stats["merges_detected"] += 1
             except BudgetExhausted:
                 break
             except Exception:

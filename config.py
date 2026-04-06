@@ -319,6 +319,16 @@ COMPOSITE_WEIGHT_DECAY = 0.001   # recency bonus (tiebreaker)
 COMPOSITE_WEIGHT_IMPORTANCE = 0.001  # layer bonus (tiebreaker)
 DECAY_LAMBDA = 0.01           # half-life ~69 days
 PROMOTED_MULTIPLIER = 1.5     # reviewed-item boost (promotion_candidate=1)
+
+# v3.2: Source quality bonus (additive on base RRF)
+# 의도적 저장(claude)이 자동 덤프보다 높은 정밀도
+SOURCE_BONUS: dict[str, float] = {
+    "claude": 0.05,        # 대화 중 Claude가 의도적 저장
+    "save_session": 0.0,   # 세션 자동 덤프 (중립)
+    "pdr": 0.0,            # post-deployment review
+    "checkpoint": -0.02,   # checkpoint 덤프 (낮은 정밀도)
+}
+SOURCE_BONUS_DEFAULT = 0.0  # obsidian, hook 등 기타
 # v3: max layer = 3
 LAYER_IMPORTANCE = {
     3: 0.6, 2: 0.4, 1: 0.2, 0: 0.1,

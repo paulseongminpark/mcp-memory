@@ -80,7 +80,7 @@ def swr_readiness(node_id: int) -> tuple[bool, float]:
 # Gate 2: Bayesian P(real pattern)
 # ─────────────────────────────────────────────
 
-PROMOTION_VISIT_THRESHOLD = 10  # visit_count >= 이 값이면 Gate 2 통과
+PROMOTION_VISIT_THRESHOLD = 3  # visit_count >= 이 값이면 Gate 2 통과 (p90 기준, 10→3 완화 2026-04-06)
 
 
 def promotion_frequency_check(node: dict) -> tuple[bool, int]:
