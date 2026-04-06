@@ -96,14 +96,29 @@ def recall(
     # recall_log 기록 (Gate 1 SWR input)
     _log_recall_results(query, results, mode)
 
-    # 포매팅 (기존 로직 유지)
+    # v3.2: context package — seed별 1홉 이웃을 관계 라벨과 함께 구조화
     formatted = []
     for r in results:
         edges = sqlite_store.get_edges(r["id"])
-        related = [
-            f"{e['relation']}→#{e['target_id'] if e['source_id'] == r['id'] else e['source_id']}"
-            for e in edges[:3]
-        ]
+        # active 에지만, co_retrieved 제외 (노이즈), 최대 5개
+        meaningful_edges = [
+            e for e in edges
+            if e.get("status") == "active" and e.get("relation") != "co_retrieved"
+        ][:5]
+
+        context = []
+        for e in meaningful_edges:
+            neighbor_id = e["target_id"] if e["source_id"] == r["id"] else e["source_id"]
+            direction = "→" if e["source_id"] == r["id"] else "←"
+            neighbor = sqlite_store.get_node(neighbor_id)
+            if neighbor and neighbor.get("status") == "active":
+                context.append({
+                    "relation": f"{direction}{e['relation']}",
+                    "id": neighbor_id,
+                    "type": neighbor["type"],
+                    "content": (neighbor.get("content") or "")[:100],
+                })
+
         formatted.append({
             "id": r["id"],
             "type": r["type"],
@@ -112,7 +127,7 @@ def recall(
             "tags": r["tags"],
             "score": round(r["score"], 3),
             "created_at": r["created_at"],
-            "related": related,
+            "context": context,
         })
 
     return {

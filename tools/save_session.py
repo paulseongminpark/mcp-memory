@@ -58,6 +58,25 @@ def save_session(
         if session_node_id:
             node_counts["narrative"] = 1
 
+            # v3.2: Narrative chain — 같은 project의 이전 Narrative에 succeeded_by edge
+            if project:
+                with sqlite_store._db() as conn:
+                    prev = conn.execute(
+                        """SELECT id FROM nodes
+                           WHERE type='Narrative' AND source='save_session'
+                             AND project=? AND status='active' AND id != ?
+                           ORDER BY created_at DESC LIMIT 1""",
+                        (project, session_node_id),
+                    ).fetchone()
+                if prev:
+                    sqlite_store.insert_edge(
+                        source_id=prev[0],
+                        target_id=session_node_id,
+                        relation="succeeded_by",
+                        strength=0.9,
+                    )
+                    node_counts["edges"] += 1
+
         # Decision 노드 + edge
         decision_ids = []
         for d in (decisions or []):
@@ -107,8 +126,9 @@ def save_session(
                 )
                 node_counts["edges"] += 1
 
-    except Exception:
-        pass  # sessions 테이블 저장은 유지, 노드 생성 실패는 graceful
+    except Exception as e:
+        import logging
+        logging.getLogger("mcp_memory").warning("save_session node/edge creation failed: %s", e)
 
     return {
         "session_id": session_id,
