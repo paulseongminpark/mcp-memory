@@ -17,7 +17,7 @@ CHROMA_PATH = str(DATA_DIR / "chroma")
 
 # 검색 기본값
 DEFAULT_TOP_K = 5
-SIMILARITY_THRESHOLD = 0.3  # 자동 edge 생성 임계값
+SIMILARITY_THRESHOLD = 0.55  # 자동 edge 생성 임계값 (v3.2: 0.3→0.55 노이즈 에지 감소)
 GRAPH_MAX_HOPS = 2
 RRF_K = 18  # Reciprocal Rank Fusion 상수 (tuned 2026-03-08: 60→18, NDCG+12.5%)
 GRAPH_BONUS = 0.005  # 그래프 이웃 보너스 (tuned 2026-03-08: 0.015→0.005, vector rank 우선)

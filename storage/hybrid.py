@@ -208,10 +208,14 @@ def _bcm_update(
     }
     now = datetime.now(timezone.utc).isoformat()
 
-    activated_edges = [
-        e for e in all_edges
-        if e.get("source_id") in id_set and e.get("target_id") in id_set
-    ]
+    # v3.2: 한쪽만 result여도 학습 (이전: 양쪽 다 result 필수 → 89.5% 에지 학습 불가)
+    # 결과 노드(id_set)와 연결된 에지면 학습 대상. 비결과 endpoint의 v는 0.1로 처리.
+    # 양쪽 다 result인 에지를 우선, 한쪽만인 에지는 최대 50개까지.
+    both_side = [e for e in all_edges
+                 if e.get("source_id") in id_set and e.get("target_id") in id_set]
+    one_side = [e for e in all_edges
+                if (e.get("source_id") in id_set) != (e.get("target_id") in id_set)]
+    activated_edges = both_side + one_side[:50]
 
     try:
         with sqlite_store._db() as conn:
@@ -242,6 +246,11 @@ def _bcm_update(
                     history = []
 
                 # BCM delta_w: 양수면 강화, 음수면 약화
+                # v3.2: 비결과 endpoint는 v=0.1로 처리 (경로 근접 보상)
+                if v_j == 0.0:
+                    v_j = 0.1
+                if v_i == 0.0:
+                    v_i = 0.1
                 delta_w = eta * v_i * (v_i - theta_m) * v_j
                 new_strength = max(0.01, min(2.0, (edge.get("strength") or 1.0) + delta_w))
                 new_freq = max(0.0, (edge.get("frequency") or 0) + delta_w * 10)

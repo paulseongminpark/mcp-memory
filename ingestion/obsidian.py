@@ -115,13 +115,14 @@ def ingest_vault(
             rel_path = str(fpath.relative_to(vault))
             chunks = chunk_markdown(text, source_path=rel_path)
 
+            # 프로젝트 추정 (경로 기반)
+            project = _guess_project(rel_path)
+            chunk_ids = []  # 같은 파일 chunk간 edge 생성용
+
             for chunk in chunks:
                 content = chunk["content"]
                 if len(content.strip()) < 20:
                     continue
-
-                # 프로젝트 추정 (경로 기반)
-                project = _guess_project(rel_path)
 
                 node_id = sqlite_store.insert_node(
                     type="Conversation",  # Obsidian 노트는 Conversation 타입
@@ -131,6 +132,7 @@ def ingest_vault(
                     tags=f"obsidian,{Path(rel_path).stem}",
                     source=f"obsidian:{rel_path}#{file_hash}",
                 )
+                chunk_ids.append(node_id)
 
                 try:
                     vec_meta = {
@@ -143,6 +145,21 @@ def ingest_vault(
                     stats["errors"].append(f"Embedding failed for {rel_path}: {e}")
 
                 stats["chunks_created"] += 1
+
+            # 같은 파일 chunk끼리 part_of edge 생성 (orphan 방지)
+            if len(chunk_ids) >= 2:
+                anchor = chunk_ids[0]
+                for cid in chunk_ids[1:]:
+                    try:
+                        sqlite_store.insert_edge(
+                            source_id=cid,
+                            target_id=anchor,
+                            relation="part_of",
+                            description=f"same file: {rel_path}",
+                            strength=0.7,
+                        )
+                    except Exception:
+                        pass  # 중복 등 무시
 
             stats["files_processed"] += 1
             file_count += 1

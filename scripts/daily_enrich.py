@@ -55,7 +55,7 @@ def phase1(conn: sqlite3.Connection, ne: NodeEnricher,
     """Phase 1: E1-E5,E7-E11 + E13-E14,E16-E17."""
     stats = {"nodes": 0, "edges": 0, "errors": 0}
     small_budget = config.TOKEN_BUDGETS["small"]
-    phase_limit = int(small_budget * 0.8)  # 80% of small pool
+    phase1_cap = int(small_budget * 0.5)  # v3.2: Phase 1은 전체의 50%만 사용 (나머지 Phase 2-5 보존)
 
     # 1a. new nodes (enriched_at IS NULL) — 통합 1-call enrichment
     rows = conn.execute(
@@ -70,6 +70,12 @@ def phase1(conn: sqlite3.Connection, ne: NodeEnricher,
             stats["nodes"] += len(results)
         except BudgetExhausted:
             return stats
+
+    # v3.2: Phase 1 budget cap — 50% 이상 소모 시 1b-1f 스킵
+    if budget.used.get("small", 0) >= phase1_cap:
+        print(f"  Phase 1 cap reached ({budget.used.get('small', 0)}/{phase1_cap}), reserving for Phase 2-5")
+        conn.commit()
+        return stats
 
     # 1b. E7 embedding_text (needs E1,E2 done first)
     rows = conn.execute("""
@@ -329,13 +335,14 @@ def _run_edge_pruning(conn: sqlite3.Connection, dry_run: bool) -> dict:
     B-6 edge pruning: strength 평가 → archive / delete / keep.
 
     ctx_log: edges.description 컬럼에 JSON 배열로 저장된 쿼리 맥락 로그.
+    Connectivity guard: 삭제 시 orphan 유발하면 스킵.
     """
     import math
 
     PRUNE_STRENGTH_THRESHOLD = 0.05
     PRUNE_MIN_CONTEXT_DIVERSITY = 2
 
-    stats = {"keep": 0, "archive": 0, "delete": 0}
+    stats = {"keep": 0, "archive": 0, "delete": 0, "guarded": 0}
 
     active_edges = conn.execute(
         "SELECT id, source_id, target_id, relation, strength, "
@@ -343,8 +350,13 @@ def _run_edge_pruning(conn: sqlite3.Connection, dry_run: bool) -> dict:
         "FROM edges"
     ).fetchall()
 
+    # 노드별 active edge 수 사전 계산 (connectivity guard용)
+    edge_counts: dict[int, int] = {}
+    for edge in active_edges:
+        edge_counts[edge["source_id"]] = edge_counts.get(edge["source_id"], 0) + 1
+        edge_counts[edge["target_id"]] = edge_counts.get(edge["target_id"], 0) + 1
+
     now_utc = datetime.now(timezone.utc)
-    now_str = now_utc.isoformat()
 
     for edge in active_edges:
         edge_id = edge["id"]
@@ -374,9 +386,16 @@ def _run_edge_pruning(conn: sqlite3.Connection, dry_run: bool) -> dict:
             stats["keep"] += 1
             continue
 
+        # Connectivity guard: 삭제하면 양쪽 노드 중 하나가 orphan 되는가?
+        src_id, tgt_id = edge["source_id"], edge["target_id"]
+        if edge_counts.get(src_id, 0) <= 1 or edge_counts.get(tgt_id, 0) <= 1:
+            stats["guarded"] += 1
+            stats["keep"] += 1
+            continue
+
         # source 노드 tier/layer 조회
         src_row = conn.execute(
-            "SELECT tier, layer FROM nodes WHERE id = ?", (edge["source_id"],)
+            "SELECT tier, layer FROM nodes WHERE id = ?", (src_id,)
         ).fetchone()
         src_tier = src_row["tier"] if src_row and src_row["tier"] is not None else 2
         src_layer = src_row["layer"] if src_row and src_row["layer"] is not None else 0
@@ -391,6 +410,9 @@ def _run_edge_pruning(conn: sqlite3.Connection, dry_run: bool) -> dict:
             if decision == "delete":
                 # v3.1: hard DELETE → soft-delete (Phase 6 pruning 사고 방지)
                 conn.execute("UPDATE edges SET status='deleted' WHERE id=?", (edge_id,))
+                # edge_counts 갱신 (후속 guard 판단에 반영)
+                edge_counts[src_id] = edge_counts.get(src_id, 0) - 1
+                edge_counts[tgt_id] = edge_counts.get(tgt_id, 0) - 1
 
         stats[decision] += 1
 
