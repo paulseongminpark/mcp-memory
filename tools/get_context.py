@@ -1,4 +1,7 @@
-"""get_context() — 프로젝트/전체 컨텍스트 요약 (~200 토큰)."""
+"""get_context() — 세션 시작 컨텍스트 (~300 토큰).
+
+v3.2: 품질 신호 + 세션 연속성 + 승격 후보 + proactive warnings.
+"""
 
 from storage import sqlite_store
 
@@ -60,6 +63,45 @@ def get_context(project: str = "") -> dict:
                     "id": sess[0], "summary": sess[1][:200],
                     "pipeline": sess[2] or "",
                 }
+    except Exception:
+        pass
+
+    # v3.2: 승격 후보 (Signal/Pattern with high visit_count)
+    try:
+        with sqlite_store._db() as conn:
+            promo_filter = f"AND project='{project}'" if project else ""
+            candidates = conn.execute(f"""
+                SELECT id, type, visit_count, substr(content,1,80) as preview
+                FROM nodes
+                WHERE status='active' AND type IN ('Signal','Pattern','Observation')
+                AND visit_count >= 5 {promo_filter}
+                ORDER BY visit_count DESC LIMIT 3
+            """).fetchall()
+            if candidates:
+                sections["promotion_ready"] = [
+                    {"id": c[0], "type": c[1], "visits": c[2], "preview": c[3]}
+                    for c in candidates
+                ]
+    except Exception:
+        pass
+
+    # v3.2: proactive warning — 최근 Failure와 유사한 패턴 감지
+    try:
+        if failures:
+            with sqlite_store._db() as conn:
+                recent_failure = failures[0]
+                # 같은 project에서 반복 실패 패턴 확인
+                repeat_failures = conn.execute("""
+                    SELECT COUNT(*) FROM nodes
+                    WHERE type='Failure' AND status='active'
+                    AND project=? AND created_at > datetime('now', '-30 days')
+                """, (recent_failure.get("project", ""),)).fetchone()
+                if repeat_failures and repeat_failures[0] >= 3:
+                    sections["warning"] = (
+                        f"Project '{recent_failure.get('project', '')}' has "
+                        f"{repeat_failures[0]} failures in last 30 days. "
+                        f"Check for recurring patterns."
+                    )
     except Exception:
         pass
 

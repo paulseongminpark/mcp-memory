@@ -375,10 +375,33 @@ def remember(
     except Exception:
         pass  # wiki-compiler 없어도 remember()는 동작해야 함
 
-    return {
+    # v3.2: proactive pattern matching — 유사 Failure/Pattern 경고
+    warnings = []
+    try:
+        similar_failures = vector_store.search(content, top_k=3,
+            where={"type": "Failure"})
+        for fid, dist, _ in similar_failures:
+            if fid == node_id or dist > 0.4:
+                continue
+            fnode = sqlite_store.get_node(fid)
+            if fnode and fnode.get("status") == "active":
+                warnings.append({
+                    "type": "similar_failure",
+                    "node_id": fid,
+                    "similarity": round(1.0 - dist, 2),
+                    "content": (fnode.get("content") or "")[:100],
+                })
+                break  # 최대 1개만
+    except Exception:
+        pass  # 경고 실패가 저장을 막으면 안됨
+
+    result = {
         "node_id": node_id,
         "type": cls.type,
         "project": project,
         "auto_edges": auto_edges,
         "message": f"Stored as node #{node_id} with {len(auto_edges)} auto-edge(s)",
     }
+    if warnings:
+        result["warnings"] = warnings
+    return result
