@@ -1,5 +1,16 @@
 # mcp-memory CHANGELOG
 
+## v3.3.1-dev (2026-04-07) — Signal 성장 엔진 가동
+
+### Signal Clustering & Synthesis
+- **임베딩 클러스터링**: Observation 417개 → cosine distance 0.35 agglomerative clustering
+- **51개 클러스터 합성**: gpt-4.1-mini 배치 → 51 Signal 노드 생성
+- **realizes edge 128개**: Signal→Observation 증거 연결
+- **Signal spine**: 19→70 (목표 50+ 초과 달성)
+- **promote_node 흐름 검증**: Signal→Pattern 승격+복구 정상 작동
+- **테스트**: 186 tests passed (변경 없음)
+- **NDCG**: 0.214 (안정 — Signal은 goldset 미포함)
+
 ## v3.3.0-dev (2026-04-07) — 온톨로지 전면 강화 (성장+교정+재반영)
 
 ### 검색 무결성

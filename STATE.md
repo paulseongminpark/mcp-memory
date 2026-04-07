@@ -2,14 +2,14 @@
 _Updated: 2026-04-07_
 
 ## Current
-- **Version**: v3.3.0-dev (온톨로지 전면 강화 — 성장+교정+재반영)
+- **Version**: v3.3.1-dev (Signal 성장 엔진 가동)
 - **Branch**: main
-- **Active Nodes**: 5,200 (node_role backfill 완료)
-- **Active Edges**: 6,110 (generation_method backfill 완료)
-- **Ontology**: 15 active types + Correction(system) + Unclassified, 49 relation types (co_retrieved 추가)
-- **RELATION_RULES**: 49개, RELATION_WEIGHT 전 relation 커버리지
+- **Active Nodes**: 5,252 (Signal 51개 신규)
+- **Active Edges**: 6,242 (realizes 128개 신규)
+- **Ontology**: 15 active types + Correction(system) + Unclassified, 49 relation types
+- **Signal spine**: 70 active (19→70, 클러스터 합성)
 - **Enrichment**: Phase 1-4 완료
-- **Quality**: recall avg 0.471, hit_rate 0.693
+- **Quality**: recall avg 0.471, hit_rate 0.693, NDCG@5 0.214
 - **API**: OpenAI (gpt-5-mini / o3-mini / gpt-4.1 / gpt-5.2 / o3)
 - **신규 컬럼**: source_kind, source_ref, node_role, epistemic_status (nodes), generation_method (edges)
 
@@ -71,6 +71,14 @@ _Updated: 2026-04-07_
 - 449 중복 soft-delete, content_hash 100%
 - 벡터 재임베딩 (summary+kc+content[:200])
 - scripts/pipeline/ 5개: inject_synonyms, cleanup_duplicates, enrich_batch, reembed, run_pipeline
+
+## v3.3.1-dev Changes (2026-04-07, Signal 성장 엔진)
+- **Signal 클러스터 합성**: Observation 417개 → cosine distance 0.35 agglomerative clustering → 51개 clusters → gpt-4.1-mini 합성 → 51 Signal 생성
+- **realizes edge 128개**: Signal→Observation evidence 연결
+- **Signal spine**: 19→70 (목표 50+ 달성)
+- **promote_node 흐름 검증**: Signal→Pattern 승격 + 복구 정상 작동
+- **Tests**: 186/186 PASS (변경 없음)
+- **NDCG**: 0.214 (변동 없음 — Signal은 goldset 미포함)
 
 ## Tech Debt
 - NetworkX full rebuild: auto/dmn 모드에서 여전히 사용
