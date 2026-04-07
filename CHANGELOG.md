@@ -1,5 +1,13 @@
 # mcp-memory CHANGELOG
 
+## R2 Metadata Saturation (2026-04-07)
+- **node_role**: 22.3% → 100% (4082건 source-aware backfill)
+- **generation_method**: 23.1% → 100% (4801건 pattern-based backfill)
+- 분류 전략: source_kind 기반 기본값 + 예외 오버라이드 (Narrative→session_anchor, validated→knowledge_core)
+- edge 분류: enrichment(2785), legacy_unknown(1397), co_retrieval(168), semantic_auto(72)
+- 테스트: 186 → 193 (+7 saturation regression)
+- Gate G2 통과
+
 ## v3.3.1-dev (2026-04-07) — Signal 성장 엔진 가동
 
 ### Signal Clustering & Synthesis

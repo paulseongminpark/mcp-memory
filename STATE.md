@@ -8,7 +8,7 @@ _Updated: 2026-04-07_
 - **Active Edges**: 6,242 (realizes 128개 신규)
 - **Ontology**: 15 active types + Correction(system) + Unclassified, 49 relation types
 - **Signal spine**: 70 active (19→70, 클러스터 합성)
-- **Enrichment**: Phase 1-4 완료
+- **Metadata fill**: node_role **100%**, generation_method **100%**
 - **Quality**: recall avg 0.471, hit_rate 0.693, NDCG@5 0.214
 - **API**: OpenAI (gpt-5-mini / o3-mini / gpt-4.1 / gpt-5.2 / o3)
 - **신규 컬럼**: source_kind, source_ref, node_role, epistemic_status (nodes), generation_method (edges)
@@ -71,6 +71,14 @@ _Updated: 2026-04-07_
 - 449 중복 soft-delete, content_hash 100%
 - 벡터 재임베딩 (summary+kc+content[:200])
 - scripts/pipeline/ 5개: inject_synonyms, cleanup_duplicates, enrich_batch, reembed, run_pipeline
+
+## R2 Metadata Saturation (2026-04-07)
+- **node_role**: 22.3% → **100%** (4082건 backfill)
+- **generation_method**: 23.1% → **100%** (4801건 backfill)
+- distribution: knowledge_candidate 4522, session_anchor 340, work_item 345, external_noise 37, knowledge_core 8
+- edge gen: enrichment 2785, session_anchor 1687, legacy_unknown 1397, co_retrieval 168, rule 131, semantic_auto 72
+- Tests: 186 → **193** (+7 saturation tests)
+- Gate: G2 통과 (node_role ≥80%, generation_method ≥85%)
 
 ## v3.3.1-dev Changes (2026-04-07, Signal 성장 엔진)
 - **Signal 클러스터 합성**: Observation 417개 → cosine distance 0.35 agglomerative clustering → 51개 clusters → gpt-4.1-mini 합성 → 51 Signal 생성
