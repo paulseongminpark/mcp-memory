@@ -192,10 +192,10 @@ queries:
   difficulty: medium
   query: 정보 충돌을 방지하는 시스템 설계
   relevant_ids:
-  - 4120
+  - 251
   also_relevant:
   - 755
-  - 771
+  - 252
   notes: 단일 진실 소스 + 쓰기 권한 분리 = 충돌 방지
   mode: generic
 - id: q019
@@ -294,19 +294,18 @@ queries:
   difficulty: easy
   query: Codex CLI와 Gemini CLI 설정 방법
   relevant_ids:
-  - 75
+  - 186
   also_relevant:
   - 319
-  - 77
   notes: Tool 노드 — 외부 CLI 설정 v4.0
   mode: generic
 - id: q029
   difficulty: easy
   query: Claude Code 스킬 목록과 사용법
   relevant_ids:
-  - 3813
-  also_relevant:
   - 44
+  also_relevant:
+  - 569
   - 281
   notes: Skill 노드 — 스킬 시스템
   mode: generic
@@ -324,10 +323,9 @@ queries:
   difficulty: medium
   query: Hook 시스템이 자동으로 하는 일
   relevant_ids:
-  - 24
+  - 66
   also_relevant:
   - 397
-  - 51
   notes: Workflow 노드 — 8종 hook 자동화 레이어
   mode: generic
 - id: q032
@@ -383,10 +381,10 @@ queries:
   difficulty: medium
   query: 메모리 시스템의 SQLite 스키마 구조
   relevant_ids:
-  - 74
-  also_relevant:
   - 3917
-  - 4222
+  also_relevant:
+  - 3896
+  - 3941
   notes: Framework 노드 — mcp-memory DB 스키마
   mode: generic
 - id: q038
