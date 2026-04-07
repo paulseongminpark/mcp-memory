@@ -1,5 +1,11 @@
 # mcp-memory CHANGELOG
 
+## R4 Correction Activation (2026-04-07)
+- Correction 0→**7**, contradicts 0→**7**
+- Identity 중복 4건 flagged (#3575/#3641/#3707/#3773 → #2712 보존)
+- 테스트 아티팩트 3건 flagged (#4271, #3152, #4648)
+- flag_node→Correction→contradicts→confidence 하락→epistemic_status 변경 전체 루프 실전 검증
+
 ## R2 Metadata Saturation (2026-04-07)
 - **node_role**: 22.3% → 100% (4082건 source-aware backfill)
 - **generation_method**: 23.1% → 100% (4801건 pattern-based backfill)
