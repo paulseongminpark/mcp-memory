@@ -67,7 +67,11 @@ def init_db() -> None:
             promotion_candidate INTEGER DEFAULT 0,
             content_hash TEXT,
             last_accessed_at TEXT,
-            retrieval_hints TEXT DEFAULT NULL
+            retrieval_hints TEXT DEFAULT NULL,
+            source_kind TEXT DEFAULT '',
+            source_ref TEXT DEFAULT '',
+            node_role TEXT DEFAULT '',
+            epistemic_status TEXT DEFAULT 'provisional'
         );
 
         CREATE TABLE IF NOT EXISTS edges (
@@ -87,7 +91,8 @@ def init_db() -> None:
             decay_rate REAL DEFAULT 0.005,
             layer_distance INTEGER,
             layer_penalty REAL,
-            status TEXT DEFAULT 'active'
+            status TEXT DEFAULT 'active',
+            generation_method TEXT DEFAULT ''
         );
 
         CREATE TABLE IF NOT EXISTS sessions (
@@ -304,6 +309,28 @@ def init_db() -> None:
         except Exception:
             pass
 
+    # v3.3: nodes source provenance / role / epistemic status
+    with _db() as _mig:
+        for sql in (
+            "ALTER TABLE nodes ADD COLUMN source_kind TEXT DEFAULT ''",
+            "ALTER TABLE nodes ADD COLUMN source_ref TEXT DEFAULT ''",
+            "ALTER TABLE nodes ADD COLUMN node_role TEXT DEFAULT ''",
+            "ALTER TABLE nodes ADD COLUMN epistemic_status TEXT DEFAULT 'provisional'",
+        ):
+            try:
+                _mig.execute(sql)
+                _mig.commit()
+            except Exception:
+                pass
+
+    # v3.3: edges generation_method
+    with _db() as _mig:
+        try:
+            _mig.execute("ALTER TABLE edges ADD COLUMN generation_method TEXT DEFAULT ''")
+            _mig.commit()
+        except Exception:
+            pass
+
     # v3 Step 0: recall_log.recall_id (H2)
     with _db() as _mig:
         try:
@@ -425,10 +452,15 @@ def insert_node(
     tier: int = 2,
     content_hash: str | None = None,
     retrieval_hints: dict | None = None,
+    source_kind: str = "",
+    source_ref: str = "",
+    node_role: str = "",
+    epistemic_status: str = "provisional",
 ) -> int | tuple[str, int | None]:
     """노드 삽입. content_hash UNIQUE 제약 위반 시 "duplicate" 반환.
 
     v3: retrieval_hints (H4) — {"when_needed", "related_queries", "context_keys"}
+    v3.3: source_kind, source_ref, node_role, epistemic_status 추가
     """
     # PROMOTE_LAYER fallback: caller가 layer 미전달 시 타입 기반 자동 배정
     if layer is None:
@@ -443,9 +475,9 @@ def insert_node(
     with _db() as conn:
         try:
             cur = conn.execute(
-                """INSERT INTO nodes (type, content, metadata, project, tags, confidence, source, layer, tier, content_hash, retrieval_hints, created_at, updated_at)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                (type, content, json.dumps(metadata or {}), project, tags, confidence, source, layer, tier, content_hash, hints_json, now, now),
+                """INSERT INTO nodes (type, content, metadata, project, tags, confidence, source, layer, tier, content_hash, retrieval_hints, source_kind, source_ref, node_role, epistemic_status, created_at, updated_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (type, content, json.dumps(metadata or {}), project, tags, confidence, source, layer, tier, content_hash, hints_json, source_kind, source_ref, node_role, epistemic_status, now, now),
             )
             node_id = cur.lastrowid
             conn.commit()
@@ -468,6 +500,7 @@ def insert_edge(
     relation: str,
     description: str = "",
     strength: float = 1.0,
+    generation_method: str = "",
 ) -> int:
     now = datetime.now(timezone.utc).isoformat()
     original_relation = relation
@@ -476,9 +509,9 @@ def insert_edge(
         relation = "connects_with"
     with _db() as conn:
         cur = conn.execute(
-            """INSERT INTO edges (source_id, target_id, relation, description, strength, created_at)
-               VALUES (?, ?, ?, ?, ?, ?)""",
-            (source_id, target_id, relation, description, strength, now),
+            """INSERT INTO edges (source_id, target_id, relation, description, strength, generation_method, created_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?)""",
+            (source_id, target_id, relation, description, strength, generation_method, now),
         )
         edge_id = cur.lastrowid
         if original_relation != relation:
@@ -544,6 +577,18 @@ def search_fts(query: str, top_k: int = 5) -> list[tuple[int, str, float]]:
                        FROM nodes_fts f
                        JOIN nodes n ON n.id = f.rowid
                        WHERE nodes_fts MATCH ?
+                         AND n.status = 'active'
+                       ORDER BY rank
+                       LIMIT ?""",
+                    (escaped, top_k),
+                ).fetchall()
+                fts_results = [(r["id"], r["content"], r["rank"]) for r in rows]
+            except sqlite3.OperationalError:
+                rows = conn.execute(
+                    """SELECT n.id, n.content, rank
+                       FROM nodes_fts f
+                       JOIN nodes n ON n.id = f.rowid
+                       WHERE nodes_fts MATCH ?
                        ORDER BY rank
                        LIMIT ?""",
                     (escaped, top_k),
@@ -603,9 +648,18 @@ def search_fts(query: str, top_k: int = 5) -> list[tuple[int, str, float]]:
     return fts_results
 
 
-def get_node(node_id: int) -> dict | None:
+def get_node(node_id: int, active_only: bool = True) -> dict | None:
     with _db() as conn:
-        row = conn.execute("SELECT * FROM nodes WHERE id = ?", (node_id,)).fetchone()
+        try:
+            if active_only:
+                row = conn.execute(
+                    "SELECT * FROM nodes WHERE id = ? AND status = 'active'",
+                    (node_id,),
+                ).fetchone()
+            else:
+                row = conn.execute("SELECT * FROM nodes WHERE id = ?", (node_id,)).fetchone()
+        except sqlite3.OperationalError:
+            row = conn.execute("SELECT * FROM nodes WHERE id = ?", (node_id,)).fetchone()
     return dict(row) if row else None
 
 
@@ -635,18 +689,40 @@ def get_recent_nodes(project: str = "", limit: int = 10, type_filter: str = "") 
     return [dict(r) for r in rows]
 
 
-def get_edges(node_id: int) -> list[dict]:
+def get_edges(node_id: int, active_only: bool = True) -> list[dict]:
     with _db() as conn:
-        rows = conn.execute(
-            """SELECT * FROM edges WHERE source_id = ? OR target_id = ?""",
-            (node_id, node_id),
-        ).fetchall()
+        try:
+            if active_only:
+                rows = conn.execute(
+                    """SELECT * FROM edges
+                       WHERE status = 'active'
+                         AND (source_id = ? OR target_id = ?)""",
+                    (node_id, node_id),
+                ).fetchall()
+            else:
+                rows = conn.execute(
+                    """SELECT * FROM edges WHERE source_id = ? OR target_id = ?""",
+                    (node_id, node_id),
+                ).fetchall()
+        except sqlite3.OperationalError:
+            rows = conn.execute(
+                """SELECT * FROM edges WHERE source_id = ? OR target_id = ?""",
+                (node_id, node_id),
+            ).fetchall()
     return [dict(r) for r in rows]
 
 
-def get_all_edges() -> list[dict]:
+def get_all_edges(active_only: bool = True) -> list[dict]:
     with _db() as conn:
-        rows = conn.execute("SELECT * FROM edges").fetchall()
+        try:
+            if active_only:
+                rows = conn.execute(
+                    "SELECT * FROM edges WHERE status = 'active'"
+                ).fetchall()
+            else:
+                rows = conn.execute("SELECT * FROM edges").fetchall()
+        except sqlite3.OperationalError:
+            rows = conn.execute("SELECT * FROM edges").fetchall()
     return [dict(r) for r in rows]
 
 

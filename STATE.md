@@ -2,21 +2,23 @@
 _Updated: 2026-04-07_
 
 ## Current
-- **Version**: v3.2.0-dev (상호작용 개선 — 품질 신호 + 피드백 루프)
+- **Version**: v3.3.0-dev (온톨로지 전면 강화 — 성장+교정+재반영)
 - **Branch**: main
-- **Active Nodes**: 5,187 (unenriched: 0)
-- **Active Edges**: 5,345
-- **Ontology**: 15 active types (Tier1:7 + Tier2:5 + Tier3:3) + Unclassified
-- **RELATION_RULES**: 49개 (37.3% type pair 커버리지)
-- **Enrichment**: Phase 1-2, 7 완료 (unenriched 0건)
-- **Quality**: 0.8+ = 3,240 (62%), 0.6-0.8 = 1,763 (34%)
+- **Active Nodes**: 5,200 (node_role backfill 완료)
+- **Active Edges**: 6,110 (generation_method backfill 완료)
+- **Ontology**: 15 active types + Correction(system) + Unclassified, 49 relation types (co_retrieved 추가)
+- **RELATION_RULES**: 49개, RELATION_WEIGHT 전 relation 커버리지
+- **Enrichment**: Phase 1-4 완료
+- **Quality**: recall avg 0.471, hit_rate 0.693
 - **API**: OpenAI (gpt-5-mini / o3-mini / gpt-4.1 / gpt-5.2 / o3)
+- **신규 컬럼**: source_kind, source_ref, node_role, epistemic_status (nodes), generation_method (edges)
 
 ## Architecture
-- 14 MCP tools (+flag_node), 4 layers (L0-L3+Unclassified), 15 node types, 48 relation types
+- 14 MCP tools (+flag_node), 4 layers (L0-L3+Unclassified), 15+1 node types, 49 relation types
 - Hybrid search: Vector (ChromaDB) + FTS5 (SQLite) + Graph (UCB/BCM)
 - Embedding: text-embedding-3-large, [Type]+summary+key_concepts+content[:200]
-- RRF_K=18, GRAPH_BONUS=0.005, candidate cutoff=top_k×10
+- RRF_K=18, GRAPH_BONUS=0.03, confidence/role/contradiction → scoring
+- Context selector 통합: get_context.py + session_context.py → context_selector.py
 - 3-Layer type-aware search: C(타입 태그 임베딩) + A(typed vector RRF 채널) + D(다양성 보장)
 - Source tracking: recall_log.sources JSON (vector/fts5/graph/typed_vector)
 

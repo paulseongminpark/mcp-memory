@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from config import SYSTEM_NODE_TYPES
+
 
 def get_valid_node_types() -> list[str]:
     """type_defs 테이블에서 active 타입 목록 반환. fallback: schema.yaml."""
@@ -35,6 +37,14 @@ def validate_node_type(type_name: str) -> tuple[bool, str | None]:
     참고: type_defs 테이블이 없으면 schema.yaml fallback 사용.
     """
     from storage import sqlite_store
+
+    if type_name in SYSTEM_NODE_TYPES:
+        return True, None
+
+    lower_system_types = {name.lower(): name for name in SYSTEM_NODE_TYPES}
+    if type_name.lower() in lower_system_types:
+        canonical = lower_system_types[type_name.lower()]
+        return True, canonical if canonical != type_name else None
 
     conn = sqlite_store._connect()
     try:

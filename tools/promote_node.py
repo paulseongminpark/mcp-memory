@@ -234,16 +234,23 @@ def promote_node(
         "reason": reason,
         "promoted_at": now,
         "gates_skipped": skip_gates,
+        "evidence_ids": related_ids or [],
     })
     metadata["promotion_history"] = history
     metadata.pop("embedding_provisional", None)
+    # v3.3: evidence_ids — 승격 근거 노드 목록
+    if related_ids:
+        metadata["evidence_ids"] = list(set(metadata.get("evidence_ids", []) + related_ids))
 
     new_layer = PROMOTE_LAYER.get(target_type, node.get("layer"))
     edge_ids = []
     with sqlite_store._db() as conn:
+        # v3.3: node_role='knowledge_core', epistemic_status='validated'
         conn.execute(
             """UPDATE nodes
-               SET type = ?, layer = ?, metadata = ?, updated_at = ?
+               SET type = ?, layer = ?, metadata = ?,
+                   node_role = 'knowledge_core', epistemic_status = 'validated',
+                   updated_at = ?
                WHERE id = ?""",
             (target_type, new_layer, json.dumps(metadata, ensure_ascii=False), now, node_id),
         )
@@ -253,8 +260,8 @@ def promote_node(
                 continue
             try:
                 cur = conn.execute(
-                    """INSERT INTO edges (source_id, target_id, relation, description, strength, created_at)
-                       VALUES (?, ?, 'realized_as', ?, 1.0, ?)""",
+                    """INSERT INTO edges (source_id, target_id, relation, description, strength, generation_method, created_at)
+                       VALUES (?, ?, 'realized_as', ?, 1.0, 'rule', ?)""",
                     (rid, node_id, f"{current_type}→{target_type}: {reason}", now),
                 )
                 edge_ids.append(cur.lastrowid)

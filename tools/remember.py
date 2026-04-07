@@ -89,6 +89,10 @@ def store(
     source: str = "claude",
     content_hash: str | None = None,
     retrieval_hints: dict | None = None,
+    source_kind: str = "",
+    source_ref: str = "",
+    node_role: str = "",
+    epistemic_status: str = "provisional",
 ) -> dict:
     """SQLite + ChromaDB에 노드 저장.
 
@@ -97,7 +101,24 @@ def store(
         content_hash 중복 시 "duplicate" 키 포함
         ChromaDB 실패 시 "warning" 키 포함
     """
-    # SQLite
+    # SQLite — v3.3: source_kind/node_role/epistemic_status 전달
+    # source_kind 자동 추론 (명시 안 됐으면)
+    if not source_kind and source:
+        src_parts = source.split(":", 1)
+        source_kind = src_parts[0]
+        if not source_ref and len(src_parts) > 1:
+            source_ref = src_parts[1]
+
+    _extra = {}
+    if source_kind:
+        _extra["source_kind"] = source_kind
+    if source_ref:
+        _extra["source_ref"] = source_ref
+    if node_role:
+        _extra["node_role"] = node_role
+    if epistemic_status and epistemic_status != "provisional":
+        _extra["epistemic_status"] = epistemic_status
+
     node_id = sqlite_store.insert_node(
         type=cls.type,
         content=content,
@@ -110,6 +131,7 @@ def store(
         tier=cls.tier,
         content_hash=content_hash,
         retrieval_hints=retrieval_hints,
+        **_extra,
     )
 
     # content_hash UNIQUE 제약 위반 → duplicate (concurrent race 방어)
@@ -212,6 +234,7 @@ def link(
             relation=relation,
             description=f"auto: similarity={1.0 - distance:.2f}",
             strength=strength,
+            generation_method="semantic_auto",
         )
         auto_edges.append({
             "edge_id": edge_id,
@@ -250,6 +273,10 @@ def remember(
     retrieval_hints: dict | None = None,
     parent_id: int | None = None,
     parent_relation: str = "contains",
+    source_kind: str = "",
+    source_ref: str = "",
+    node_role: str = "",
+    epistemic_status: str = "provisional",
 ) -> dict:
     """기억을 저장하고 자동으로 관계를 생성한다.
 
@@ -285,6 +312,10 @@ def remember(
         confidence=confidence, source=source,
         content_hash=content_hash,
         retrieval_hints=retrieval_hints,
+        source_kind=source_kind,
+        source_ref=source_ref,
+        node_role=node_role,
+        epistemic_status=epistemic_status,
     )
 
     # 2-a. DB 레벨 중복 감지 (concurrent race condition 방어)
@@ -302,6 +333,7 @@ def remember(
                 target_id=node_id,
                 relation=parent_relation,
                 strength=0.85,
+                generation_method="rule",
             )
             parent_edge = {
                 "edge_id": edge_id,
@@ -361,6 +393,7 @@ def remember(
                     source_id=node_id, target_id=neighbor[0],
                     relation=relation, strength=0.6,
                     description="fallback: no similar neighbor found",
+                    generation_method="fallback",
                 )
                 auto_edges.append({
                     "edge_id": edge_id, "target_id": neighbor[0],

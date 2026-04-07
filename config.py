@@ -25,21 +25,35 @@ GRAPH_BONUS = 0.03   # 그래프 이웃 보너스 (v3.2: 0.005→0.03, graph 발
 # v3.2: 관계 타입별 graph traversal 가중치
 # 인과 관계가 가장 가치 높음, 구조 관계는 기본, co_retrieved는 최저
 RELATION_WEIGHT: dict[str, float] = {
-    # 인과 (1.5x) — "왜?"에 대한 답
+    # 인과 (1.3~1.5x) — "왜?"에 대한 답
     "caused_by": 1.5, "led_to": 1.5, "triggered_by": 1.5, "resulted_in": 1.5,
     "resolved_by": 1.5, "enabled_by": 1.3, "blocked_by": 1.3,
-    # 승격 (1.3x) — 지식 성장 경로
+    "prevented_by": 1.3,
+    # 승격 (1.2~1.3x) — 지식 성장 경로
     "realized_as": 1.3, "crystallized_into": 1.3, "abstracted_from": 1.3,
-    "generalizes_to": 1.2,
-    # 의미 (1.2x) — 의미적 연결
+    "generalizes_to": 1.2, "constrains": 1.1, "generates": 1.1,
+    # 의미 (1.1~1.2x) — 의미적 연결
     "supports": 1.2, "contradicts": 1.2, "reinforces_mutually": 1.2,
-    "analogous_to": 1.1, "exemplifies": 1.1,
-    # 시간 (1.1x) — 흐름 추적
+    "analogous_to": 1.1, "exemplifies": 1.1, "inspired_by": 1.1,
+    "validates": 1.1, "contextualizes": 1.0,
+    # cross-domain (1.0~1.1x)
+    "mirrors": 1.1, "influenced_by": 1.0, "correlated_with": 1.0,
+    "transfers_to": 1.1, "showcases": 0.9, "refuted_by": 1.2,
+    # 구조 (0.8~1.0x)
+    "contains": 1.0, "part_of": 1.0, "governed_by": 1.0, "governs": 1.0,
+    "extends": 1.0, "composed_of": 1.0, "derived_from": 1.0,
+    "instantiated_as": 0.9, "expressed_as": 0.9,
+    # 시간/변화 (0.9~1.1x)
     "succeeded_by": 1.1, "preceded_by": 1.1, "evolved_from": 1.1,
-    # 구조 (1.0x, 기본)
-    "contains": 1.0, "part_of": 1.0, "governed_by": 1.0, "extends": 1.0,
-    # 약한 (0.5x) — 노이즈
-    "co_retrieved": 0.3, "connects_with": 0.5,
+    "assembles": 0.9, "born_from": 0.9, "differs_in": 0.8, "variation_of": 0.8,
+    # perspective
+    "interpreted_as": 0.9, "questions": 1.0, "viewed_through": 0.8,
+    # semantic weak
+    "parallel_with": 0.7, "connects_with": 0.5,
+    # behavioral/derived (최저)
+    "co_retrieved": 0.3,
+    # unused but defined
+    "simultaneous_with": 0.6,
 }
 RELATION_WEIGHT_DEFAULT = 1.0
 ENRICHMENT_QUALITY_WEIGHT = 0.2   # recall() quality_score 가중치
@@ -171,6 +185,9 @@ RELATION_TYPES = {
     "cross_domain": [
         "transfers_to", "mirrors", "influenced_by", "showcases",
         "correlated_with", "refuted_by",
+    ],
+    "behavioral": [
+        "co_retrieved",
     ],
 }
 
@@ -350,6 +367,60 @@ SOURCE_BONUS: dict[str, float] = {
     "checkpoint": -0.02,   # checkpoint 덤프 (낮은 정밀도)
 }
 SOURCE_BONUS_DEFAULT = 0.0  # obsidian, hook 등 기타
+
+# ── v3.3: 온톨로지 정책 상수 ─────────────────────────────────
+
+# System types — generic recall에서 숨기되 correction-aware recall에서 우선 노출
+SYSTEM_NODE_TYPES = {"Correction"}
+
+# Node role — session/knowledge 분리의 핵심
+NODE_ROLES = {
+    "session_anchor",      # save_session Narrative
+    "work_item",           # short Decision/Question (40자 미만)
+    "knowledge_candidate", # 40자+ Decision/Question, 일반 remember()
+    "knowledge_core",      # promoted nodes
+    "signal_candidate",    # 반복 관찰에서 Signal 후보
+    "correction",          # flag_node() 생성
+    "external_noise",      # .venv/LICENSE 등 ingest noise
+}
+
+# Generic recall에서 제외하거나 강한 패널티를 줄 role
+GENERIC_RECALL_EXCLUDE_ROLES = {"session_anchor", "work_item", "external_noise", "correction"}
+GENERIC_RECALL_ROLE_PENALTY: dict[str, float] = {
+    "session_anchor": -0.08,
+    "work_item": -0.06,
+    "external_noise": -0.10,
+}
+
+# Epistemic status — 지식 신뢰 상태
+EPISTEMIC_STATUSES = {"provisional", "validated", "flagged", "outdated", "superseded"}
+
+# Source kind — source 컬럼에서 분리
+SOURCE_KINDS = {"save_session", "checkpoint", "claude", "obsidian", "pdr", "user", "hook", "external"}
+
+# Edge generation method — fallback/session_anchor 구분
+GENERATION_METHODS = {"manual", "rule", "semantic_auto", "fallback", "session_anchor", "co_retrieval", "migration", "external"}
+GENERATION_METHOD_PENALTY: dict[str, float] = {
+    "fallback": -0.03,
+    "session_anchor": -0.05,  # recollection mode에서만 유지
+    "co_retrieval": -0.02,
+}
+
+# Confidence → ranking 반영 (additive)
+CONFIDENCE_WEIGHT = 0.05  # final_score += (confidence - 0.5) * CONFIDENCE_WEIGHT
+CONTRADICTION_PENALTY = -0.10  # active contradicts edge 있을 때
+
+# save_session knowledge gate
+SAVE_SESSION_DECISION_MIN_LEN = 40   # 미만 → work_item
+SAVE_SESSION_QUESTION_MIN_LEN = 40   # 미만 → work_item
+SAVE_SESSION_SKIP_PATTERNS = {"미정", "확인", "검토", "점검", "여부", "TBD", "TODO"}
+
+# Project defaults
+PROJECT_DEFAULT_GLOBAL = "global"
+PROJECT_DEFAULT_EXTERNAL = "external"
+
+# Tag normalization
+TAG_CANONICAL_CASE = "lower-kebab"
 # v3: max layer = 3
 LAYER_IMPORTANCE = {
     3: 0.6, 2: 0.4, 1: 0.2, 0: 0.1,

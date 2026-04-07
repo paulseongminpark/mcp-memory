@@ -23,6 +23,9 @@ from config import (
     DECAY_LAMBDA, PROMOTED_MULTIPLIER, LAYER_IMPORTANCE,
     SOURCE_BONUS, SOURCE_BONUS_DEFAULT,
     RELATION_WEIGHT, RELATION_WEIGHT_DEFAULT,
+    CONFIDENCE_WEIGHT, CONTRADICTION_PENALTY,
+    GENERIC_RECALL_ROLE_PENALTY, GENERIC_RECALL_EXCLUDE_ROLES,
+    GENERATION_METHOD_PENALTY,
 )
 from storage import sqlite_store, vector_store
 from graph.traversal import build_graph  # traverse 제거 — UCB로 교체
@@ -44,7 +47,7 @@ def _get_graph() -> tuple[list, object]:
     global _GRAPH_CACHE, _GRAPH_CACHE_TS
     now = time.monotonic()
     if _GRAPH_CACHE is None or (now - _GRAPH_CACHE_TS) > _GRAPH_TTL:
-        all_edges = sqlite_store.get_all_edges()
+        all_edges = sqlite_store.get_all_edges(active_only=True)
         graph = build_graph(all_edges)
         # visit_count를 DB에서 로드 → UCB 탐색에서 활용 (B-12)
         try:
@@ -79,7 +82,28 @@ def _traverse_sql(seed_ids: list[int], depth: int = 2) -> set[int]:
         return set()
 
     ph = ",".join("?" * len(seed_ids))
-    sql = f"""
+    sql_active = f"""
+    WITH RECURSIVE sa(id, hop) AS (
+        SELECT target_id, 1 FROM edges
+         WHERE status = 'active' AND source_id IN ({ph})
+        UNION
+        SELECT source_id, 1 FROM edges
+         WHERE status = 'active' AND target_id IN ({ph})
+        UNION ALL
+        SELECT e.target_id, sa.hop + 1
+          FROM edges e
+          JOIN sa ON e.source_id = sa.id
+         WHERE e.status = 'active' AND sa.hop < ?
+        UNION ALL
+        SELECT e.source_id, sa.hop + 1
+          FROM edges e
+          JOIN sa ON e.target_id = sa.id
+         WHERE e.status = 'active' AND sa.hop < ?
+    )
+    SELECT DISTINCT id FROM sa
+    WHERE id NOT IN ({ph})
+    """
+    sql_fallback = f"""
     WITH RECURSIVE sa(id, hop) AS (
         SELECT target_id, 1 FROM edges WHERE source_id IN ({ph})
         UNION
@@ -102,10 +126,15 @@ def _traverse_sql(seed_ids: list[int], depth: int = 2) -> set[int]:
 
     try:
         with sqlite_store._db() as conn:
-            rows = conn.execute(sql, params).fetchall()
+            rows = conn.execute(sql_active, params).fetchall()
             return {row[0] for row in rows}
     except Exception:
-        return set()  # CTE 실패 시 그래프 보너스 없이 계속
+        try:
+            with sqlite_store._db() as conn:
+                rows = conn.execute(sql_fallback, params).fetchall()
+                return {row[0] for row in rows}
+        except Exception:
+            return set()  # CTE 실패 시 그래프 보너스 없이 계속
 
 
 # ─── _ucb_traverse() — B-12 ──────────────────────────────────────
@@ -145,13 +174,18 @@ def _ucb_traverse(
                     # v3.2: 관계 타입별 가중치 (인과 > 구조 > 약한)
                     rel = edata.get("relation", "")
                     w_ij *= RELATION_WEIGHT.get(rel, RELATION_WEIGHT_DEFAULT)
+                    generation_method = edata.get("generation_method", "")
+                    w_ij += GENERATION_METHOD_PENALTY.get(generation_method, 0.0)
                 elif graph.has_edge(nbr, nid):
                     edata = graph.edges[nbr, nid]
                     w_ij = edata.get("strength", 0.1)
                     rel = edata.get("relation", "")
                     w_ij *= RELATION_WEIGHT.get(rel, RELATION_WEIGHT_DEFAULT)
+                    generation_method = edata.get("generation_method", "")
+                    w_ij += GENERATION_METHOD_PENALTY.get(generation_method, 0.0)
                 else:
                     w_ij = 0.1
+                w_ij = max(w_ij, 0.0)
                 n_j = graph.nodes[nbr].get("visit_count", 1)
                 score = w_ij + c * math.sqrt(math.log(n_i + 1) / (n_j + 1))
                 candidates.append((score, nbr))
@@ -556,7 +590,7 @@ def hybrid_search(
     now_utc = datetime.now(timezone.utc)
     candidates = []
     for node_id in sorted_ids[:top_k * 10]:
-        node = sqlite_store.get_node(node_id)
+        node = sqlite_store.get_node(node_id, active_only=True)
         if not node:
             continue
         if type_filter and node["type"] != type_filter:
@@ -576,7 +610,25 @@ def hybrid_search(
         # v3.2: source 품질 가중치
         src = (node.get("source") or "").split(":")[0]  # "obsidian:..." → "obsidian"
         src_bonus = SOURCE_BONUS.get(src, SOURCE_BONUS_DEFAULT)
-        node["_base_rrf"] = scores[node_id] + enrichment_bonus + tier_bonus + src_bonus
+        role = node.get("node_role") or ""
+        role_penalty = GENERIC_RECALL_ROLE_PENALTY.get(role, 0.0)
+        confidence = float(node.get("confidence") or 0.0)
+        confidence_bonus = (confidence - 0.5) * CONFIDENCE_WEIGHT
+        contradiction_penalty = 0.0
+        if role in GENERIC_RECALL_EXCLUDE_ROLES and role_penalty == 0.0:
+            role_penalty = -0.05
+        edges = sqlite_store.get_edges(node_id, active_only=True)
+        if any(edge.get("relation") == "contradicts" for edge in edges):
+            contradiction_penalty = CONTRADICTION_PENALTY
+        node["_base_rrf"] = (
+            scores[node_id]
+            + enrichment_bonus
+            + tier_bonus
+            + src_bonus
+            + confidence_bonus
+            + role_penalty
+            + contradiction_penalty
+        )
         node["_sources"] = sorted(source_map.get(node_id, set()))
         candidates.append(node)
 
@@ -629,7 +681,11 @@ def hybrid_search(
         # 마지막 슬롯을 graph-only 최상위로 교체
         result[-1] = graph_only[0]
 
-    return result
+    result = [
+        r for r in result
+        if sqlite_store.get_node(r["id"], active_only=True) is not None
+    ]
+    return result[:top_k]
 
 
 # ─── background thread 관리 ──────────────────────────────────────

@@ -441,3 +441,8 @@ relation_types:
   refuted_by:
     description: "A가 B에 의해 반박되었다"
     inverse: null
+
+  # behavioral/derived (1)
+  co_retrieved:
+    description: "A와 B가 같은 recall에서 반복 공출현 (derived signal)"
+    inverse: co_retrieved

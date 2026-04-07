@@ -1,5 +1,46 @@
 # mcp-memory CHANGELOG
 
+## v3.3.0-dev (2026-04-07) — 온톨로지 전면 강화 (성장+교정+재반영)
+
+### 검색 무결성
+- **active-only filter**: get_node/get_edges/get_all_edges/search_fts 전 경로에 status='active' 강제
+- **confidence → scoring**: (confidence - 0.5) * CONFIDENCE_WEIGHT additive
+- **contradiction penalty**: contradicts edge 존재 시 -0.10
+- **node_role penalty**: session_anchor -0.08, work_item -0.06, external_noise -0.10
+
+### 온톨로지 메타데이터
+- **신규 컬럼 5개**: source_kind, source_ref, node_role, epistemic_status (nodes), generation_method (edges)
+- **Correction type active 복구**: system type으로 validators bypass
+- **co_retrieved relation_defs 등록**: behavioral 카테고리
+- **RELATION_WEIGHT 전 coverage**: 22개 미커버 relation 명시적 weight 추가
+
+### save_session knowledge gate
+- Decision/Question 40자 미만 → node_role='work_item' (generic recall 제외)
+- SKIP_PATTERNS 매칭 시 노드 미생성
+- Narrative → node_role='session_anchor'
+- contains edge → generation_method='session_anchor'
+
+### context selector 통합
+- get_context.py + session_context.py → context_selector.py 공용 selector
+- L2+ core, Signal, Observation 포함하는 풍부한 선택
+- work_item/external_noise 제외
+
+### 성장 엔진
+- **get_becoming maturity**: 5차원 (quality 30% + edges 20% + visits 20% + diversity 20% + recency 10%)
+- **promote_node evidence bundle**: evidence_ids 기록, node_role='knowledge_core'
+- **Signal 승격**: Observation 7건 → Signal (12→19)
+
+### 데이터 backfill
+- source_kind 분류: 5200 노드 전체
+- node_role 분류: save_session 1075건 (session_anchor 93, work_item 343, knowledge_candidate 639)
+- external noise quarantine: 37건
+- blank project 보정: 30건
+- JSON normalize: 58 fields
+
+### 테스트
+- 186 tests passed (Codex 작성 5개 포함)
+- recall avg 0.35→0.47, hit_rate 0.50→0.69
+
 ## v3.2.0-dev (2026-04-07) — 상호작용 개선 + 시스템 건강 복구
 
 ### 상호작용 개선

@@ -38,16 +38,28 @@ def flag_node(
         )
         conn.commit()
 
-    # 2. Correction 노드 생성
+    # 2. 원본 노드 epistemic_status 갱신
+    with sqlite_store._db() as conn:
+        conn.execute(
+            "UPDATE nodes SET epistemic_status = ? WHERE id = ?",
+            ("flagged" if action == "inaccurate" else action, node_id),
+        )
+        conn.commit()
+
+    # 3. Correction 노드 생성 (system type — validators bypass 필요)
     correction = remember(
         content=f"[Correction] Node #{node_id} flagged as {action}: {reason}",
         type="Correction",
         project=node.get("project", ""),
         source="flag_node",
         confidence=0.8,
+        source_kind="claude",
+        source_ref=f"flag_node:{node_id}",
+        node_role="correction",
+        epistemic_status="validated",
     )
 
-    # 3. contradicts edge 생성
+    # 4. contradicts edge 생성
     corr_id = correction.get("node_id")
     if corr_id:
         sqlite_store.insert_edge(
@@ -56,12 +68,14 @@ def flag_node(
             relation="contradicts",
             description=reason[:200],
             strength=0.9,
+            generation_method="rule",
         )
 
     return {
         "node_id": node_id,
         "action": action,
         "confidence": f"{old_conf:.2f} → {new_conf:.2f}",
+        "epistemic_status": "flagged" if action == "inaccurate" else action,
         "correction_id": corr_id,
         "message": f"Node #{node_id} flagged as {action}. Confidence {old_conf:.2f}→{new_conf:.2f}. Correction #{corr_id} created.",
     }

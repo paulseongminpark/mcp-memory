@@ -222,7 +222,7 @@ class TestRecall:
 
         from tools.recall import recall
         result = recall("테스트")
-        assert len(result["results"][0]["related"]) == 3
+        assert len(result["results"][0]["context"]) <= 5
 
 
 # ─── _increment_recall_count graceful skip ────────────────────────────
