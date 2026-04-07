@@ -22,6 +22,7 @@ from config import (
     COMPOSITE_WEIGHT_RRF, COMPOSITE_WEIGHT_DECAY, COMPOSITE_WEIGHT_IMPORTANCE,
     DECAY_LAMBDA, PROMOTED_MULTIPLIER, LAYER_IMPORTANCE,
     SOURCE_BONUS, SOURCE_BONUS_DEFAULT,
+    RELATION_WEIGHT, RELATION_WEIGHT_DEFAULT,
 )
 from storage import sqlite_store, vector_store
 from graph.traversal import build_graph  # traverse 제거 — UCB로 교체
@@ -139,9 +140,16 @@ def _ucb_traverse(
                 if nbr in visited:
                     continue
                 if graph.has_edge(nid, nbr):
-                    w_ij = graph.edges[nid, nbr].get("strength", 0.1)
+                    edata = graph.edges[nid, nbr]
+                    w_ij = edata.get("strength", 0.1)
+                    # v3.2: 관계 타입별 가중치 (인과 > 구조 > 약한)
+                    rel = edata.get("relation", "")
+                    w_ij *= RELATION_WEIGHT.get(rel, RELATION_WEIGHT_DEFAULT)
                 elif graph.has_edge(nbr, nid):
-                    w_ij = graph.edges[nbr, nid].get("strength", 0.1)
+                    edata = graph.edges[nbr, nid]
+                    w_ij = edata.get("strength", 0.1)
+                    rel = edata.get("relation", "")
+                    w_ij *= RELATION_WEIGHT.get(rel, RELATION_WEIGHT_DEFAULT)
                 else:
                     w_ij = 0.1
                 n_j = graph.nodes[nbr].get("visit_count", 1)
@@ -610,6 +618,16 @@ def hybrid_search(
 
     candidates.sort(key=lambda n: n["score"], reverse=True)
     result = _apply_type_diversity(candidates, top_k)
+
+    # v3.2: graph 보호 슬롯 — graph-only 결과 최소 1개 보장
+    # vector/fts5가 못 찾고 graph만 찾은 노드를 살린다
+    graph_only = [
+        c for c in candidates
+        if c.get("_sources") == ["graph"] and c not in result
+    ]
+    if graph_only and result:
+        # 마지막 슬롯을 graph-only 최상위로 교체
+        result[-1] = graph_only[0]
 
     return result
 

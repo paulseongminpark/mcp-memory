@@ -20,7 +20,28 @@ DEFAULT_TOP_K = 5
 SIMILARITY_THRESHOLD = 0.55  # 자동 edge 생성 임계값 (v3.2: 0.3→0.55 노이즈 에지 감소)
 GRAPH_MAX_HOPS = 2
 RRF_K = 18  # Reciprocal Rank Fusion 상수 (tuned 2026-03-08: 60→18, NDCG+12.5%)
-GRAPH_BONUS = 0.005  # 그래프 이웃 보너스 (tuned 2026-03-08: 0.015→0.005, vector rank 우선)
+GRAPH_BONUS = 0.03   # 그래프 이웃 보너스 (v3.2: 0.005→0.03, graph 발견 실질적 반영)
+
+# v3.2: 관계 타입별 graph traversal 가중치
+# 인과 관계가 가장 가치 높음, 구조 관계는 기본, co_retrieved는 최저
+RELATION_WEIGHT: dict[str, float] = {
+    # 인과 (1.5x) — "왜?"에 대한 답
+    "caused_by": 1.5, "led_to": 1.5, "triggered_by": 1.5, "resulted_in": 1.5,
+    "resolved_by": 1.5, "enabled_by": 1.3, "blocked_by": 1.3,
+    # 승격 (1.3x) — 지식 성장 경로
+    "realized_as": 1.3, "crystallized_into": 1.3, "abstracted_from": 1.3,
+    "generalizes_to": 1.2,
+    # 의미 (1.2x) — 의미적 연결
+    "supports": 1.2, "contradicts": 1.2, "reinforces_mutually": 1.2,
+    "analogous_to": 1.1, "exemplifies": 1.1,
+    # 시간 (1.1x) — 흐름 추적
+    "succeeded_by": 1.1, "preceded_by": 1.1, "evolved_from": 1.1,
+    # 구조 (1.0x, 기본)
+    "contains": 1.0, "part_of": 1.0, "governed_by": 1.0, "extends": 1.0,
+    # 약한 (0.5x) — 노이즈
+    "co_retrieved": 0.3, "connects_with": 0.5,
+}
+RELATION_WEIGHT_DEFAULT = 1.0
 ENRICHMENT_QUALITY_WEIGHT = 0.2   # recall() quality_score 가중치
 ENRICHMENT_TEMPORAL_WEIGHT = 0.1  # recall() temporal_relevance 가중치
 

@@ -140,11 +140,64 @@ def recall(
             "context": context,
         })
 
-    return {
+    # v3.2: multi-hop 경로 합성 — 결과 간 인과 체인 감지
+    chains = _detect_chains(results)
+
+    response = {
         "results": formatted,
         "count": len(formatted),
         "message": f"Found {len(formatted)} memory(ies) for '{query}'",
     }
+    if chains:
+        response["chains"] = chains
+    return response
+
+
+# ─── multi-hop chain 감지 (v3.2) ──────────────────────────────────
+
+CAUSAL_RELATIONS = {
+    "led_to", "caused_by", "triggered_by", "resulted_in",
+    "resolved_by", "realized_as", "crystallized_into",
+    "evolved_from", "succeeded_by",
+}
+
+
+def _detect_chains(results: list[dict]) -> list[dict]:
+    """결과 노드 간 인과 체인 감지. A→led_to→B→resulted_in→C."""
+    if len(results) < 2:
+        return []
+
+    id_set = {r["id"] for r in results}
+    chains = []
+
+    for r in results:
+        edges = sqlite_store.get_edges(r["id"])
+        for e in edges:
+            if e.get("status") != "active":
+                continue
+            rel = e.get("relation", "")
+            if rel not in CAUSAL_RELATIONS:
+                continue
+            # 결과 내 다른 노드로의 인과 연결
+            other_id = e["target_id"] if e["source_id"] == r["id"] else e["source_id"]
+            if other_id in id_set and other_id != r["id"]:
+                direction = "→" if e["source_id"] == r["id"] else "←"
+                chains.append({
+                    "from": r["id"],
+                    "to": other_id,
+                    "relation": f"{direction}{rel}",
+                })
+
+    # 중복 제거 (A→B, B→A 동시 감지 방지)
+    seen = set()
+    unique = []
+    for c in chains:
+        key = tuple(sorted([c["from"], c["to"]]))
+        if key not in seen:
+            seen.add(key)
+            unique.append(c)
+
+    return unique
 
 
 # ─── 패치 전환 헬퍼 (B-4) ─────────────────────────────────────────

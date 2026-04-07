@@ -332,6 +332,43 @@ def remember(
     if parent_edge:
         auto_edges.insert(0, parent_edge)
 
+    # v3.2: fallback edge — auto_link 실패 시 최소 1개 edge 보장
+    # 같은 project + 같은 type의 최근 노드에 구조적 연결
+    if not auto_edges and project:
+        try:
+            with sqlite_store._db() as conn:
+                neighbor = conn.execute(
+                    """SELECT id, type, layer FROM nodes
+                       WHERE project=? AND type=? AND status='active' AND id != ?
+                       ORDER BY created_at DESC LIMIT 1""",
+                    (project, cls.type, node_id),
+                ).fetchone()
+                if not neighbor:
+                    # 같은 type 없으면 같은 project의 아무 노드
+                    neighbor = conn.execute(
+                        """SELECT id, type, layer FROM nodes
+                           WHERE project=? AND status='active' AND id != ?
+                           ORDER BY created_at DESC LIMIT 1""",
+                        (project, node_id),
+                    ).fetchone()
+            if neighbor:
+                relation = infer_relation(
+                    src_type=cls.type, src_layer=cls.layer,
+                    tgt_type=neighbor[1], tgt_layer=neighbor[2],
+                    src_project=project, tgt_project=project,
+                )
+                edge_id = sqlite_store.insert_edge(
+                    source_id=node_id, target_id=neighbor[0],
+                    relation=relation, strength=0.6,
+                    description="fallback: no similar neighbor found",
+                )
+                auto_edges.append({
+                    "edge_id": edge_id, "target_id": neighbor[0],
+                    "relation": relation, "strength": 0.6,
+                })
+        except Exception:
+            pass  # fallback 실패가 저장을 막으면 안됨
+
     # wiki-compiler dirty flag
     try:
         sqlite_store.mark_dirty(project, node_id)
