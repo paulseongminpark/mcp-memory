@@ -13,6 +13,27 @@ sys.path.insert(0, str(__import__("pathlib").Path(__file__).parent.parent))
 from config import DB_PATH
 
 
+def _load_proven_knowledge() -> str:
+    """proven_knowledge.md에서 검증된 지식 요약 로드."""
+    pk_path = DB_PATH.parent / "proven_knowledge.md"
+    if not pk_path.exists():
+        return ""
+    try:
+        text = pk_path.read_text(encoding="utf-8")
+        # 헤더 제거, 내용만
+        lines = []
+        for line in text.split("\n"):
+            if line.startswith("# ") or line.startswith("_Auto-generated"):
+                continue
+            if line.startswith("검증된 지식"):
+                continue
+            if line.strip():
+                lines.append(line)
+        return "\n".join(lines[:40])  # 최대 40줄
+    except Exception:
+        return ""
+
+
 def get_context_cli(project: str = "") -> str:
     if not DB_PATH.exists():
         return ""
@@ -24,6 +45,13 @@ def get_context_cli(project: str = "") -> str:
         return ""
 
     lines = []
+
+    # v4: proven_knowledge.md에서 검증된 지식 먼저
+    proven = _load_proven_knowledge()
+    if proven:
+        lines.append("=== 검증된 지식 (proven_knowledge.md) ===")
+        lines.append(proven)
+        lines.append("")
 
     # L2+ 핵심 패턴/원칙
     if "l2_core" in sections:

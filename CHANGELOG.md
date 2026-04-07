@@ -1,5 +1,12 @@
 # mcp-memory CHANGELOG
 
+## Merger Artifact Pipeline (2026-04-07)
+- `scripts/render_proven_knowledge.py`: knowledge_core + validated + high-signal + corrections → `data/proven_knowledge.md` (22 nodes)
+- `data/merger_manifest.json`: 반영 이력 추적 (22 entries)
+- `session_context.py`: 세션 시작 시 proven_knowledge.md를 먼저 출력
+- 렌더 기준: knowledge_core(무조건) + validated(q≥0.85) + Signal(v≥5) + Correction
+- DB → artifact → session context 단일 흐름 완성
+
 ## Goldset v4 교정 + Enum Drift 수정 (2026-04-07)
 - goldset 19개 쿼리 교정: NDCG@5 0.201→**0.402**, hit_rate 0.646→**0.939**
 - config GENERATION_METHODS: enrichment/orphan_repair/legacy_unknown 추가 (enum drift 0)
