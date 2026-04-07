@@ -460,6 +460,9 @@ class GraphAnalyzer:
         system, user = self.prompts.render("E19",
             relation_list=relation_list,
             orphan_brief=orphan_brief,
+            orphan_type=orphan.get("type", "Unknown"),
+            orphan_layer=orphan.get("layer", "?"),
+            orphan_project=orphan.get("project", "?"),
             neighbor_briefs=neighbor_briefs,
         )
         r = self._call_json(config.ENRICHMENT_MODELS["deep"], system, user)
@@ -741,28 +744,89 @@ class GraphAnalyzer:
             print()
         return results
 
-    def run_e19_all(self, limit: int = 30) -> list[dict]:
-        """Run E19 on orphan nodes, insert suggested edges."""
-        orphans = self.find_orphan_nodes()[:limit]
+    def _select_diverse_neighbors(self, node: dict, limit: int = 12) -> list[dict]:
+        """v3.2: 다양한 이웃 후보 선택 — 타입/레이어/프로젝트 혼합.
+
+        4가지 슬롯:
+        - 같은 project + 같은 type (수평): 3개
+        - 같은 project + 다른 layer (수직): 3개
+        - 같은 type + 다른 project (cross-project): 3개
+        - 같은 project + 높은 visit_count (허브): 3개
+        """
+        nid = node["id"]
+        project = node.get("project", "")
+        ntype = node.get("type", "")
+        layer = node.get("layer")
+        neighbors = []
+        seen = {nid}
+
+        def _add(rows):
+            for r in rows:
+                d = dict(r)
+                if d["id"] not in seen:
+                    seen.add(d["id"])
+                    neighbors.append(d)
+
+        # 1. 같은 project + 같은 type (수평)
+        if project:
+            _add(self.conn.execute(
+                "SELECT * FROM nodes WHERE project=? AND type=? AND id!=? AND status='active' ORDER BY created_at DESC LIMIT 3",
+                (project, ntype, nid),
+            ).fetchall())
+
+        # 2. 같은 project + 다른 layer (수직 흐름)
+        if project and layer is not None:
+            _add(self.conn.execute(
+                "SELECT * FROM nodes WHERE project=? AND layer!=? AND id!=? AND status='active' ORDER BY visit_count DESC LIMIT 3",
+                (project, layer, nid),
+            ).fetchall())
+
+        # 3. 같은 type + 다른 project (cross-project)
+        if project:
+            _add(self.conn.execute(
+                "SELECT * FROM nodes WHERE type=? AND project!=? AND project!='' AND id!=? AND status='active' ORDER BY visit_count DESC LIMIT 3",
+                (ntype, project, nid),
+            ).fetchall())
+
+        # 4. 같은 project 허브 노드 (visit_count 높은)
+        if project:
+            _add(self.conn.execute(
+                "SELECT * FROM nodes WHERE project=? AND id!=? AND status='active' ORDER BY visit_count DESC LIMIT 3",
+                (project, nid),
+            ).fetchall())
+
+        # project 없으면 전체에서
+        if not neighbors:
+            _add(self.conn.execute(
+                "SELECT * FROM nodes WHERE status='active' AND id!=? ORDER BY visit_count DESC LIMIT 10",
+                (nid,),
+            ).fetchall())
+
+        return neighbors[:limit]
+
+    def run_e19_all(self, limit: int = 100) -> list[dict]:
+        """Run E19 on orphan + single-edge nodes. v3.2: 다양한 이웃 선택."""
+        # v3.2: orphan + single-edge 모두 포함
+        orphans = self.find_orphan_nodes()
+        single_edge = self.conn.execute('''
+            SELECT n.* FROM nodes n
+            JOIN edges e ON (n.id = e.source_id OR n.id = e.target_id) AND e.status='active'
+            WHERE n.status='active'
+            GROUP BY n.id HAVING COUNT(e.id) = 1
+            ORDER BY n.visit_count DESC
+        ''').fetchall()
+        single_edge = [dict(r) for r in single_edge]
+
+        # orphan 우선, 이후 single-edge
+        targets = orphans + [s for s in single_edge if s["id"] not in {o["id"] for o in orphans}]
+        targets = targets[:limit]
+
         results = []
-        total = len(orphans)
+        total = len(targets)
         t0 = time.time()
-        for i, orphan in enumerate(orphans):
+        for i, orphan in enumerate(targets):
             try:
-                project = orphan.get("project", "")
-                if project:
-                    rows = self.conn.execute(
-                        "SELECT * FROM nodes WHERE project = ? AND id != ? "
-                        "AND status = 'active' ORDER BY created_at DESC LIMIT 10",
-                        (project, orphan["id"]),
-                    ).fetchall()
-                else:
-                    rows = self.conn.execute(
-                        "SELECT * FROM nodes WHERE status = 'active' AND id != ? "
-                        "ORDER BY created_at DESC LIMIT 10",
-                        (orphan["id"],),
-                    ).fetchall()
-                neighbors = [dict(r) for r in rows]
+                neighbors = self._select_diverse_neighbors(orphan)
 
                 suggestions = self.e19_missing_links(orphan, neighbors)
                 for s in suggestions:
@@ -1012,6 +1076,74 @@ class GraphAnalyzer:
             filled = int(bar_w * done / total) if total else bar_w
             bar = "\u2588" * filled + "\u2591" * (bar_w - filled)
             print(f"\r  E25 [{bar}] {done}/{total} gaps={self.stats['gaps_analyzed']} ETA {h}h{m:02d}m{s:02d}s",
+                  end="", flush=True)
+            time.sleep(config.BATCH_SLEEP)
+        if total > 0:
+            print()
+        return results
+
+    # ── E26: Edge description generation ─────────────────────
+
+    def e26_edge_description(self, edge: dict,
+                             source_node: dict, target_node: dict) -> dict:
+        """Generate a description for an edge without one."""
+        system, user = self.prompts.render("E26",
+            relation=edge.get("relation", "connects_with"),
+            source_id=source_node["id"],
+            source_type=source_node.get("type", ""),
+            source_brief=self._node_brief(source_node),
+            target_id=target_node["id"],
+            target_type=target_node.get("type", ""),
+            target_brief=self._node_brief(target_node),
+        )
+        return self._call_json(config.ENRICHMENT_MODELS["bulk"], system, user)
+
+    def run_e26_all(self, limit: int = 200) -> list[dict]:
+        """Run E26: add descriptions to edges missing them."""
+        edges = self.conn.execute('''
+            SELECT * FROM edges
+            WHERE status='active'
+            AND (description IS NULL OR description='' OR description='[]')
+            AND relation != 'co_retrieved'
+            ORDER BY strength DESC
+            LIMIT ?
+        ''', (limit,)).fetchall()
+        edges = [dict(e) for e in edges]
+        results = []
+        total = len(edges)
+        t0 = time.time()
+        self.stats["descriptions_added"] = 0
+
+        for i, edge in enumerate(edges):
+            try:
+                src = self.conn.execute("SELECT * FROM nodes WHERE id=?", (edge["source_id"],)).fetchone()
+                tgt = self.conn.execute("SELECT * FROM nodes WHERE id=?", (edge["target_id"],)).fetchone()
+                if not src or not tgt:
+                    continue
+                result = self.e26_edge_description(edge, dict(src), dict(tgt))
+                desc = result.get("description", "")
+                if desc:
+                    self.conn.execute(
+                        "UPDATE edges SET description=? WHERE id=?",
+                        (desc[:200], edge["id"]),
+                    )
+                    self.conn.commit()
+                    self.stats["descriptions_added"] += 1
+                results.append(result)
+            except BudgetExhausted:
+                break
+            except Exception:
+                self.stats["errors"] += 1
+            done = i + 1
+            elapsed = time.time() - t0
+            rate = done / elapsed if elapsed > 0 else 0
+            eta = (total - done) / rate if rate > 0 else 0
+            m, s = divmod(int(eta), 60)
+            h, m = divmod(m, 60)
+            bar_w = 30
+            filled = int(bar_w * done / total) if total else bar_w
+            bar = "\u2588" * filled + "\u2591" * (bar_w - filled)
+            print(f"\r  E26 [{bar}] {done}/{total} descs={self.stats['descriptions_added']} ETA {h}h{m:02d}m{s:02d}s",
                   end="", flush=True)
             time.sleep(config.BATCH_SLEEP)
         if total > 0:

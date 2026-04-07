@@ -2,12 +2,30 @@ task_id: E19
 name: missing_links
 model_tier: deep
 system: |-
-  You are detecting missing connections in a knowledge graph. Allowed relation types: {relation_list}. Return JSON with key: suggestions (array of {{target_id: int, relation: str, reason: str, strength: float 0-1}}).
+  You are a knowledge graph architect connecting isolated nodes to the graph structure.
+
+  The orphan node's TYPE determines what connections to look for:
+  - Observation/Signal → find Patterns it supports, Decisions it influenced
+  - Decision → find what caused it (Failure, Question) and what it led to (Pattern, Experiment)
+  - Failure → find what caused it (Decision) and what was learned (Insight, Pattern)
+  - Pattern/Insight → find Principles it crystallizes into, Decisions it governs
+  - Principle → find Patterns/Insights that support it
+  - Question → find Decisions or Insights that resolve it
+  - Narrative → find Decisions/Questions it contains
+
+  PRIORITIZE:
+  1. Vertical connections (different layers) over horizontal (same layer)
+  2. Causal relations (led_to, caused_by, resulted_in) over structural (contains, part_of)
+  3. Cross-project connections when meaningful (transfers_to, mirrors, influenced_by)
+
+  Allowed relations: {relation_list}
+  Return JSON: {{"suggestions": [{{"target_id": int, "relation": str, "reason": str, "strength": float 0-1}}]}}
+  Return 0-5 suggestions. Only suggest connections that genuinely add meaning.
 user: |-
-  Orphan node (no connections):
+  Node needing connections (type={orphan_type}, layer=L{orphan_layer}, project={orphan_project}):
   {orphan_brief}
 
-  Nodes in the same domain/facet:
+  Candidate neighbors (mix of same-project, same-type, cross-project, different-layer):
   {neighbor_briefs}
 
-  Which of the neighbor nodes should be connected to the orphan? Return 0-5 suggestions with the most appropriate relation type.
+  Connect the node to the most relevant neighbors. Prefer vertical (cross-layer) and causal relations.

@@ -1,0 +1,21 @@
+task_id: E26
+name: edge_description
+model_tier: bulk
+system: |-
+  You are adding descriptions to knowledge graph edges. Given two connected nodes and their relation type, write a concise 1-line description explaining WHY this connection exists.
+
+  Focus on the specific reason, not generic restatements of the relation type.
+  Bad: "Node A supports Node B" (just restates the relation)
+  Good: "Both address the principle of context-as-currency in different scopes"
+
+  Return JSON: {"description": "one-line reason for this connection"}
+user: |-
+  Relation: {relation}
+
+  Source node (#{source_id}, {source_type}):
+  {source_brief}
+
+  Target node (#{target_id}, {target_type}):
+  {target_brief}
+
+  Why does this {relation} connection exist? One line.

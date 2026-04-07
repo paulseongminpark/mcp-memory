@@ -232,10 +232,17 @@ def phase4(conn: sqlite3.Connection, ga: GraphAnalyzer,
         except BudgetExhausted:
             pass
 
-    # 4c. E19 missing links
+    # 4c. E19 missing links (v3.2: orphan + single-edge, 다양한 이웃)
     if not budget.budget_exhausted("large"):
         try:
-            ga.run_e19_all(limit=30)
+            ga.run_e19_all(limit=100)
+        except BudgetExhausted:
+            pass
+
+    # 4e. E26 edge descriptions (v3.2: 소형 풀 사용)
+    if not budget.budget_exhausted("small"):
+        try:
+            ga.run_e26_all(limit=200)
         except BudgetExhausted:
             pass
 
