@@ -7,6 +7,23 @@
 - 렌더 기준: knowledge_core(무조건) + validated(q≥0.85) + Signal(v≥5) + Correction
 - DB → artifact → session context 단일 흐름 완성
 
+## V5 Runtime + Epistemic + Edge Class (2026-04-07)
+
+### V5-01: render_memory_md active 필터
+- 전 쿼리에 `status='active'` + `node_role` + `epistemic_status` 필터 추가
+- deleted/outdated/work_item/external_noise가 MEMORY.md에 올라가지 않음
+
+### V5-02: Epistemic Output Separation
+- context_selector: l2_core에서 outdated/flagged/superseded 제외
+- context_selector: corrections 전용 섹션 신설 (contradicts edge 포함)
+- session_context: "교정 경고" 섹션 분리 출력
+- proven_knowledge.md: Core Knowledge / Corrections 2섹션 분리
+
+### V5-03: Edge Class 분류 체계
+- config.py EDGE_CLASS: 49 relation → semantic/evidence/temporal/structural/operational
+- REASONING_EDGE_CLASSES: generic reasoning에서 operational 제외
+- 196 tests passed
+
 ## Goldset v4 교정 + Enum Drift 수정 (2026-04-07)
 - goldset 19개 쿼리 교정: NDCG@5 0.201→**0.402**, hit_rate 0.646→**0.939**
 - config GENERATION_METHODS: enrichment/orphan_repair/legacy_unknown 추가 (enum drift 0)

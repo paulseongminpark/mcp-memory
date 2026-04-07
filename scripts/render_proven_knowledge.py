@@ -93,19 +93,26 @@ def render_markdown(nodes):
     """프로젝트별 그룹핑된 proven_knowledge.md 생성."""
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
+    # v5: epistemic separation — core/signal과 correction 분리
+    core_nodes = [n for n in nodes if n["reason"] != "correction"]
+    correction_nodes = [n for n in nodes if n["reason"] == "correction"]
+
     by_project = defaultdict(list)
-    for n in nodes:
+    for n in core_nodes:
         by_project[n["project"] or "system"].append(n)
 
     lines = [
         "# Proven Knowledge",
         f"_Auto-generated: {now} | {len(nodes)} nodes_\n",
-        "검증된 지식만 포함. knowledge_core + validated + high-signal + corrections.\n",
     ]
+
+    # Section 1: Core Knowledge
+    lines.append("## Core Knowledge")
+    lines.append("검증된 핵심 지식. knowledge_core + validated + high-signal.\n")
 
     for proj in sorted(by_project.keys()):
         proj_nodes = by_project[proj]
-        lines.append(f"## {proj}")
+        lines.append(f"### {proj}")
         for n in proj_nodes:
             content = (n["summary"] or n["content"] or "")[:120]
             content = content.replace("\n", " ").strip()
@@ -117,6 +124,15 @@ def render_markdown(nodes):
                 f"- **[{n['type']}]** #{n['id']} (q={q:.2f} v={v} conf={conf:.2f} _{tag}_) "
                 f"{content}"
             )
+        lines.append("")
+
+    # Section 2: Corrections / Warnings (분리)
+    if correction_nodes:
+        lines.append("## Corrections / Warnings")
+        lines.append("교정된 노드. 해당 정보를 신뢰하지 마세요.\n")
+        for n in correction_nodes:
+            content = (n["content"] or "")[:120].replace("\n", " ").strip()
+            lines.append(f"- **[Correction]** #{n['id']} {content}")
         lines.append("")
 
     return "\n".join(lines)

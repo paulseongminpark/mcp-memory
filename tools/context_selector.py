@@ -29,13 +29,15 @@ def select_context(project: str = "") -> dict:
             return f"AND {prefix}project = ?", [project]
         return "", []
 
-    # ── L2+ 핵심 패턴/원칙 (quality 상위 15개) ──
+    # ── L2+ 핵심 패턴/원칙 (quality 상위 15개) — v5: epistemic 필터 ──
     pc, pp = _proj()
     rows = conn.execute(f"""
-        SELECT id, type, content, summary, quality_score, layer
+        SELECT id, type, content, summary, quality_score, layer, epistemic_status
         FROM nodes
         WHERE layer >= 2 AND status = 'active'
           AND type IN ('Pattern','Insight','Principle','Identity','Framework')
+          AND epistemic_status NOT IN ('outdated', 'superseded', 'flagged')
+          AND node_role NOT IN ('external_noise', 'work_item')
           {pc}
         ORDER BY quality_score DESC NULLS LAST LIMIT 15
     """, pp).fetchall()
@@ -44,6 +46,26 @@ def select_context(project: str = "") -> dict:
             {"id": r["id"], "type": r["type"],
              "content": (r["summary"] or r["content"])[:80],
              "quality": round(r["quality_score"] or 0, 2)}
+            for r in rows
+        ]
+
+    # ── v5: Corrections / Warnings (epistemic separation) ──
+    pc, pp = _proj()
+    rows = conn.execute(f"""
+        SELECT n.id, n.content, n.created_at,
+               e.target_id as flagged_node_id
+        FROM nodes n
+        LEFT JOIN edges e ON e.source_id = n.id AND e.relation = 'contradicts' AND e.status = 'active'
+        WHERE n.type = 'Correction' AND n.status = 'active'
+          {pc}
+        ORDER BY n.created_at DESC LIMIT 5
+    """, pp).fetchall()
+    if rows:
+        sections["corrections"] = [
+            {"id": r["id"],
+             "content": r["content"][:80],
+             "flagged_node": r["flagged_node_id"],
+             "date": (r["created_at"] or "")[:10]}
             for r in rows
         ]
 

@@ -74,6 +74,14 @@ def get_context_cli(project: str = "") -> str:
     if lines:
         lines.append("")
 
+    # v5: Corrections / Warnings (epistemic separation — core와 분리)
+    if "corrections" in sections:
+        lines.append("교정 경고:")
+        for c in sections["corrections"]:
+            flagged = f" (→#{c['flagged_node']})" if c.get('flagged_node') else ""
+            lines.append(f"  - [{c.get('date','')}] {c['content']}{flagged}")
+        lines.append("")
+
     # Decision
     if "decisions" in sections:
         lines.append("최근 결정:")

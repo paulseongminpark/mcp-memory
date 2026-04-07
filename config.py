@@ -20,7 +20,7 @@ DEFAULT_TOP_K = 5
 SIMILARITY_THRESHOLD = 0.55  # 자동 edge 생성 임계값 (v3.2: 0.3→0.55 노이즈 에지 감소)
 GRAPH_MAX_HOPS = 2
 RRF_K = 18  # Reciprocal Rank Fusion 상수 (tuned 2026-03-08: 60→18, NDCG+12.5%)
-GRAPH_BONUS = 0.03   # 그래프 이웃 보너스 (v3.2: 0.005→0.03, graph 발견 실질적 반영)
+GRAPH_BONUS = 0.12   # v4: semantic edge 한정 강화 (0.03→0.12). operational edge는 GENERATION_METHOD_PENALTY로 감점
 
 # v3.2: 관계 타입별 graph traversal 가중치
 # 인과 관계가 가장 가치 높음, 구조 관계는 기본, co_retrieved는 최저
@@ -56,6 +56,39 @@ RELATION_WEIGHT: dict[str, float] = {
     "simultaneous_with": 0.6,
 }
 RELATION_WEIGHT_DEFAULT = 1.0
+
+# v5: Edge class 분류 — reasoning graph에서 semantic/evidence만 주력 사용
+EDGE_CLASS: dict[str, str] = {
+    # semantic — reasoning 핵심 (supports, led_to, governs 등)
+    "supports": "semantic", "contradicts": "semantic", "reinforces_mutually": "semantic",
+    "led_to": "semantic", "caused_by": "semantic", "triggered_by": "semantic",
+    "resulted_in": "semantic", "resolved_by": "semantic", "enabled_by": "semantic",
+    "blocked_by": "semantic", "prevented_by": "semantic",
+    "generalizes_to": "semantic", "constrains": "semantic", "generates": "semantic",
+    "governed_by": "semantic", "governs": "semantic",
+    "analogous_to": "semantic", "inspired_by": "semantic", "contextualizes": "semantic",
+    "mirrors": "semantic", "influenced_by": "semantic", "transfers_to": "semantic",
+    "correlated_with": "semantic", "refuted_by": "semantic",
+    "questions": "semantic", "validates": "semantic",
+    # evidence — 지식 성장 경로
+    "realized_as": "evidence", "crystallized_into": "evidence",
+    "abstracted_from": "evidence", "exemplifies": "evidence",
+    "expressed_as": "evidence", "instantiated_as": "evidence",
+    "derived_from": "evidence", "showcases": "evidence",
+    # temporal — 시간/구조
+    "succeeded_by": "temporal", "preceded_by": "temporal", "evolved_from": "temporal",
+    "assembles": "temporal", "born_from": "temporal",
+    "contains": "structural", "part_of": "structural", "extends": "structural",
+    "composed_of": "structural",
+    # operational — reasoning에서 약하게
+    "co_retrieved": "operational", "parallel_with": "operational",
+    "connects_with": "operational", "simultaneous_with": "operational",
+    "differs_in": "operational", "variation_of": "operational",
+    "interpreted_as": "operational", "viewed_through": "operational",
+}
+EDGE_CLASS_DEFAULT = "semantic"
+# generic reasoning에서 사용할 class (operational 제외)
+REASONING_EDGE_CLASSES = {"semantic", "evidence", "temporal", "structural"}
 ENRICHMENT_QUALITY_WEIGHT = 0.2   # recall() quality_score 가중치
 ENRICHMENT_TEMPORAL_WEIGHT = 0.1  # recall() temporal_relevance 가중치
 

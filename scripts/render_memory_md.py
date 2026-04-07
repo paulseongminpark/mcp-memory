@@ -30,10 +30,12 @@ def get_db():
 
 
 def query_l3_nodes(conn) -> list[dict]:
-    """L3 (Principle, Identity) 전체."""
+    """L3 (Principle, Identity) — active + knowledge relevant only."""
     rows = conn.execute(
         """SELECT type, content, COALESCE(quality_score, ?) as qs
-           FROM nodes WHERE layer = 3
+           FROM nodes WHERE layer = 3 AND status = 'active'
+             AND node_role NOT IN ('external_noise', 'work_item')
+             AND epistemic_status NOT IN ('outdated', 'superseded')
            ORDER BY qs DESC""",
         (UNENRICHED_DEFAULT_QS.get(3, 0.75),)
     ).fetchall()
@@ -41,10 +43,12 @@ def query_l3_nodes(conn) -> list[dict]:
 
 
 def query_l2_top(conn, limit=15) -> list[dict]:
-    """L2 (Pattern, Insight, Framework) 상위 N개."""
+    """L2 (Pattern, Insight, Framework) 상위 N개 — active only."""
     rows = conn.execute(
         """SELECT type, content, COALESCE(quality_score, ?) as qs
-           FROM nodes WHERE layer = 2
+           FROM nodes WHERE layer = 2 AND status = 'active'
+             AND node_role NOT IN ('external_noise', 'work_item')
+             AND epistemic_status NOT IN ('outdated', 'superseded')
            ORDER BY qs DESC LIMIT ?""",
         (UNENRICHED_DEFAULT_QS.get(2, 0.65), limit)
     ).fetchall()
@@ -52,11 +56,13 @@ def query_l2_top(conn, limit=15) -> list[dict]:
 
 
 def query_recent_decisions(conn, days=7, limit=5) -> list[dict]:
-    """최근 N일 Decision 상위."""
+    """최근 N일 Decision — active, work_item 제외."""
     since = (datetime.now(tz=None) - timedelta(days=days)).isoformat()
     rows = conn.execute(
         """SELECT content, created_at
-           FROM nodes WHERE type = 'Decision' AND created_at > ?
+           FROM nodes WHERE type = 'Decision' AND status = 'active'
+             AND node_role NOT IN ('work_item', 'external_noise')
+             AND created_at > ?
            ORDER BY created_at DESC LIMIT ?""",
         (since, limit)
     ).fetchall()
@@ -64,20 +70,21 @@ def query_recent_decisions(conn, days=7, limit=5) -> list[dict]:
 
 
 def query_open_questions(conn) -> list[dict]:
-    """미해결 Question 전체."""
+    """미해결 Question — active, work_item 제외."""
     rows = conn.execute(
         """SELECT content, created_at FROM nodes
-           WHERE type = 'Question'
+           WHERE type = 'Question' AND status = 'active'
+             AND node_role NOT IN ('work_item', 'external_noise')
            ORDER BY created_at DESC"""
     ).fetchall()
     return [{"content": r[0][:80], "date": r[1][:10]} for r in rows]
 
 
 def query_recent_failures(conn, limit=3) -> list[dict]:
-    """최근 Failure 3개."""
+    """최근 Failure 3개 — active only."""
     rows = conn.execute(
         """SELECT content, created_at FROM nodes
-           WHERE type = 'Failure'
+           WHERE type = 'Failure' AND status = 'active'
            ORDER BY created_at DESC LIMIT ?""",
         (limit,)
     ).fetchall()
