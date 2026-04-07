@@ -27,7 +27,9 @@ if os.path.exists(env_file):
 
 from tools.recall import recall
 
-GOLDSET = os.path.join(os.path.dirname(os.path.abspath(__file__)), "goldset_corrected.yaml")
+GOLDSET_V4 = os.path.join(os.path.dirname(os.path.abspath(__file__)), "goldset_v4.yaml")
+GOLDSET_LEGACY = os.path.join(os.path.dirname(os.path.abspath(__file__)), "goldset_corrected.yaml")
+GOLDSET = GOLDSET_V4 if os.path.exists(GOLDSET_V4) else GOLDSET_LEGACY
 
 
 def load_goldset() -> list[dict]:
@@ -83,9 +85,10 @@ def run_eval(k_values: list[int] = None, verbose: bool = False) -> dict:
         relevant = q.get("relevant_ids", [])
         also = q.get("also_relevant", [])
 
-        # recall 실행
+        # recall 실행 (v4: mode-aware)
+        query_mode = q.get("mode", "generic")
         try:
-            recall_result = recall(query=query_text, top_k=max(k_values))
+            recall_result = recall(query=query_text, top_k=max(k_values), mode=query_mode)
             retrieved_ids = [n["id"] for n in recall_result.get("results", [])]
         except Exception as e:
             if verbose:

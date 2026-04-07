@@ -9,7 +9,11 @@ _Updated: 2026-04-07_
 - **Ontology**: 15 active types + Correction(system) + Unclassified, 49 relation types
 - **Signal spine**: 70 active (19→70, 클러스터 합성)
 - **Metadata fill**: node_role **100%**, generation_method **100%**
-- **Quality**: recall avg 0.471, hit_rate 0.693, NDCG@5 0.214
+- **Recall modes**: generic, recollection, troubleshooting, correction (4종)
+- **Orphan**: 14.0% → **0.0%**
+- **Correction**: 7 nodes, 7 contradicts edges
+- **Merger**: MVP 1건 (#4159→MEMORY.md)
+- **Quality**: NDCG@5 0.201, hit_rate 0.646 (goldset v4, 82 queries)
 - **API**: OpenAI (gpt-5-mini / o3-mini / gpt-4.1 / gpt-5.2 / o3)
 - **신규 컬럼**: source_kind, source_ref, node_role, epistemic_status (nodes), generation_method (edges)
 

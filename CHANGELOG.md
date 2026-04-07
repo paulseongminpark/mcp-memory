@@ -1,5 +1,30 @@
 # mcp-memory CHANGELOG
 
+## R1-R6 Ontology v4 본선 (2026-04-07)
+
+### R1 Goldset Modernization
+- goldset_v4.yaml: 75→82 queries (+7 mode-specific)
+- mode 필드 추가: generic(75), troubleshooting(3), correction(2), recollection(2)
+- ndcg.py mode-aware 수정 (query별 mode를 recall에 전달)
+- Baseline: NDCG@5=0.201, hit_rate=0.646
+
+### R3 Retrieval Contract (4-mode)
+- recall() intent mode 4종: generic, recollection, troubleshooting, correction
+- troubleshooting: Failure 타입 병렬 검색 + 0.05 부스트
+- correction: Correction threshold 0.5→0.3, contradicts 정보 출력
+- recollection: session_anchor 포함, work_item/external_noise만 제외
+- search mode(auto/focus/dmn) ↔ intent mode 분리
+
+### R5 Graph Repair
+- orphan 732→**0** (14.0%→0.0%)
+- text-embedding-3-large 배치 임베딩 → nearest neighbor edge 생성
+- 732 orphan_repair edges 생성
+
+### R6 Memory-Merger MVP
+- knowledge_core #4159+#4175 → MEMORY.md User Preferences 반영
+- "속도+정확도 동시, 트레이드오프 거부, 병렬화로 전부 해결"
+- merger metadata 기록 (merged_to, merged_at, merger_version)
+
 ## R4 Correction Activation (2026-04-07)
 - Correction 0→**7**, contradicts 0→**7**
 - Identity 중복 4건 flagged (#3575/#3641/#3707/#3773 → #2712 보존)

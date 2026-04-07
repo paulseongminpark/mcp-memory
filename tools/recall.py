@@ -31,31 +31,78 @@ def _canonicalize_type_filter(type_filter: str) -> str:
     return _TYPE_CANON_CACHE.get(type_filter, type_filter)
 
 
+    # v4: intent modes — 검색 의도별 필터/부스트 분리
+INTENT_MODES = {"generic", "recollection", "troubleshooting", "correction"}
+SEARCH_MODES = {"auto", "focus", "dmn"}
+
+
+def _resolve_mode(mode: str) -> tuple[str, str]:
+    """mode → (search_mode, intent_mode) 분리.
+
+    intent modes는 search_mode=auto로 매핑.
+    search modes는 intent_mode=generic으로 매핑.
+    """
+    if mode in INTENT_MODES:
+        return "auto", mode
+    if mode in SEARCH_MODES:
+        return mode, "generic"
+    return "auto", "generic"
+
+
 def recall(
     query: str,
     type_filter: str = "",
     project: str = "",
     top_k: int = DEFAULT_TOP_K,
-    mode: str = "auto",   # "auto" | "focus" | "dmn"
+    mode: str = "auto",   # search: "auto"|"focus"|"dmn"  intent: "generic"|"recollection"|"troubleshooting"|"correction"
 ) -> dict:
     """기억 검색.
 
-    mode:
+    mode (search):
       "auto"  — 쿼리 길이로 탐험 계수 자동 결정 (기본)
-      "focus" — 강한 연결 우선 (UCB_C_FOCUS=0.3), 집중 검색
-      "dmn"   — 미탐색 연결 우선 (UCB_C_DMN=2.5), 연상 검색
+      "focus" — 강한 연결 우선, 집중 검색
+      "dmn"   — 미탐색 연결 우선, 연상 검색
+
+    mode (intent, v4):
+      "generic"         — 일반 검색. work_item/session_anchor 억제
+      "recollection"    — 세션 회고. session_anchor 포함
+      "troubleshooting" — 문제 해결. Failure/Pattern 부스트
+      "correction"      — 교정 검색. Correction 최우선, contradicts 포함
     """
+    search_mode, intent = _resolve_mode(mode)
+
     # H1: deprecated type_filter canonicalization
     type_filter = _canonicalize_type_filter(type_filter)
 
-    # 1차 검색
-    results = hybrid_search(
-        query,
-        type_filter=type_filter,
-        project=project,
-        top_k=top_k,
-        mode=mode,
-    )
+    # v4 troubleshooting: Failure 타입 우선 검색
+    if intent == "troubleshooting" and not type_filter:
+        # 메인 검색 + Failure 전용 검색 병합
+        results_main = hybrid_search(
+            query, type_filter=type_filter, project=project,
+            top_k=top_k, mode=search_mode,
+        )
+        results_failure = hybrid_search(
+            query, type_filter="Failure", project=project,
+            top_k=top_k, mode=search_mode,
+        )
+        # 병합: Failure 결과에 부스트 (+0.05)
+        seen = set()
+        results = []
+        for r in results_failure:
+            r["score"] = r.get("score", 0) + 0.05
+            results.append(r)
+            seen.add(r["id"])
+        for r in results_main:
+            if r["id"] not in seen:
+                results.append(r)
+        results.sort(key=lambda r: r.get("score", 0), reverse=True)
+        results = results[:top_k]
+    else:
+        # 1차 검색
+        results = hybrid_search(
+            query, type_filter=type_filter, project=project,
+            top_k=top_k, mode=search_mode,
+        )
 
     if not results:
         return {"results": [], "count": 0, "message": "No memories found."}
@@ -65,12 +112,27 @@ def recall(
     if not results:
         return {"results": [], "count": 0, "message": "No memories above score threshold."}
 
-    # v3.3: generic mode에서 session_anchor/work_item/external_noise 제외
-    # mode=recollection 시에는 session_anchor 포함 (세션 회고용)
-    if mode != "recollection":
+    # v4: intent별 node_role 필터링
+    if intent == "generic":
         results = [
             r for r in results
             if r.get("node_role", "") not in GENERIC_RECALL_EXCLUDE_ROLES
+        ]
+    elif intent == "recollection":
+        # session_anchor 포함, work_item/external_noise만 제외
+        exclude = {"work_item", "external_noise"}
+        results = [
+            r for r in results
+            if r.get("node_role", "") not in exclude
+        ]
+    elif intent == "correction":
+        # correction 노드 억제 해제 — 모든 role 포함
+        pass
+    elif intent == "troubleshooting":
+        # external_noise만 제외
+        results = [
+            r for r in results
+            if r.get("node_role", "") != "external_noise"
         ]
 
     # B-4: 패치 전환 (Marginal Value Theorem)
@@ -91,13 +153,28 @@ def recall(
     # 학습 경로: BCM + SPRT + action_log (검색과 분리)
     post_search_learn(results, query)
 
+    # v4 correction mode: contradicts edge 정보 결과에 주입
+    if intent == "correction":
+        for r in results:
+            contradicts = sqlite_store.get_edges(r["id"])
+            contra_info = [
+                {"relation": e["relation"], "target_id": e["target_id"],
+                 "source_id": e["source_id"]}
+                for e in contradicts
+                if e.get("relation") == "contradicts" and e.get("status") == "active"
+            ]
+            if contra_info:
+                r["_contradicts"] = contra_info
+
     # P2-W2-02: Correction top-inject — 사용자 교정 노드 최우선 삽입
     # type_filter 명시 시 Correction 주입 스킵 (필터 의도 존중)
+    # v4 correction mode: threshold 낮춤 (0.5→0.3) + 더 많이 주입
+    correction_threshold = 0.3 if intent == "correction" else 0.5
     if not type_filter:
         corrections_raw = hybrid_search(
-            query, type_filter="Correction", project=project, top_k=top_k, mode=mode
+            query, type_filter="Correction", project=project, top_k=top_k, mode=search_mode
         )
-        corrections_filtered = [c for c in corrections_raw if c.get("score", 0) > 0.5]
+        corrections_filtered = [c for c in corrections_raw if c.get("score", 0) > correction_threshold]
         if corrections_filtered:
             existing_ids = {r["id"] for r in results}
             corrections_new = [c for c in corrections_filtered if c["id"] not in existing_ids]
@@ -107,7 +184,7 @@ def recall(
     _increment_recall_count()
 
     # recall_log 기록 (Gate 1 SWR input)
-    _log_recall_results(query, results, mode)
+    _log_recall_results(query, results, intent)
 
     # v3.2: context package — seed별 1홉 이웃을 관계 라벨과 함께 구조화
     formatted = []
@@ -132,7 +209,7 @@ def recall(
                     "content": (neighbor.get("content") or "")[:100],
                 })
 
-        formatted.append({
+        entry = {
             "id": r["id"],
             "type": r["type"],
             "content": r["content"][:200],
@@ -149,7 +226,11 @@ def recall(
             "node_role": r.get("node_role", ""),
             "epistemic_status": r.get("epistemic_status", "provisional"),
             "context": context,
-        })
+        }
+        # v4: correction mode — contradicts 정보 포함
+        if r.get("_contradicts"):
+            entry["contradicts"] = r["_contradicts"]
+        formatted.append(entry)
 
     # v3.2: multi-hop 경로 합성 — 결과 간 인과 체인 감지
     chains = _detect_chains(results)

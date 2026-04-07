@@ -1,0 +1,960 @@
+version: '4.0'
+created: '2026-03-08'
+total_queries: 82
+author: C-session-draft
+queries:
+- id: q001
+  difficulty: easy
+  query: 뇌의 다차원 연결을 외부화하고 싶다
+  relevant_ids:
+  - 4163
+  also_relevant:
+  - 4161
+  - 4166
+  notes: Paul의 근본 동기 Value 노드 — 가장 핵심적인 tier=0
+  mode: generic
+- id: q002
+  difficulty: easy
+  query: 이색적 접합으로 새로운 의미 만들기
+  relevant_ids:
+  - 4166
+  also_relevant:
+  - 4163
+  - 4161
+  notes: 창의성 접근법 Value 노드
+  mode: generic
+- id: q003
+  difficulty: easy
+  query: 의지에 의존하지 않고 환경을 설계하라
+  relevant_ids:
+  - 4165
+  also_relevant:
+  - 4163
+  - 406
+  - 1657
+  - 3577
+  - 2714
+  notes: 시스템 설계 Philosophy — 행동 유도 설계. 1657/3577/2714도 동일 개념 표현
+  mode: generic
+- id: q004
+  difficulty: easy
+  query: 구현 완료는 완료가 아니다 코드는 절반 7일이면 충분하다
+  relevant_ids:
+  - 406
+  also_relevant:
+  - 404
+  - 405
+  notes: '반복 개발 원칙 — v3.3 경험 기반. query: 406의 고유 문장 조합'
+  mode: generic
+- id: q005
+  difficulty: easy
+  query: 빼기가 더하기보다 어렵다. 불필요한 에이전트를 없애는 결정
+  relevant_ids:
+  - 404
+  also_relevant:
+  - 4165
+  - 378
+  - 403
+  notes: 감법 원칙 — Dieter Rams / 일론 머스크. 403=성숙 곡선 더하기에서 빼기로
+  mode: generic
+- id: q006
+  difficulty: easy
+  query: AI는 도구가 아니라 팀원이다
+  relevant_ids:
+  - 405
+  also_relevant:
+  - 404
+  - 406
+  - 378
+  notes: AI 협업 철학 — 잘 설계된 시스템에서 AI의 역할
+  mode: generic
+- id: q007
+  difficulty: easy
+  query: STATE.md가 유일한 진실이다
+  relevant_ids:
+  - 43
+  also_relevant:
+  - 755
+  - 771
+  notes: 단일 진실 소스의 구체적 구현 — STATE.md 명시
+  mode: generic
+- id: q008
+  difficulty: easy
+  query: Obsidian에 쓰고 Claude에 말하고 GPT에서 토론하면 어디가 최신인가
+  relevant_ids:
+  - 755
+  also_relevant:
+  - 756
+  - 43
+  - 771
+  - 574
+  - 571
+  - 276
+  notes: 단일 진실 소스 위반 사례. 574/571/276도 Obsidian=편집금지 원칙 표현
+  mode: generic
+- id: q009
+  difficulty: easy
+  query: 여러 AI가 동시에 파일을 수정하면 안 된다
+  relevant_ids:
+  - 756
+  also_relevant:
+  - 755
+  - 771
+  notes: 쓰기 권한 분리 원칙
+  mode: generic
+- id: q010
+  difficulty: easy
+  query: 모든 현상을 다차원으로 해석하는 것이 사고의 본질
+  relevant_ids:
+  - 4161
+  also_relevant:
+  - 4163
+  - 4166
+  notes: 다차원 인식론 Belief 노드
+  mode: generic
+- id: q011
+  difficulty: medium
+  query: 토큰은 화폐다. 컨텍스트를 비용으로 관리해야 한다
+  relevant_ids:
+  - 181
+  - 377
+  also_relevant:
+  - 378
+  notes: 토큰=화폐 원칙이 2개 노드에 중복 표현됨 — 둘 다 정답
+  mode: generic
+- id: q012
+  difficulty: medium
+  query: 단일 진실 소스 원칙
+  relevant_ids:
+  - 43
+  - 755
+  - 771
+  - 574
+  - 571
+  - 276
+  also_relevant:
+  - 756
+  notes: SoT 원칙이 여러 노드에 분산. 574/571/276도 실제 반환되는 SoT 정답 노드
+  mode: generic
+- id: q013
+  difficulty: medium
+  query: 오케스트레이션 시스템의 핵심 원칙 세 가지
+  relevant_ids:
+  - 378
+  also_relevant:
+  - 181
+  - 377
+  - 404
+  - 405
+  notes: Baseline최소화/오프로딩/계층위임 — 378이 핵심, 나머지 보완
+  mode: generic
+- id: q014
+  difficulty: medium
+  query: 컨텍스트 토큰 비용을 최소화하는 방법
+  relevant_ids:
+  - 181
+  - 377
+  - 378
+  also_relevant:
+  - 43
+  notes: 토큰 관리 원칙 클러스터
+  mode: generic
+- id: q015
+  difficulty: medium
+  query: 지식 그래프 운영의 핵심 원칙
+  relevant_ids:
+  - 43
+  - 755
+  - 756
+  - 771
+  also_relevant:
+  - 181
+  - 105
+  - 276
+  - 571
+  notes: 단일 진실/쓰기권한/SoT. 105/276/571도 동일 개념의 실제 반환 노드
+  mode: generic
+- id: q016
+  difficulty: medium
+  query: AI와 협업할 때 지켜야 할 원칙
+  relevant_ids:
+  - 405
+  - 404
+  also_relevant:
+  - 406
+  - 378
+  - 756
+  notes: AI 팀원 + 감법 + 7일 원칙이 협업 원칙 구성
+  mode: generic
+- id: q017
+  difficulty: medium
+  query: Paul의 창의적 사고 방식
+  relevant_ids:
+  - 4166
+  - 4161
+  also_relevant:
+  - 4163
+  - 4165
+  notes: 이색적 접합 + 다차원 해석 = 창의성 구조
+  mode: generic
+- id: q018
+  difficulty: medium
+  query: 정보 충돌을 방지하는 시스템 설계
+  relevant_ids:
+  - 755
+  - 756
+  - 771
+  also_relevant:
+  - 43
+  notes: 단일 진실 소스 + 쓰기 권한 분리 = 충돌 방지
+  mode: generic
+- id: q019
+  difficulty: medium
+  query: 컨텍스트 윈도우 200K를 효율적으로 사용하는 방법
+  relevant_ids:
+  - 377
+  - 181
+  also_relevant:
+  - 378
+  notes: '# VERIFY: 200K 컨텍스트 관련 추가 노드 있을 수 있음'
+  mode: generic
+- id: q020
+  difficulty: medium
+  query: 반복 개선과 감법 설계의 조합
+  relevant_ids:
+  - 406
+  - 404
+  also_relevant:
+  - 4165
+  - 405
+  notes: 7일 반복 + 빼기 원칙이 함께 적용됨
+  mode: generic
+- id: q021
+  difficulty: hard
+  query: 뇌의 다차원 연결을 외부화하고 싶다는 욕구가 이 시스템을 만든 이유
+  relevant_ids:
+  - 4163
+  also_relevant:
+  - 4161
+  - 4165
+  - 4166
+  notes: '근본 동기. query: 4163의 핵심 문장 직접 인용'
+  mode: generic
+- id: q022
+  difficulty: hard
+  query: 뇌와 인공 시스템의 유사성
+  relevant_ids:
+  - 4161
+  - 4163
+  also_relevant:
+  - 4165
+  notes: 다차원 인식 + 외부화 욕구 — 추상적이지만 L4가 정답
+  mode: generic
+- id: q023
+  difficulty: hard
+  query: Paul의 근본 동기 가치 뇌의 연결 외부화
+  relevant_ids:
+  - 4163
+  - 4166
+  also_relevant:
+  - 4161
+  - 4165
+  - 3895
+  notes: Value 레이어. query 수정으로 4166 rank1 달성. 3895=Paul 사고방식 Identity 노드
+  mode: generic
+- id: q024
+  difficulty: hard
+  query: 시스템이 자율적으로 작동하게 만드는 조건
+  relevant_ids:
+  - 4165
+  - 405
+  also_relevant:
+  - 378
+  - 406
+  - 404
+  notes: 환경 설계 + AI 팀원 + 오케스트레이션 원칙 조합
+  mode: generic
+- id: q025
+  difficulty: hard
+  query: 마찰을 최소화해서 생각과 행동의 간격을 줄이는 방법
+  relevant_ids:
+  - 4165
+  also_relevant:
+  - 404
+  - 406
+  - 181
+  notes: '# VERIFY: 마찰 제거 관련 Signal→Pattern 노드 있을 수 있음'
+  mode: generic
+- id: q026
+  difficulty: easy
+  query: /sync 명령어로 하는 일
+  relevant_ids:
+  - 721
+  also_relevant:
+  - 286
+  notes: Workflow 노드 — /sync 습관. 721이 핵심
+  mode: generic
+- id: q027
+  difficulty: easy
+  query: 세션 전환할 때 반드시 해야 하는 절차
+  relevant_ids:
+  - 286
+  also_relevant:
+  - 721
+  - 377
+  notes: Workflow 노드 — verify → /sync → /session-end 체인
+  mode: generic
+- id: q028
+  difficulty: easy
+  query: Codex CLI와 Gemini CLI 설정 방법
+  relevant_ids:
+  - 319
+  also_relevant:
+  - 391
+  - 189
+  notes: Tool 노드 — 외부 CLI 설정 v4.0
+  mode: generic
+- id: q029
+  difficulty: easy
+  query: Claude Code 스킬 목록과 사용법
+  relevant_ids:
+  - 44
+  - 281
+  also_relevant:
+  - 834
+  - 864
+  notes: Skill 노드 — 스킬 시스템
+  mode: generic
+- id: q030
+  difficulty: medium
+  query: 에이전트가 23개에서 15개로 줄어든 이유
+  relevant_ids:
+  - 772
+  also_relevant:
+  - 403
+  - 404
+  notes: Evolution 노드 — 에이전트 감축, 성숙 곡선과 연결
+  mode: generic
+- id: q031
+  difficulty: medium
+  query: Hook 시스템이 자동으로 하는 일
+  relevant_ids:
+  - 397
+  also_relevant:
+  - 593
+  - 286
+  notes: Workflow 노드 — 8종 hook 자동화 레이어
+  mode: generic
+- id: q032
+  difficulty: easy
+  query: Cross-CLI 메모리 공유 방법
+  relevant_ids:
+  - 391
+  also_relevant:
+  - 319
+  - 189
+  notes: Tool 노드 — CLI 전환 시 맥락 보존
+  mode: generic
+- id: q033
+  difficulty: medium
+  query: 에이전트 팀 구성과 역할 분담
+  relevant_ids:
+  - 873
+  also_relevant:
+  - 1357
+  - 154
+  notes: Agent 노드 — 4팀 + 허브 구조
+  mode: generic
+- id: q034
+  difficulty: medium
+  query: 마찰을 제거하고 단축키로 만드는 설계 원칙
+  relevant_ids:
+  - 4120
+  also_relevant:
+  - 4165
+  - 4163
+  notes: Signal 노드 — 마찰 제거 집착
+  mode: generic
+- id: q035
+  difficulty: easy
+  query: Flat Root 파일 구조 패턴
+  relevant_ids:
+  - 221
+  also_relevant:
+  - 926
+  notes: Pattern 노드 — v3.3.1 파일 구조
+  mode: generic
+- id: q036
+  difficulty: medium
+  query: 체인 에이전트 결과를 파일로 오프로딩하는 패턴
+  relevant_ids:
+  - 926
+  also_relevant:
+  - 377
+  - 378
+  notes: Pattern 노드 — .chain-temp 패턴, 토큰 절감
+  mode: generic
+- id: q037
+  difficulty: medium
+  query: 메모리 시스템의 SQLite 스키마 구조
+  relevant_ids:
+  - 3917
+  also_relevant: []
+  notes: Framework 노드 — mcp-memory DB 스키마
+  mode: generic
+- id: q038
+  difficulty: medium
+  query: tech-review 포스트 자동 생성 실패 원인
+  relevant_ids:
+  - 979
+  also_relevant:
+  - 344
+  notes: Failure 노드 — 2/23 자동 생성 실패
+  mode: generic
+- id: q039
+  difficulty: medium
+  query: Codex와 Gemini 실전 테스트 결과
+  relevant_ids:
+  - 189
+  also_relevant:
+  - 1007
+  notes: Experiment 노드 — e2e 검증 결과
+  mode: generic
+- id: q040
+  difficulty: hard
+  query: 리좀형 팀 구조 설계 원칙
+  relevant_ids:
+  - 225
+  also_relevant:
+  - 873
+  - 1357
+  notes: Framework 노드 — meta-orchestrator 중심 리좀 구조
+  mode: generic
+- id: q041
+  difficulty: medium
+  query: 모델 변경 실험과 에이전트 최적화
+  relevant_ids:
+  - 912
+  also_relevant:
+  - 908
+  - 942
+  notes: Experiment 노드 — 1차→2차 모델 비교
+  mode: generic
+- id: q042
+  difficulty: medium
+  query: 시간 축 추적과 메모 자동 삽입 습관
+  relevant_ids:
+  - 4121
+  also_relevant:
+  - 4120
+  notes: Signal 노드 — 시간 축 추적 습관
+  mode: generic
+- id: q043
+  difficulty: hard
+  query: 다중 소스 교차 검증으로 온톨로지 신뢰도 높이기
+  relevant_ids:
+  - 4126
+  also_relevant:
+  - 4120
+  - 4121
+  notes: Signal 노드 — checkpoint+Obsidian+daily-memo 교차 검증
+  mode: generic
+- id: q044
+  difficulty: medium
+  query: enrichment 배치 처리 중 GPT null 반환 버그
+  relevant_ids:
+  - 4150
+  also_relevant:
+  - 4177
+  notes: Failure 노드 — enrich_batch Phase C 버그
+  mode: generic
+- id: q045
+  difficulty: medium
+  query: Obsidian 볼트 구조와 중앙 MOC 허브
+  relevant_ids:
+  - 1074
+  also_relevant:
+  - 275
+  - 573
+  notes: Framework 노드 — 볼트 구조 설계
+  mode: generic
+- id: q046
+  difficulty: medium
+  query: Claude Code 중심 멀티 AI 시스템 개요
+  relevant_ids:
+  - 275
+  - 573
+  also_relevant:
+  - 225
+  notes: Narrative 노드 — 시스템 전체 개요
+  mode: generic
+- id: q047
+  difficulty: hard
+  query: 포트폴리오에서 AI 방법론을 어떻게 보여줄 것인가
+  relevant_ids:
+  - 1601
+  - 1602
+  also_relevant: []
+  notes: Tension/Narrative 노드 — 포트폴리오 프레이밍 고충
+  mode: generic
+- id: q048
+  difficulty: hard
+  query: '성숙 곡선: 더하기에서 빼기로 전환하는 시점'
+  relevant_ids:
+  - 403
+  also_relevant:
+  - 404
+  - 772
+  notes: Pattern 노드 — 에이전트 수 증감 곡선, 감법 원칙 연결
+  mode: generic
+- id: q049
+  difficulty: hard
+  query: GPT 맞춤형 지침과 AI 대화 전략
+  relevant_ids:
+  - 1618
+  also_relevant:
+  - 405
+  notes: Tool 노드 — GPT 글로벌 지침
+  mode: generic
+- id: q050
+  difficulty: medium
+  query: RELATION_RULES 타입 기반 관계 자동 매핑
+  relevant_ids:
+  - 4189
+  also_relevant: []
+  notes: Decision 노드 — 관계 규칙 기반 매핑 설계 결정
+  mode: generic
+- id: q051
+  difficulty: easy
+  query: git diff 결과를 보고 영향받는 테스트만 골라 최소 테스트셋을 만드는 절차는 뭐였지?
+  relevant_ids:
+  - 126
+  - 112
+  - 109
+  also_relevant:
+  - 1413
+  - 167
+  - 1370
+  - 181
+  - 378
+  notes: Workflow L1 — 변경 파일 기반 최소 테스트셋 생성 절차
+  mode: generic
+- id: q052
+  difficulty: medium
+  query: 배포 전에 TypeScript 에러, console.log, localhost 하드코딩, git status를 점검하는 배포 체인은
+    어떻게 되어 있지?
+  relevant_ids:
+  - 126
+  - 119
+  - 112
+  also_relevant:
+  - 4035
+  - 1668
+  - 1413
+  - 1325
+  - 1526
+  notes: Workflow L1 — 배포 자동화 체크리스트
+  mode: generic
+- id: q053
+  difficulty: medium
+  query: meta-orchestrator는 세션 시작 시 무엇을 읽고 어떤 팀을 활성화할지 어떻게 판단했지?
+  relevant_ids:
+  - 4236
+  - 198
+  - 126
+  also_relevant:
+  - 132
+  - 1302
+  - 151
+  - 1528
+  - 188
+  notes: Agent/Workflow L1 — 메타 오케스트레이터의 입력과 판단 로직
+  mode: generic
+- id: q054
+  difficulty: easy
+  query: tech-review-ops, ai-feedback-loop, daily-ops 세 팀을 어떤 역할로 나눴는지 정리한 항목은 뭐였지?
+  relevant_ids:
+  - 198
+  - 133
+  - 141
+  also_relevant:
+  - 2726
+  - 810
+  - 404
+  - 1301
+  - 2712
+  notes: Agent L1 — 팀 구조와 역할 분담
+  mode: generic
+- id: q055
+  difficulty: easy
+  query: 할 일 목록을 보고 추가하고 완료 처리하면서 핸드폰 inbox까지 동기화하는 /todo 스킬은 뭐였지?
+  relevant_ids:
+  - 136
+  - 106
+  - 117
+  also_relevant:
+  - 1313
+  - 227
+  - 181
+  - 219
+  - 1311
+  notes: Skill L1 — 명령형 작업 관리 스킬
+  mode: generic
+- id: q056
+  difficulty: easy
+  query: 세션 종료 후 daily memo를 동기화하는 실행 스킬이나 스크립트는 뭐였지?
+  relevant_ids:
+  - 136
+  - 33
+  - 106
+  also_relevant:
+  - 132
+  - 752
+  - 151
+  - 3931
+  - 188
+  notes: Skill/Tool L1 — 메모 동기화 자동화
+  mode: generic
+- id: q057
+  difficulty: easy
+  query: orchestration 프로젝트 구조와 핵심 경로를 정리한 프로젝트 개요는 뭐였지?
+  relevant_ids:
+  - 15
+  - 165
+  - 102
+  also_relevant:
+  - 609
+  - 227
+  - 1290
+  - 3575
+  - 1656
+  notes: Project L1 — 프로젝트 구조와 경로 정리
+  mode: generic
+- id: q058
+  difficulty: medium
+  query: 사용 중인 AI 도구를 역할과 접근 방식까지 나눠서 정리한 내용은 어디 있었지?
+  relevant_ids:
+  - 42
+  - 104
+  - 4155
+  also_relevant:
+  - 135
+  - 84
+  - 148
+  - 405
+  - 600
+  notes: Tool L1 — 도구 선택 기준과 역할 배치
+  mode: generic
+- id: q059
+  difficulty: medium
+  query: 컨텍스트 비대화를 막기 위해 병렬 독립 세션과 index 파일을 쓰는 패턴은 뭐였지?
+  relevant_ids:
+  - 4235
+  - 4119
+  - 4092
+  also_relevant:
+  - 756
+  - 276
+  - 378
+  - 222
+  - 574
+  notes: Pattern L2 — 컨텍스트 관리 패턴
+  mode: generic
+- id: q060
+  difficulty: medium
+  query: dev 볼트 구조를 계층적으로 설명한 프레임워크 문서는 뭐였지?
+  relevant_ids:
+  - 36
+  - 37
+  - 120
+  also_relevant:
+  - 35
+  - 164
+  - 3367
+  - 758
+  - 378
+  notes: Framework L2 — 볼트 구조 프레임워크
+  mode: generic
+- id: q061
+  difficulty: medium
+  query: portfolio에서 Obsidian 섹션 v4.0을 재작성하며 Hook, Architecture, Problem, Evolution,
+    Lessons 구조로 바꾼 세션 서사는 뭐였지?
+  relevant_ids:
+  - 27
+  - 99
+  - 98
+  also_relevant:
+  - 227
+  - 2601
+  - 77
+  - 2638
+  - 188
+  notes: Narrative L0 — 작업 맥락과 전개를 담은 세션 서사
+  mode: generic
+- id: q062
+  difficulty: hard
+  query: 해마와 신피질, 기억 공고화를 온톨로지 레이어와 승격 흐름에 대응시킨 연결은 어떻게 설명됐지?
+  relevant_ids:
+  - 4209
+  - 4046
+  also_relevant:
+  - 132
+  - 4166
+  - 4044
+  - 758
+  - 3931
+  notes: Connection L2 — 뇌과학과 온톨로지 아키텍처 연결
+  mode: generic
+- id: q063
+  difficulty: hard
+  query: IHS 허브 보호 설계에서 레이어별 human review 기준을 어떻게 나눴는지 찾고 싶다
+  relevant_ids:
+  - 4223
+  - 4280
+  - 124
+  also_relevant:
+  - 3849
+  - 1289
+  - 4044
+  - 1365
+  - 1526
+  notes: Pattern/Framework L2 — 허브 보호와 레이어별 검토 규칙
+  mode: generic
+- id: q064
+  difficulty: hard
+  query: Signal을 Pattern으로 올릴 때 단순 반복 횟수 대신 압축이나 일반화로 판단해야 한다는 논의는 뭐였지?
+  relevant_ids:
+  - 4049
+  - 4235
+  - 4119
+  also_relevant:
+  - 3202
+  - 708
+  - 1349
+  - 2726
+  - 404
+  notes: Pattern/Framework L2 — 승격 판단 기준과 패턴 인식
+  mode: generic
+- id: q065
+  difficulty: easy
+  query: E14 전체 배치가 100% 실패했던 직접 원인과 거기서 얻은 교훈은 뭐였지?
+  relevant_ids:
+  - 4243
+  - 4172
+  - 4212
+  also_relevant:
+  - 35
+  - 4067
+  - 236
+  - 4173
+  - 1301
+  notes: Failure L1 — 배치 실패 원인 분석
+  mode: generic
+- id: q066
+  difficulty: easy
+  query: auto-compact 이후 자동 재실행이 안 된다는 실패 사례에서 확인한 한계는 뭐였지?
+  relevant_ids:
+  - 4218
+  - 4143
+  - 4172
+  also_relevant:
+  - 760
+  - 377
+  - 282
+  - 222
+  - 927
+  notes: Failure L1 — 자동화 한계 발견
+  mode: generic
+- id: q067
+  difficulty: hard
+  query: semantic feedback loop가 어떻게 오염되는지 실제 경로를 검증한 실패 분석은 뭐였지?
+  relevant_ids:
+  - 4220
+  - 4149
+  - 4243
+  also_relevant:
+  - 4165
+  - 1289
+  - 1334
+  - 1657
+  - 1277
+  notes: Failure/Experiment L1 — 검색 오염 경로 검증
+  mode: generic
+- id: q068
+  difficulty: medium
+  query: v3.3 전체 시스템 e2e 테스트 실험에서 1차와 2차 비교 결과는 어떻게 나왔지?
+  relevant_ids:
+  - 189
+  also_relevant:
+  - 35
+  - 879
+  - 1012
+  - 406
+  - 921
+  notes: Experiment L1 — 다단계 E2E 실험 결과
+  mode: generic
+- id: q069
+  difficulty: medium
+  query: Subagent-Driven Development로 UI Lab 07부터 10까지 구현한 실험 기록은 뭐였지?
+  relevant_ids:
+  - 189
+  also_relevant:
+  - 147
+  - 86
+  - 151
+  - 220
+  - 222
+  notes: Experiment L1 — 서브에이전트 개발 실험
+  mode: generic
+- id: q070
+  difficulty: medium
+  query: 에이전트 수가 23에서 24로 바뀌고 스킬 수가 13에서 11로 조정된 진화 기록을 찾고 싶다
+  relevant_ids:
+  - 193
+  - 191
+  also_relevant:
+  - 2816
+  - 3141
+  - 3143
+  - 617
+  - 3221
+  notes: Evolution L1 — 에이전트/스킬 구성 변화
+  mode: generic
+- id: q071
+  difficulty: medium
+  query: 7일 동안 시스템이 v1.0에서 어떻게 진화했는지 요약한 기록은 뭐였지?
+  relevant_ids:
+  - 193
+  - 191
+  also_relevant:
+  - 3745
+  - 43
+  - 406
+  - 151
+  - 3679
+  notes: Evolution L1 — 버전 진화 기록
+  mode: generic
+- id: q072
+  difficulty: easy
+  query: v2.1 구현 세션을 4개의 Claude Code 세션과 2개의 CLI로 나누기로 한 결정은 뭐였지?
+  relevant_ids:
+  - 4248
+  - 4257
+  - 4229
+  also_relevant:
+  - 3813
+  - 2696
+  - 1579
+  - 1488
+  - 188
+  notes: Decision L1 — 멀티세션 역할 분담 결정
+  mode: generic
+- id: q073
+  difficulty: medium
+  query: 리뷰 아키텍처를 3 CLI x 3 Rounds x 9 Categories로 설계한 결정은 뭐였지?
+  relevant_ids:
+  - 4257
+  - 4255
+  - 4247
+  also_relevant:
+  - 3813
+  - 135
+  - 2696
+  - 590
+  - 849
+  notes: Decision/Framework L1 — 리뷰 구조 설계 결정
+  mode: generic
+- id: q074
+  difficulty: easy
+  query: Auto Memory 개선과 Cross-CLI .ctx 정리, Playwright MCP 활성화를 목표로 한 세션 목표는 뭐였지?
+  relevant_ids:
+  - 4231
+  - 4045
+  also_relevant:
+  - 132
+  - 276
+  - 151
+  - 603
+  - 222
+  notes: Goal L1 — 세션 목표 설정
+  mode: generic
+- id: q075
+  difficulty: medium
+  query: 반복 작업이 보이면 바로 단축키나 스크립트로 바꾸려는 습관이 관찰된 신호는 뭐였지?
+  relevant_ids:
+  - 4126
+  also_relevant:
+  - 3576
+  - 3728
+  - 760
+  - 2714
+  - 3931
+  notes: Signal L1 — 마찰 제거와 자동화 집착이 드러난 관찰 신호
+  mode: generic
+- id: q076
+  difficulty: medium
+  mode: troubleshooting
+  query: 서브에이전트가 잘못된 수치를 기록한 실패
+  relevant_ids:
+  - 4289
+  also_relevant:
+  - 4271
+  notes: 'Failure node #4289 — 서브에이전트 hit_rate 오기록. troubleshooting mode에서 Failure
+    상향 기대'
+- id: q077
+  difficulty: medium
+  mode: troubleshooting
+  query: 멀티세션 아이디에이션에서 범용 프롬프트 전송 사고
+  relevant_ids:
+  - 4011
+  also_relevant: []
+  notes: Failure — 오케스트레이터 통합 전 범용 프롬프트 전송 → B가 소스 수정+커밋
+- id: q078
+  difficulty: hard
+  mode: troubleshooting
+  query: enrichment 카운터가 거짓 수치를 기록한 문제
+  relevant_ids: []
+  also_relevant: []
+  notes: enrichment 정직화 관련. Failure/Pattern 노드 검색 기대
+- id: q079
+  difficulty: easy
+  mode: correction
+  query: Identity 중복 노드 교정
+  relevant_ids:
+  - 6261
+  - 6262
+  - 6263
+  - 6264
+  also_relevant:
+  - 3575
+  - 3641
+  - 3707
+  - 3773
+  notes: Correction nodes for Identity duplicates. correction mode에서 contradicts 정보
+    포함 기대
+- id: q080
+  difficulty: easy
+  mode: correction
+  query: 테스트 아티팩트 더미 노드 교정
+  relevant_ids:
+  - 6260
+  - 6265
+  also_relevant:
+  - 4271
+  - 3152
+  notes: Correction for test artifacts. correction mode에서 상향 기대
+- id: q081
+  difficulty: medium
+  mode: recollection
+  query: 온톨로지 v3 마이그레이션 세션 기록
+  relevant_ids: []
+  also_relevant: []
+  notes: Narrative/session_anchor 노드 검색 기대. recollection에서 session_anchor 포함
+- id: q082
+  difficulty: medium
+  mode: recollection
+  query: PDR 설계 세션 회고
+  relevant_ids: []
+  also_relevant: []
+  notes: PDR 관련 session_anchor 검색. recollection mode에서 Narrative 포함 기대
+correction_note: q051-q075 relevant_ids를 type-filtered 벡터 검색으로 교정
