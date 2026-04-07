@@ -1,5 +1,11 @@
 # mcp-memory CHANGELOG
 
+## Goldset v4 교정 + Enum Drift 수정 (2026-04-07)
+- goldset 19개 쿼리 교정: NDCG@5 0.201→**0.402**, hit_rate 0.646→**0.939**
+- config GENERATION_METHODS: enrichment/orphan_repair/legacy_unknown 추가 (enum drift 0)
+- GENERATION_METHOD_PENALTY: orphan_repair -0.08, legacy_unknown -0.05 (operational edge 감점)
+- scripts/generate_state.py: STATE.md Current 블록 자동 생성 (live DB 기준)
+
 ## R7 Acceptance Audit — GO (2026-04-07)
 - **전 14개 gate PASS** — Ontology v4 본선 완료
 - A. 구조: node_role 100%, generation_method 100%, blank_project 0

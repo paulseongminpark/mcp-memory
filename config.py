@@ -398,12 +398,26 @@ EPISTEMIC_STATUSES = {"provisional", "validated", "flagged", "outdated", "supers
 # Source kind — source 컬럼에서 분리
 SOURCE_KINDS = {"save_session", "checkpoint", "claude", "obsidian", "pdr", "user", "hook", "external"}
 
-# Edge generation method — fallback/session_anchor 구분
-GENERATION_METHODS = {"manual", "rule", "semantic_auto", "fallback", "session_anchor", "co_retrieval", "migration", "external"}
+# Edge generation method — live DB 값 기준 (v4.0)
+GENERATION_METHODS = {
+    # semantic (reasoning 기여)
+    "manual", "rule", "semantic_auto",
+    # structural
+    "session_anchor", "co_retrieval",
+    # derived (enrichment pipeline)
+    "enrichment",
+    # operational (기계적 — reasoning weight 최소)
+    "fallback", "orphan_repair", "legacy_unknown",
+    # legacy
+    "migration", "external",
+}
 GENERATION_METHOD_PENALTY: dict[str, float] = {
+    "orphan_repair": -0.08,
+    "legacy_unknown": -0.05,
     "fallback": -0.03,
-    "session_anchor": -0.05,  # recollection mode에서만 유지
+    "session_anchor": -0.05,
     "co_retrieval": -0.02,
+    "enrichment": 0.0,
 }
 
 # Confidence → ranking 반영 (additive)
