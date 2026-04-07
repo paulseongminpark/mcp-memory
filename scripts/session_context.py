@@ -39,8 +39,7 @@ def get_context_cli(project: str = "") -> str:
         FROM nodes
         WHERE layer >= 2
           AND status = 'active'
-          AND type IN ('Pattern','Insight','Principle','Identity','Belief',
-                       'Value','Framework','Heuristic','Concept')
+          AND type IN ('Pattern','Insight','Principle','Identity','Framework')
           {proj_clause}
         ORDER BY quality_score DESC NULLS LAST
         LIMIT 15
@@ -140,6 +139,40 @@ def get_context_cli(project: str = "") -> str:
         lines.append("최근 인사이트:")
         for i in insights:
             lines.append(f"  - {i['content'][:60]}")
+
+    # ── v3.2: 승격 후보 (visit_count >= 5) ──────────────────────────
+    proj_clause, proj_params = _project_clause()
+    promo_rows = conn.execute(
+        f"""
+        SELECT id, type, visit_count, substr(content,1,60) as preview
+        FROM nodes
+        WHERE status='active' AND type IN ('Signal','Pattern','Observation')
+        AND visit_count >= 5 {proj_clause}
+        ORDER BY visit_count DESC LIMIT 3
+        """,
+        proj_params,
+    ).fetchall()
+    if promo_rows:
+        lines.append("승격 후보 (반복 검증됨):")
+        for r in promo_rows:
+            lines.append(f"  - #{r['id']} [{r['type']}] v={r['visit_count']} {r['preview']}")
+
+    # ── v3.2: 반복 실패 경고 ──────────────────────────────────────
+    proj_clause, proj_params = _project_clause()
+    fail_counts = conn.execute(
+        f"""
+        SELECT project, COUNT(*) as cnt FROM nodes
+        WHERE type='Failure' AND status='active'
+        AND created_at >= ? {proj_clause}
+        GROUP BY project HAVING cnt >= 3
+        ORDER BY cnt DESC LIMIT 3
+        """,
+        [cutoff_30d] + proj_params,
+    ).fetchall()
+    if fail_counts:
+        lines.append("반복 실패 경고:")
+        for r in fail_counts:
+            lines.append(f"  - {r['project']}: {r['cnt']}건 (30일)")
 
     conn.close()
 
