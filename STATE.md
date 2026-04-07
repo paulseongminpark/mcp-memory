@@ -2,7 +2,7 @@
 _Updated: 2026-04-07_
 
 ## Current
-- **Version**: v3.3.1-dev (Signal 성장 엔진 가동)
+- **Version**: v4.0 (Ontology v4 본선 GO — R7 감사 통과)
 - **Branch**: main
 - **Active Nodes**: 5,252 (Signal 51개 신규)
 - **Active Edges**: 6,242 (realizes 128개 신규)

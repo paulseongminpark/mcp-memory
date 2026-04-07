@@ -1,5 +1,14 @@
 # mcp-memory CHANGELOG
 
+## R7 Acceptance Audit — GO (2026-04-07)
+- **전 14개 gate PASS** — Ontology v4 본선 완료
+- A. 구조: node_role 100%, generation_method 100%, blank_project 0
+- B. Retrieval: 4-mode contract, generic suppression, correction contradicts
+- C. Graph: orphan 0.0%, 0-1 edge 49.1%
+- D. Growth: Correction 7, contradicts 7, validated 16, knowledge_core 9, Signal 69
+- E. Merger: 2건 (MEMORY.md 반영)
+- Nodes: 5,259 | Edges: 7,001 | Tests: 193 passed
+
 ## R1-R6 Ontology v4 본선 (2026-04-07)
 
 ### R1 Goldset Modernization
