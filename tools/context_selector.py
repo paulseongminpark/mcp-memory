@@ -197,6 +197,46 @@ def select_context(project: str = "") -> dict:
     except Exception:
         pass
 
+    # ── 세션 타임라인 (action_log 기반) ──
+    try:
+        # 마지막 세션의 시작 시간을 기준으로 이벤트 수집
+        last_sess = conn.execute(
+            "SELECT session_id, started_at FROM sessions ORDER BY id DESC LIMIT 1"
+        ).fetchone()
+        if last_sess and last_sess["started_at"]:
+            timeline_rows = conn.execute("""
+                SELECT action_type, context, created_at,
+                       json_extract(params, '$.type') as node_type,
+                       json_extract(params, '$.project') as event_project
+                FROM action_log
+                WHERE action_type IN (
+                    'decision_recorded', 'failure_recorded', 'question_recorded',
+                    'pipeline_advanced', 'session_start', 'session_end'
+                )
+                AND created_at >= ?
+                ORDER BY created_at ASC
+                LIMIT 20
+            """, [last_sess["started_at"]]).fetchall()
+            if timeline_rows:
+                _TYPE_LABELS = {
+                    "decision_recorded": "decision",
+                    "failure_recorded": "failure",
+                    "question_recorded": "question",
+                    "pipeline_advanced": "pipeline",
+                    "session_start": "session_start",
+                    "session_end": "session_end",
+                }
+                sections["timeline"] = [
+                    {
+                        "time": r["created_at"][11:16] if r["created_at"] and len(r["created_at"]) > 16 else "",
+                        "type": _TYPE_LABELS.get(r["action_type"], r["action_type"]),
+                        "summary": (r["context"] or "")[:80],
+                    }
+                    for r in timeline_rows
+                ]
+    except Exception:
+        pass
+
     # ── active_pipeline ──
     try:
         row = conn.execute(

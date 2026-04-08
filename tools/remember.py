@@ -408,6 +408,21 @@ def remember(
     except Exception:
         pass  # wiki-compiler 없어도 remember()는 동작해야 함
 
+    # 타임라인 이벤트 기록 (Decision/Failure/Question만)
+    _TIMELINE_TYPES = {"Decision": "decision_recorded", "Failure": "failure_recorded", "Question": "question_recorded"}
+    if cls.type in _TIMELINE_TYPES:
+        try:
+            action_log.record(
+                action_type=_TIMELINE_TYPES[cls.type],
+                actor=source or "claude",
+                target_type="node",
+                target_id=node_id,
+                params=json.dumps({"type": cls.type, "project": project}, ensure_ascii=False),
+                context=content[:120],
+            )
+        except Exception:
+            pass
+
     # v3.2: proactive pattern matching — 유사 Failure/Pattern 경고
     warnings = []
     try:

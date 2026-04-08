@@ -33,6 +33,11 @@ ACTION_TAXONOMY = {
     "type_deprecated":  "온톨로지 타입 deprecated",
     "type_migrated":    "온톨로지 타입 마이그레이션",
     "relation_corrected": "잘못된 관계 교정",
+    # timeline events (세션 타임라인 복구용)
+    "decision_recorded":  "Decision 노드 기록 (타임라인)",
+    "failure_recorded":   "Failure 노드 기록 (타임라인)",
+    "question_recorded":  "Question 노드 기록 (타임라인)",
+    "pipeline_advanced":  "파이프라인 phase/round 전환",
     # admin
     "session_start":    "세션 시작",
     "session_end":      "세션 종료",

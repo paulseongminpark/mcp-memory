@@ -36,6 +36,8 @@ def get_context(project: str = "") -> dict:
         result["warning"] = "; ".join(
             f"{w['project']}: {w['count']}건 (30일)" for w in sections["warnings"]
         )
+    if "timeline" in sections:
+        result["session_timeline"] = sections["timeline"]
     if "active_pipeline" in sections:
         result["active_pipeline"] = sections["active_pipeline"]
 

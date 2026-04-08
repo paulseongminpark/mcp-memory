@@ -20,7 +20,7 @@ DEFAULT_TOP_K = 5
 SIMILARITY_THRESHOLD = 0.55  # 자동 edge 생성 임계값 (v3.2: 0.3→0.55 노이즈 에지 감소)
 GRAPH_MAX_HOPS = 2
 RRF_K = 18  # Reciprocal Rank Fusion 상수 (tuned 2026-03-08: 60→18, NDCG+12.5%)
-GRAPH_BONUS = 0.12   # v4: semantic edge 한정 강화 (0.03→0.12). operational edge는 GENERATION_METHOD_PENALTY로 감점
+GRAPH_BONUS = 0.005  # 복원 (0.364 baseline 시점 값). graph neighbor가 vector rank를 밀어내지 않도록
 
 # v3.2: 관계 타입별 graph traversal 가중치
 # 인과 관계가 가장 가치 높음, 구조 관계는 기본, co_retrieved는 최저
@@ -390,6 +390,12 @@ COMPOSITE_WEIGHT_DECAY = 0.001   # recency bonus (tiebreaker)
 COMPOSITE_WEIGHT_IMPORTANCE = 0.001  # layer bonus (tiebreaker)
 DECAY_LAMBDA = 0.01           # half-life ~69 days
 PROMOTED_MULTIPLIER = 1.5     # reviewed-item boost (promotion_candidate=1)
+
+# ── Conditional Reranker (local GGUF cross-encoder) ─────────
+RERANKER_ENABLED = True       # False면 reranker 완전 비활성
+RERANKER_WEIGHT = 0.35        # CE score 가중치 (0=RRF only, 1=CE only)
+RERANKER_GAP_THRESHOLD = 0.05 # top1-top2 gap이 이 미만이면 rerank 실행
+RERANKER_CANDIDATE_MULT = 3   # top_k * N개 후보를 reranker에 전달
 
 # v3.2: Source quality bonus (additive on base RRF)
 # 의도적 저장(claude)이 자동 덤프보다 높은 정밀도

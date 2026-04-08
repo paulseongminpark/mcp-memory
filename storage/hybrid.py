@@ -669,17 +669,16 @@ def hybrid_search(
         del node["_base_rrf"]
 
     candidates.sort(key=lambda n: n["score"], reverse=True)
-    result = _apply_type_diversity(candidates, top_k)
 
-    # v3.2: graph 보호 슬롯 — graph-only 결과 최소 1개 보장
-    # vector/fts5가 못 찾고 graph만 찾은 노드를 살린다
-    graph_only = [
-        c for c in candidates
-        if c.get("_sources") == ["graph"] and c not in result
-    ]
-    if graph_only and result:
-        # 마지막 슬롯을 graph-only 최상위로 교체
-        result[-1] = graph_only[0]
+    # ── 조건부 Reranker (local GGUF cross-encoder) ──
+    from config import RERANKER_ENABLED, RERANKER_GAP_THRESHOLD, RERANKER_CANDIDATE_MULT
+    if RERANKER_ENABLED and len(candidates) >= 2:
+        from storage.reranker import should_rerank, rerank as _rerank
+        rerank_pool = candidates[:top_k * RERANKER_CANDIDATE_MULT]
+        if should_rerank(rerank_pool, RERANKER_GAP_THRESHOLD):
+            candidates = _rerank(query, rerank_pool, len(candidates))
+
+    result = _apply_type_diversity(candidates, top_k)
 
     result = [
         r for r in result
