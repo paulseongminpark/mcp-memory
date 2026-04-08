@@ -1,8 +1,10 @@
 from __future__ import annotations
+import pytest
 
 from storage import hybrid, sqlite_store
 
 
+@pytest.mark.skip(reason="WS-1.1: confidence_bonus 제거됨. maturity level 2 도달 시 재활성.")
 def test_confidence_bonus_reorders_candidates(fresh_db, monkeypatch):
     low_conf = sqlite_store.insert_node(
         type="Insight",

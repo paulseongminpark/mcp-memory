@@ -525,11 +525,13 @@ def emit_event(
     summary: str,
     project: str = "",
     metadata: dict | None = None,
+    target: str = "",
+    task_id: str = "",
 ) -> dict:
     """Emit a session event (idempotent — duplicate event_id ignored).
 
     Event types: FILE_CONFLICT, DECISION_MADE, PIPELINE_ADVANCE,
-    TASK_COMPLETE, HEALTH_ALERT
+    TASK_COMPLETE, HEALTH_ALERT, TASK_ASSIGN, TASK_PICK
 
     Args:
         event_id: Deterministic hash for idempotency
@@ -538,13 +540,15 @@ def emit_event(
         summary: Human-readable description
         project: Project name
         metadata: Additional context (JSON)
+        target: Target agent for TASK_ASSIGN (codex/gemini/claude)
+        task_id: Associated task ID from tasks.db
     """
     valid_types = {"FILE_CONFLICT", "DECISION_MADE", "PIPELINE_ADVANCE",
-                   "TASK_COMPLETE", "HEALTH_ALERT"}
+                   "TASK_COMPLETE", "HEALTH_ALERT", "TASK_ASSIGN", "TASK_PICK"}
     _ready.wait()
     if event_type not in valid_types:
         return {"error": f"Invalid event_type: {event_type}. Valid: {valid_types}"}
-    return insert_session_event(event_id, session_id, event_type, summary, project, metadata)
+    return insert_session_event(event_id, session_id, event_type, summary, project, metadata, target, task_id)
 
 
 @mcp.tool()
@@ -553,17 +557,22 @@ def poll_events(
     since: str = "",
     status: str = "ACTIVE",
     limit: int = 20,
+    target: str = "",
+    event_type: str = "",
 ) -> dict:
     """Poll session events from other sessions (cross-session awareness).
+    Use target to filter inbox (Gas Town mailbox).
 
     Args:
         exclude_session: Skip events from this session (typically your own)
         since: ISO timestamp cursor — only events after this time
         status: Filter by status (ACTIVE/RESOLVED/EXPIRED)
         limit: Max results
+        target: Filter by target agent (e.g. 'codex' for Codex inbox)
+        event_type: Filter by event type (e.g. 'TASK_ASSIGN')
     """
     _ready.wait()
-    events = query_session_events(exclude_session, since, status, limit)
+    events = query_session_events(exclude_session, since, status, limit, target, event_type)
     return {"events": events, "count": len(events)}
 
 
@@ -599,6 +608,109 @@ def export_ontology(
     """
     _ready.wait()
     return _export_ontology(types, project, since, changed_only)
+
+
+# ── v6.1: Beads (tasks.db) ────────────────────────────────────────
+
+from storage.task_store import (
+    create_task as _create_task,
+    query_tasks as _query_tasks,
+    complete_task as _complete_task,
+    generate_next_section as _generate_next,
+)
+
+
+@mcp.tool()
+def create_task(
+    title: str,
+    project: str = "",
+    priority: int = 2,
+    assigned_to: str = "claude",
+    pipeline: str = "",
+    phase: str = "",
+    auto_eligible: int = 0,
+    task_type: str = "llm_complex",
+    blocked_by: str = "",
+) -> dict:
+    """Create a task in the Beads task graph (tasks.db).
+
+    Args:
+        title: Task description
+        project: Project name (mcp-memory, orchestration, etc.)
+        priority: 1=highest, 2=normal, 3=low
+        assigned_to: Agent name (claude, codex, gemini)
+        pipeline: Pipeline name (e.g. 15_agent-autonomy_0408)
+        phase: Pipeline phase (e.g. build-r1)
+        auto_eligible: 1 if Phase 4 auto-execution allowed
+        task_type: script (Python $0) / llm_simple (Haiku) / llm_complex (Opus)
+        blocked_by: Comma-separated task IDs that must complete first
+    """
+    return _create_task(title, project, priority, assigned_to,
+                        pipeline, phase, auto_eligible, task_type, blocked_by)
+
+
+@mcp.tool()
+def query_tasks(
+    project: str = "",
+    status: str = "",
+    assigned_to: str = "",
+    pipeline: str = "",
+    limit: int = 10,
+) -> dict:
+    """Query tasks from the Beads task graph.
+
+    Args:
+        project: Filter by project
+        status: Filter by status (backlog/ready/in_progress/done/cancelled). Empty = ready+in_progress
+        assigned_to: Filter by agent
+        pipeline: Filter by pipeline
+        limit: Max results (default 10)
+    """
+    tasks = _query_tasks(project, status, assigned_to, pipeline, limit)
+    return {"tasks": tasks, "count": len(tasks)}
+
+
+@mcp.tool()
+def complete_task(
+    task_id: str,
+    result: str = "",
+) -> dict:
+    """Complete a task. Auto-resolves blocked_by dependencies.
+    Emits TASK_COMPLETE SessionEvent for cross-session awareness.
+
+    Args:
+        task_id: Task ID to complete
+        result: Result summary
+    """
+    import hashlib, os
+    outcome = _complete_task(task_id, result)
+    if "error" not in outcome:
+        session_id = os.environ.get("CLAUDE_SESSION_ID", str(os.getpid()))
+        event_id = hashlib.sha256(
+            f"{session_id}:task_complete:{task_id}".encode()
+        ).hexdigest()[:16]
+        project = outcome.get("project", "")
+        summary = f"Task {task_id} done: {result[:100]}" if result else f"Task {task_id} done"
+        unblocked = outcome.get("unblocked", [])
+        if unblocked:
+            summary += f" → unblocked: {', '.join(u['title'] for u in unblocked)}"
+        try:
+            insert_session_event(event_id, session_id, "TASK_COMPLETE", summary, project)
+        except Exception as e:
+            import logging
+            logging.warning(f"TASK_COMPLETE event emit failed for {task_id}: {e}")
+    return outcome
+
+
+@mcp.tool()
+def generate_next(project: str = "") -> dict:
+    """Generate STATE.md 'Next' section from tasks.db.
+
+    Args:
+        project: Filter by project. Empty = all projects.
+    """
+    md = _generate_next(project)
+    return {"markdown": md}
 
 
 if __name__ == "__main__":

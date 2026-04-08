@@ -8,6 +8,7 @@ Gates (직렬):
 
 import json
 import math
+import sys
 from datetime import datetime, timezone
 
 from config import (
@@ -292,6 +293,17 @@ def promote_node(
         )
     except Exception:
         pass
+
+    # WS-4: 승격 후 proven_knowledge.md 자동 갱신 (오프라인 fallback 동기화)
+    try:
+        import subprocess
+        subprocess.Popen(
+            [sys.executable, "scripts/render_proven_knowledge.py"],
+            cwd=str(__import__("pathlib").Path(__file__).parent.parent),
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        )
+    except Exception:
+        pass  # render 실패가 승격을 중단시키지 않음
 
     return {
         "node_id": node_id,

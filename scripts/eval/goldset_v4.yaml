@@ -1,3 +1,4 @@
+# FROZEN 2026-04-08. WS-0.1. 이 파일 수정 금지. 변경 시 goldset_v5.yaml 별도 생성.
 version: '4.0'
 created: '2026-03-08'
 total_queries: 82
@@ -294,9 +295,10 @@ queries:
   difficulty: easy
   query: Codex CLI와 Gemini CLI 설정 방법
   relevant_ids:
-  - 186
-  also_relevant:
   - 319
+  also_relevant:
+  - 186
+  - 4527
   notes: Tool 노드 — 외부 CLI 설정 v4.0
   mode: generic
 - id: q029
@@ -323,8 +325,9 @@ queries:
   difficulty: medium
   query: Hook 시스템이 자동으로 하는 일
   relevant_ids:
-  - 66
+  - 687
   also_relevant:
+  - 852
   - 397
   notes: Workflow 노드 — 8종 hook 자동화 레이어
   mode: generic

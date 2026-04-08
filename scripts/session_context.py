@@ -46,20 +46,27 @@ def get_context_cli(project: str = "") -> str:
 
     lines = []
 
-    # v4: proven_knowledge.md에서 검증된 지식 먼저
-    proven = _load_proven_knowledge()
-    if proven:
-        lines.append("=== 검증된 지식 (proven_knowledge.md) ===")
-        lines.append(proven)
+    # ── Layer 1: Core Knowledge (DB 직접, SoT primary) ──
+    if "knowledge_core" in sections:
+        lines.append("=== 검증된 지식 (knowledge_core, DB live) ===")
+        for r in sections["knowledge_core"]:
+            lines.append(f"  - [{r['type']}] #{r['id']} ({r['project']}) {r['content']}")
         lines.append("")
+    else:
+        # DB fallback: proven_knowledge.md
+        proven = _load_proven_knowledge()
+        if proven:
+            lines.append("=== 검증된 지식 (proven_knowledge.md fallback) ===")
+            lines.append(proven)
+            lines.append("")
 
-    # L2+ 핵심 패턴/원칙
+    # L2+ 핵심 패턴/원칙 (knowledge_core에 포함 안 된 것)
     if "l2_core" in sections:
         lines.append("핵심 패턴/원칙 (L2+, quality 상위):")
         for r in sections["l2_core"]:
             lines.append(f"  - [{r['type']}] {r['content']}")
 
-    # Signal
+    # ── Layer 2: Active Signals ──
     if "signals" in sections:
         lines.append("관찰 중 (Signal, 최근 30일):")
         for r in sections["signals"]:

@@ -139,9 +139,9 @@ def test_record_default_params_result():
 
 
 def test_taxonomy_count():
-    """ACTION_TAXONOMY 25개 확인."""
+    """ACTION_TAXONOMY 29개 확인."""
     from storage.action_log import ACTION_TAXONOMY
-    assert len(ACTION_TAXONOMY) == 25
+    assert len(ACTION_TAXONOMY) == 29
 
 
 def test_record_created_at_populated():

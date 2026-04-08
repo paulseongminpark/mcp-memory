@@ -79,11 +79,11 @@ def recall(
         # 메인 검색 + Failure 전용 검색 병합
         results_main = hybrid_search(
             query, type_filter=type_filter, project=project,
-            top_k=top_k, mode=search_mode,
+            top_k=top_k * 3, mode=search_mode,
         )
         results_failure = hybrid_search(
             query, type_filter="Failure", project=project,
-            top_k=top_k, mode=search_mode,
+            top_k=top_k * 3, mode=search_mode,
         )
         # 병합: Failure 결과에 부스트 (+0.05)
         seen = set()
@@ -96,21 +96,20 @@ def recall(
             if r["id"] not in seen:
                 results.append(r)
         results.sort(key=lambda r: r.get("score", 0), reverse=True)
-        results = results[:top_k]
     else:
-        # 1차 검색
+        # 1차 검색 (overfetch: 후처리 필터 후에도 top_k 확보)
         results = hybrid_search(
             query, type_filter=type_filter, project=project,
-            top_k=top_k, mode=search_mode,
+            top_k=top_k * 3, mode=search_mode,
         )
 
     if not results:
         return {"results": [], "count": 0, "message": "No memories found."}
 
-    # v3.2: 최소 점수 필터 — 0.3 미만은 노이즈
-    results = [r for r in results if r.get("score", 0) >= 0.3]
+    # v3.2→WS-fix: scoring 단순화 후 score 범위 0.05~0.17. 0.3 threshold 제거.
+    # 노이즈 방지는 overfetch + role 필터 + top_k 절단으로 충분.
     if not results:
-        return {"results": [], "count": 0, "message": "No memories above score threshold."}
+        return {"results": [], "count": 0, "message": "No memories found."}
 
     # v4: intent별 node_role 필터링
     if intent == "generic":
@@ -135,6 +134,9 @@ def recall(
             if r.get("node_role", "") != "external_noise"
         ]
 
+    # overfetch 후 필터 완료 → top_k로 절단
+    results = results[:top_k]
+
     # B-4: 패치 전환 (Marginal Value Theorem)
     # project 명시 시 전환 생략 (사용자 의도 존중)
     # top_k < 3 시 포화 판단 불가 → 생략
@@ -143,7 +145,7 @@ def recall(
         alt = hybrid_search(
             query,
             top_k=top_k,
-            mode=mode,
+            mode=search_mode,
             excluded_project=dominant,
         )
         # 원본 상위 절반 + 새 패치 결과 절반

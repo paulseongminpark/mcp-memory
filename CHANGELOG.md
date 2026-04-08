@@ -1,5 +1,34 @@
 # mcp-memory CHANGELOG
 
+## v5.1 WS-0~4 + Beads + Recall Fix (2026-04-08)
+
+### WS-0: knowledge_core Context
+- context_selector: knowledge_core 전용 섹션 (SoT primary, visit_count 상위 30건)
+
+### WS-1.2: Reasoning Graph Cleanup
+- config: GRAPH_EXCLUDED_METHODS (session_anchor, legacy_unknown, orphan_repair, co_retrieval, fallback)
+- hybrid.py: NetworkX graph + SQL CTE에서 operational edge 제외
+- 미사용 import 정리 (ENRICHMENT_QUALITY_WEIGHT, SOURCE_BONUS 등)
+
+### WS-2.1: Write-Layer Normalize
+- sqlite_store.insert_node: node_role 미전달 시 knowledge_candidate, epistemic_status 미전달 시 provisional 기본값
+
+### WS-4: Promote Auto-Render + Maturity Gating
+- promote_node: 승격 후 proven_knowledge.md 자동 렌더 (background subprocess)
+- config: get_maturity_level() 4단계 (core 기준), MATURITY_GATES (graph_channel/complex_scoring)
+- hybrid.py: maturity gating으로 graph channel on/off
+
+### Beads v6.1: Task Graph
+- storage/task_store.py: tasks.db SQLite (create, query, complete, generate_next)
+- server.py: 4 MCP tools (create_task, query_tasks, complete_task, generate_next)
+- session_events: target + task_id 칼럼 추가, emit_event/poll_events에 TASK_ASSIGN/TASK_PICK 지원
+- complete_task → TASK_COMPLETE SessionEvent 자동 발행 + blocked_by 해소
+
+### Recall Quality Fix
+- 0.3 score threshold 제거 (scoring 단순화 후 범위 0.05~0.17로 하락, threshold가 전부 차단)
+- overfetch 3x: hybrid_search top_k*3 → role 필터 → top_k 절단
+- patch 전환 mode 변수 버그 수정 (mode → search_mode)
+
 ## Merger Artifact Pipeline (2026-04-07)
 - `scripts/render_proven_knowledge.py`: knowledge_core + validated + high-signal + corrections → `data/proven_knowledge.md` (22 nodes)
 - `data/merger_manifest.json`: 반영 이력 추적 (22 entries)

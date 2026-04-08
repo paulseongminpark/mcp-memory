@@ -1,8 +1,10 @@
 from __future__ import annotations
+import pytest
 
 from storage import hybrid, sqlite_store
 
 
+@pytest.mark.skip(reason="WS-1.1: role_penalty를 hybrid에서 제거, recall 필터에서만 적용. maturity level 2 도달 시 재활성.")
 def test_node_role_penalty_pushes_work_item_down(fresh_db, monkeypatch):
     work_item = sqlite_store.insert_node(
         type="Decision",

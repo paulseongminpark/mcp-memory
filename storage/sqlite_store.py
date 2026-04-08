@@ -381,6 +381,26 @@ def init_db() -> None:
         except Exception:
             pass
 
+    # v6.1: session_events에 target + task_id 칼럼 추가 (Gas Town)
+    with _db() as _mig:
+        try:
+            _mig.execute("ALTER TABLE session_events ADD COLUMN target TEXT DEFAULT ''")
+            _mig.commit()
+        except Exception:
+            pass
+    with _db() as _mig:
+        try:
+            _mig.execute("ALTER TABLE session_events ADD COLUMN task_id TEXT DEFAULT ''")
+            _mig.commit()
+        except Exception:
+            pass
+    with _db() as _mig:
+        try:
+            _mig.execute("CREATE INDEX IF NOT EXISTS idx_sevt_target ON session_events(target)")
+            _mig.commit()
+        except Exception:
+            pass
+
     # --- dirty_topics (wiki-compiler 연동) ---
     with _db() as conn:
         try:
@@ -462,6 +482,12 @@ def insert_node(
     v3: retrieval_hints (H4) — {"when_needed", "related_queries", "context_keys"}
     v3.3: source_kind, source_ref, node_role, epistemic_status 추가
     """
+    # WS-2.1: 중앙 write-layer normalize — 모든 ingress의 최종 방어선
+    if not node_role:
+        node_role = "knowledge_candidate"
+    if not epistemic_status:
+        epistemic_status = "provisional"
+
     # PROMOTE_LAYER fallback: caller가 layer 미전달 시 타입 기반 자동 배정
     if layer is None:
         layer = PROMOTE_LAYER.get(type)  # Unclassified → None (의도적)
@@ -918,6 +944,8 @@ def insert_session_event(
     summary: str,
     project: str = "",
     metadata: dict | None = None,
+    target: str = "",
+    task_id: str = "",
 ) -> dict:
     """Idempotent upsert — 동일 event_id는 무시."""
     now = datetime.now(timezone.utc).isoformat()
@@ -925,13 +953,12 @@ def insert_session_event(
         try:
             conn.execute(
                 """INSERT OR IGNORE INTO session_events
-                   (event_id, session_id, project, event_type, summary, status, created_at, metadata)
-                   VALUES (?, ?, ?, ?, ?, 'ACTIVE', ?, ?)""",
+                   (event_id, session_id, project, event_type, summary, status, created_at, metadata, target, task_id)
+                   VALUES (?, ?, ?, ?, ?, 'ACTIVE', ?, ?, ?, ?)""",
                 (event_id, session_id, project, event_type, summary, now,
-                 json.dumps(metadata or {})),
+                 json.dumps(metadata or {}), target, task_id),
             )
             conn.commit()
-            # check if actually inserted (vs ignored)
             row = conn.execute(
                 "SELECT id FROM session_events WHERE event_id = ?", (event_id,)
             ).fetchone()
@@ -945,8 +972,10 @@ def query_session_events(
     since: str = "",
     status: str = "ACTIVE",
     limit: int = 50,
+    target: str = "",
+    event_type: str = "",
 ) -> list[dict]:
-    """다른 세션의 이벤트 조회 (polling용)."""
+    """다른 세션의 이벤트 조회 (polling용). target으로 inbox 필터링."""
     with _db() as conn:
         conditions = ["status = ?"]
         params: list = [status]
@@ -956,6 +985,12 @@ def query_session_events(
         if since:
             conditions.append("created_at > ?")
             params.append(since)
+        if target:
+            conditions.append("target = ?")
+            params.append(target)
+        if event_type:
+            conditions.append("event_type = ?")
+            params.append(event_type)
         params.append(limit)
         rows = conn.execute(
             f"SELECT * FROM session_events WHERE {' AND '.join(conditions)} ORDER BY created_at DESC LIMIT ?",

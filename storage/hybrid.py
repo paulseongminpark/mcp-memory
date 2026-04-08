@@ -13,19 +13,17 @@ import time
 
 from config import (
     DEFAULT_TOP_K, RRF_K, GRAPH_BONUS,
-    ENRICHMENT_QUALITY_WEIGHT, ENRICHMENT_TEMPORAL_WEIGHT,
     CONTEXT_HISTORY_LIMIT, BCM_HISTORY_WINDOW,
     UCB_C_FOCUS, UCB_C_AUTO, UCB_C_DMN,
     GRAPH_MAX_HOPS, LAYER_ETA,
     SPRT_ALPHA, SPRT_BETA, SPRT_P1, SPRT_P0, SPRT_MIN_OBS,
     TYPE_KEYWORDS, TYPE_CHANNEL_WEIGHT, TYPE_CHANNEL_WEIGHTS, MAX_TYPE_HINTS,
-    COMPOSITE_WEIGHT_RRF, COMPOSITE_WEIGHT_DECAY, COMPOSITE_WEIGHT_IMPORTANCE,
+    COMPOSITE_WEIGHT_DECAY, COMPOSITE_WEIGHT_IMPORTANCE,
     DECAY_LAMBDA, PROMOTED_MULTIPLIER, LAYER_IMPORTANCE,
-    SOURCE_BONUS, SOURCE_BONUS_DEFAULT,
     RELATION_WEIGHT, RELATION_WEIGHT_DEFAULT,
-    CONFIDENCE_WEIGHT, CONTRADICTION_PENALTY,
-    GENERIC_RECALL_ROLE_PENALTY, GENERIC_RECALL_EXCLUDE_ROLES,
+    CONTRADICTION_PENALTY,
     GENERATION_METHOD_PENALTY,
+    GRAPH_EXCLUDED_METHODS,
 )
 from storage import sqlite_store, vector_store
 from graph.traversal import build_graph  # traverse 제거 — UCB로 교체
@@ -47,7 +45,10 @@ def _get_graph() -> tuple[list, object]:
     global _GRAPH_CACHE, _GRAPH_CACHE_TS
     now = time.monotonic()
     if _GRAPH_CACHE is None or (now - _GRAPH_CACHE_TS) > _GRAPH_TTL:
-        all_edges = sqlite_store.get_all_edges(active_only=True)
+        all_edges_raw = sqlite_store.get_all_edges(active_only=True)
+        # WS-1.2: reasoning graph에서 operational edge 제외
+        all_edges = [e for e in all_edges_raw
+                     if e.get("generation_method", "") not in GRAPH_EXCLUDED_METHODS]
         graph = build_graph(all_edges)
         # visit_count를 DB에서 로드 → UCB 탐색에서 활용 (B-12)
         try:
@@ -82,23 +83,29 @@ def _traverse_sql(seed_ids: list[int], depth: int = 2) -> set[int]:
         return set()
 
     ph = ",".join("?" * len(seed_ids))
+    # WS-1.2: operational edge 제외
+    excl = "','".join(GRAPH_EXCLUDED_METHODS)
     sql_active = f"""
     WITH RECURSIVE sa(id, hop) AS (
         SELECT target_id, 1 FROM edges
          WHERE status = 'active' AND source_id IN ({ph})
+           AND COALESCE(generation_method,'') NOT IN ('{excl}')
         UNION
         SELECT source_id, 1 FROM edges
          WHERE status = 'active' AND target_id IN ({ph})
+           AND COALESCE(generation_method,'') NOT IN ('{excl}')
         UNION ALL
         SELECT e.target_id, sa.hop + 1
           FROM edges e
           JOIN sa ON e.source_id = sa.id
          WHERE e.status = 'active' AND sa.hop < ?
+           AND COALESCE(e.generation_method,'') NOT IN ('{excl}')
         UNION ALL
         SELECT e.source_id, sa.hop + 1
           FROM edges e
           JOIN sa ON e.target_id = sa.id
          WHERE e.status = 'active' AND sa.hop < ?
+           AND COALESCE(e.generation_method,'') NOT IN ('{excl}')
     )
     SELECT DISTINCT id FROM sa
     WHERE id NOT IN ({ph})
@@ -552,18 +559,20 @@ def hybrid_search(
     for node_id, _, _ in fts_results[:3]:
         seed_ids.append(node_id)
 
-    # 4. UCB 그래프 탐색 (B-12, B-16 TTL 캐시)
-    c = _auto_ucb_c(query, mode=mode)
-    if seed_ids:
+    # 4. UCB 그래프 탐색 (B-12, B-16 TTL 캐시) — maturity gating (WS-4.1)
+    from config import get_maturity_level, MATURITY_GATES
+    _maturity = get_maturity_level()
+    _gates = MATURITY_GATES.get(_maturity, MATURITY_GATES[0])
+
+    if not _gates["graph_channel"] or not seed_ids:
+        graph_neighbors = set()
+    else:
+        c = _auto_ucb_c(query, mode=mode)
         if c <= UCB_C_FOCUS:
-            # focus 모드: SQL CTE로 빠르게 (NetworkX 불필요)
             graph_neighbors = _traverse_sql(seed_ids, depth=GRAPH_MAX_HOPS)
         else:
-            # auto/dmn 모드: UCB 필요 → NetworkX 유지 (visit_count 기반 탐험)
             all_edges, graph = _get_graph()
             graph_neighbors = _ucb_traverse(graph, seed_ids, depth=GRAPH_MAX_HOPS, c=c)
-    else:
-        graph_neighbors = set()
 
     # 5. Reciprocal Rank Fusion + source tracking
     scores: dict[int, float] = defaultdict(float)
@@ -599,34 +608,16 @@ def hybrid_search(
             continue
         if excluded_project and node["project"] == excluded_project:
             continue  # B-4: 포화된 패치 제외
-        # base RRF score (enrichment + tier 포함)
-        qs = node.get("quality_score") or 0.0
-        tr = node.get("temporal_relevance") or 0.0
-        enrichment_bonus = (
-            qs * ENRICHMENT_QUALITY_WEIGHT + tr * ENRICHMENT_TEMPORAL_WEIGHT
-        )
+        # base RRF score — WS-1.1: 차별력 없는 신호 제거 (quality 96% 동일, confidence 70% 동일)
         tier = node.get("tier", 2)
         tier_bonus = {0: 0.15, 1: 0.05, 2: 0.0}.get(tier, 0.0)
-        # v3.2: source 품질 가중치
-        src = (node.get("source") or "").split(":")[0]  # "obsidian:..." → "obsidian"
-        src_bonus = SOURCE_BONUS.get(src, SOURCE_BONUS_DEFAULT)
-        role = node.get("node_role") or ""
-        role_penalty = GENERIC_RECALL_ROLE_PENALTY.get(role, 0.0)
-        confidence = float(node.get("confidence") or 0.0)
-        confidence_bonus = (confidence - 0.5) * CONFIDENCE_WEIGHT
         contradiction_penalty = 0.0
-        if role in GENERIC_RECALL_EXCLUDE_ROLES and role_penalty == 0.0:
-            role_penalty = -0.05
         edges = sqlite_store.get_edges(node_id, active_only=True)
         if any(edge.get("relation") == "contradicts" for edge in edges):
             contradiction_penalty = CONTRADICTION_PENALTY
         node["_base_rrf"] = (
             scores[node_id]
-            + enrichment_bonus
             + tier_bonus
-            + src_bonus
-            + confidence_bonus
-            + role_penalty
             + contradiction_penalty
         )
         node["_sources"] = sorted(source_map.get(node_id, set()))
@@ -670,7 +661,7 @@ def hybrid_search(
 
     candidates.sort(key=lambda n: n["score"], reverse=True)
 
-    # ── 조건부 Reranker (local GGUF cross-encoder) ──
+    # ── 조건부 Reranker (local cross-encoder) ──
     from config import RERANKER_ENABLED, RERANKER_GAP_THRESHOLD, RERANKER_CANDIDATE_MULT
     if RERANKER_ENABLED and len(candidates) >= 2:
         from storage.reranker import should_rerank, rerank as _rerank

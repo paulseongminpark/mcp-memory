@@ -21,56 +21,8 @@ MAX_RETRIES = 3
 
 
 def build_embed_text(node):
-    """v4 임베딩 텍스트 포맷."""
-    typ = node['type'] or 'Unclassified'
-    proj = node['project'] or 'system'
-    summary = node['summary'] or ''
-    content = (node['content'] or '')[:200]
-
-    # atomic_claims
-    claims = ''
-    if node['atomic_claims']:
-        try:
-            ac = json.loads(node['atomic_claims'])
-            if ac:
-                claims = 'Claims: ' + '; '.join(ac[:4])
-        except:
-            pass
-
-    # retrieval_queries
-    queries = ''
-    if node['retrieval_queries']:
-        try:
-            rq = json.loads(node['retrieval_queries'])
-            if rq:
-                queries = 'Queries: ' + '; '.join(rq[:5])
-        except:
-            pass
-
-    # key_concepts
-    keywords = ''
-    if node['key_concepts']:
-        try:
-            kc = json.loads(node['key_concepts']) if node['key_concepts'].startswith('[') else node['key_concepts']
-            if isinstance(kc, list):
-                keywords = 'Keywords: ' + ', '.join(kc[:6])
-            elif isinstance(kc, str):
-                keywords = 'Keywords: ' + kc[:80]
-        except:
-            keywords = 'Keywords: ' + node['key_concepts'][:80]
-
-    # Compose
-    parts = [f"[{typ}|{proj}] {summary or content[:80]}"]
-    if claims:
-        parts.append(claims)
-    if queries:
-        parts.append(queries)
-    if keywords:
-        parts.append(keywords)
-    if not summary:
-        parts.append(content)
-
-    return '\n'.join(parts)
+    """v4 임베딩 텍스트 — content only (대조 실험)."""
+    return node['content'] or ''
 
 
 def main():
@@ -79,12 +31,12 @@ def main():
 
     # Delete and recreate collection for clean state
     try:
-        chroma_client.delete_collection('memory_nodes')
+        chroma_client.delete_collection('memories')
         print("Deleted old ChromaDB collection")
     except:
         pass
     collection = chroma_client.create_collection(
-        name='memory_nodes',
+        name='memories',
         metadata={"hnsw:space": "cosine"},
     )
     print("Created new ChromaDB collection")

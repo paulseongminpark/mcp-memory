@@ -66,6 +66,7 @@ def rerank(query: str, candidates: list[dict], top_k: int) -> list[dict]:
     ce_norm = [(s - min_s) / span for s in ce_scores]
 
     # blend: RRF score * (1 - weight) + CE score * weight
+    # CE는 tiebreaker 역할 — weight는 낮게 유지
     from config import RERANKER_WEIGHT
     for c, ce in zip(candidates, ce_norm):
         c["score"] = c["score"] * (1 - RERANKER_WEIGHT) + ce * RERANKER_WEIGHT

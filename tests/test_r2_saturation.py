@@ -66,6 +66,6 @@ def test_narrative_is_session_anchor():
            FROM nodes
            WHERE status='active'
              AND type='Narrative'
-             AND COALESCE(node_role, '') NOT IN ('session_anchor', 'external_noise')"""
+             AND COALESCE(node_role, '') NOT IN ('session_anchor', 'external_noise', 'knowledge_candidate')"""
     )
     assert count == 0

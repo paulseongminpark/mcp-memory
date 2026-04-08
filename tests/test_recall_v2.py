@@ -110,7 +110,7 @@ class TestRecall:
             "테스트",
             type_filter="",
             project="",
-            top_k=5,
+            top_k=15,  # overfetch: top_k(5) * 3
             mode="focus",
         )
 

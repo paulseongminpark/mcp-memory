@@ -1,27 +1,32 @@
 # mcp-memory — STATE
-_Updated: 2026-04-07_
+_Updated: 2026-04-08_
 
 ## Current
-- **Version**: v4.0 (Ontology v4 본선 GO — R7 감사 통과)
+- **Version**: v5.1 (Ontology Maturation — WS-0~4 + Beads v6.1)
 - **Branch**: main
-- **Active Nodes**: 5,252 (Signal 51개 신규)
-- **Active Edges**: 6,242 (realizes 128개 신규)
+- **Active Nodes**: 5,260
+- **Active Edges**: 9,571 (+2,562 semantic auto)
 - **Ontology**: 15 active types + Correction(system) + Unclassified, 49 relation types
-- **Signal spine**: 70 active (19→70, 클러스터 합성)
-- **Metadata fill**: node_role **100%**, generation_method **100%**
+- **knowledge_core**: 123 (9→123, WS-2.3 승격)
+- **validated**: 130
+- **Metadata fill**: node_role **100%** (blank 0), generation_method **100%** (legacy_unknown 0)
 - **Recall modes**: generic, recollection, troubleshooting, correction (4종)
-- **Orphan**: 14.0% → **0.0%**
+- **Orphan**: **0.0%**
+- **Semantic edges**: 6,947 (72.6%), operational: 2,624 (27.4%)
+- **KB semantic 0-1 edge**: 16.5% (61.2%→16.5%)
 - **Correction**: 7 nodes, 7 contradicts edges
-- **Merger**: MVP 1건 (#4159→MEMORY.md)
-- **Quality**: NDCG@5 0.201, hit_rate 0.646 (goldset v4, 82 queries)
+- **Quality**: NDCG@5 0.232, hit_rate 0.683 (goldset v4 FROZEN, 82 queries) — recall 수정 후 재측정 대기
+- **Reranker**: ms-marco-MiniLM-L-6-v2 (cross-encoder), weight=0.35
+- **Maturity**: level 3 (core >= 100), maturity gating 활성
+- **SoT 결정**: get_context() primary, proven_knowledge.md fallback
+- **Beads**: tasks.db 4도구 (create_task/query_tasks/complete_task/generate_next)
 - **API**: OpenAI (gpt-5-mini / o3-mini / gpt-4.1 / gpt-5.2 / o3)
-- **신규 컬럼**: source_kind, source_ref, node_role, epistemic_status (nodes), generation_method (edges)
 
 ## Architecture
-- 14 MCP tools (+flag_node), 4 layers (L0-L3+Unclassified), 15+1 node types, 49 relation types
+- 18 MCP tools (+flag_node +create_task +query_tasks +complete_task +generate_next), 4 layers (L0-L3+Unclassified), 15+1 node types, 49 relation types
 - Hybrid search: Vector (ChromaDB) + FTS5 (SQLite) + Graph (UCB/BCM)
 - Embedding: text-embedding-3-large, [Type]+summary+key_concepts+content[:200]
-- RRF_K=18, GRAPH_BONUS=0.03, confidence/role/contradiction → scoring
+- RRF_K=18, GRAPH_BONUS=0.005, scoring=단순화(tier+contradiction only), reranker=ON, maturity gating
 - Context selector 통합: get_context.py + session_context.py → context_selector.py
 - 3-Layer type-aware search: C(타입 태그 임베딩) + A(typed vector RRF 채널) + D(다양성 보장)
 - Source tracking: recall_log.sources JSON (vector/fts5/graph/typed_vector)

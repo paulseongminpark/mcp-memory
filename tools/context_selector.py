@@ -29,6 +29,24 @@ def select_context(project: str = "") -> dict:
             return f"AND {prefix}project = ?", [project]
         return "", []
 
+    # ── WS-1.0: knowledge_core 전용 (SoT primary) ──
+    pc, pp = _proj()
+    rows = conn.execute(f"""
+        SELECT id, type, content, summary, project, confidence
+        FROM nodes
+        WHERE node_role = 'knowledge_core' AND status = 'active'
+          AND epistemic_status NOT IN ('outdated', 'superseded', 'flagged')
+          {pc}
+        ORDER BY visit_count DESC NULLS LAST LIMIT 30
+    """, pp).fetchall()
+    if rows:
+        sections["knowledge_core"] = [
+            {"id": r["id"], "type": r["type"], "project": r["project"],
+             "content": (r["summary"] or r["content"])[:100],
+             "confidence": round(r["confidence"] or 0.5, 2)}
+            for r in rows
+        ]
+
     # ── L2+ 핵심 패턴/원칙 (quality 상위 15개) — v5: epistemic 필터 ──
     pc, pp = _proj()
     rows = conn.execute(f"""
