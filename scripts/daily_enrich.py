@@ -623,6 +623,19 @@ def main():
     print(f"dry_run={dry_run}  large={args.budget_large:,}  small={args.budget_small:,}")
     print("=" * 50)
 
+    # Phase 0: auto-promote (no API cost, runs before enrichment)
+    print("\n--- Phase 0: auto-promote ---")
+    try:
+        from scripts.auto_promote import find_candidates, execute_promotions
+        candidates = find_candidates()
+        if candidates:
+            result = execute_promotions(candidates, dry_run=dry_run)
+            print(f"  Promoted: {result['promoted']}, Candidates: {result['total_candidates']}")
+        else:
+            print("  No promotion candidates.")
+    except Exception as e:
+        print(f"  Auto-promote error: {e}")
+
     phase_stats = {}
     phases = [
         (1, "Phase 1: bulk", lambda: phase1(conn, ne, re, budget)),

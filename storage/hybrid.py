@@ -5,6 +5,7 @@ Phase 1: BCM + UCB 통합 (B-12), 재공고화 (B-10), 패치 전환 지원 (B-4
 
 from collections import defaultdict
 from datetime import datetime, timezone
+import hashlib
 import json
 import logging
 import math
@@ -12,7 +13,7 @@ import threading
 import time
 
 from config import (
-    DEFAULT_TOP_K, RRF_K, GRAPH_BONUS,
+    DEFAULT_TOP_K, RRF_K,
     CONTEXT_HISTORY_LIMIT, BCM_HISTORY_WINDOW,
     UCB_C_FOCUS, UCB_C_AUTO, UCB_C_DMN,
     GRAPH_MAX_HOPS, LAYER_ETA,
@@ -20,10 +21,15 @@ from config import (
     TYPE_KEYWORDS, TYPE_CHANNEL_WEIGHT, TYPE_CHANNEL_WEIGHTS, MAX_TYPE_HINTS,
     COMPOSITE_WEIGHT_DECAY, COMPOSITE_WEIGHT_IMPORTANCE,
     DECAY_LAMBDA, PROMOTED_MULTIPLIER, LAYER_IMPORTANCE,
-    RELATION_WEIGHT, RELATION_WEIGHT_DEFAULT,
+    RELATION_FAMILY, RELATION_FAMILY_WEIGHT,
+    EDGE_CLASS, GRAPH_BONUS_BY_CLASS, GRAPH_BONUS_DEFAULT_CLASS,
     CONTRADICTION_PENALTY,
     GENERATION_METHOD_PENALTY,
     GRAPH_EXCLUDED_METHODS,
+    SOURCE_BONUS,
+    SOURCE_BONUS_DEFAULT,
+    ENRICHMENT_QUALITY_WEIGHT,
+    CONFIDENCE_WEIGHT,
 )
 from storage import sqlite_store, vector_store
 from graph.traversal import build_graph  # traverse 제거 — UCB로 교체
@@ -34,6 +40,34 @@ from graph.traversal import build_graph  # traverse 제거 — UCB로 교체
 _GRAPH_CACHE: tuple[list, object] | None = None  # (all_edges, nx.DiGraph)
 _GRAPH_CACHE_TS: float = 0.0
 _GRAPH_TTL: float = 300.0  # 5분
+_CLASS_RANK = {
+    "semantic": 4,
+    "evidence": 3,
+    "temporal": 2,
+    "structural": 1,
+    "operational": 0,
+}
+
+
+class _NeighborClassMap(dict[int, str]):
+    """dict[int, str] with legacy set-style equality for older tests/callers."""
+
+    def __eq__(self, other):
+        if isinstance(other, set):
+            return set(self.keys()) == other
+        return super().__eq__(other)
+
+
+def _class_rank(edge_class: str) -> int:
+    return _CLASS_RANK.get(edge_class, 0)
+
+
+def _normalize_graph_neighbors(graph_neighbors) -> dict[int, str]:
+    if isinstance(graph_neighbors, dict):
+        return _NeighborClassMap(graph_neighbors)
+    if isinstance(graph_neighbors, set):
+        return _NeighborClassMap({node_id: "" for node_id in graph_neighbors})
+    return _NeighborClassMap()
 
 
 def _get_graph() -> tuple[list, object]:
@@ -72,7 +106,47 @@ def _get_graph() -> tuple[list, object]:
 
 # ─── _traverse_sql() — B-11 (보조용, Phase 2 전환 준비) ──────────
 
-def _traverse_sql(seed_ids: list[int], depth: int = 2) -> set[int]:
+def _lookup_edge_classes(node_ids: set[int], seed_ids: list[int]) -> dict[int, str]:
+    """Look up the best edge class for each traversed node."""
+    if not node_ids or not seed_ids:
+        return _NeighborClassMap()
+
+    ph_nodes = ",".join("?" * len(node_ids))
+    ph_seeds = ",".join("?" * len(seed_ids))
+    sql = f"""
+        SELECT target_id AS neighbor, relation
+        FROM edges
+        WHERE status = 'active'
+          AND source_id IN ({ph_seeds})
+          AND target_id IN ({ph_nodes})
+        UNION ALL
+        SELECT source_id AS neighbor, relation
+        FROM edges
+        WHERE status = 'active'
+          AND target_id IN ({ph_seeds})
+          AND source_id IN ({ph_nodes})
+    """
+
+    result: dict[int, str] = {}
+    try:
+        with sqlite_store._db() as conn:
+            rows = conn.execute(
+                sql,
+                list(seed_ids) + list(node_ids) + list(seed_ids) + list(node_ids),
+            ).fetchall()
+        for neighbor_id, relation in rows:
+            edge_class = EDGE_CLASS.get(relation or "", "operational")
+            if neighbor_id not in result or _class_rank(edge_class) > _class_rank(result[neighbor_id]):
+                result[neighbor_id] = edge_class
+    except Exception:
+        result = {}
+
+    for node_id in node_ids:
+        result.setdefault(node_id, "")
+    return _NeighborClassMap(result)
+
+
+def _traverse_sql(seed_ids: list[int], depth: int = 2) -> dict[int, str]:
     """SQL Recursive CTE 기반 그래프 탐색. Chen (2014) DB-optimized.
 
     Phase 1: 직접 호출되지 않음 (UCB가 메인 탐색 경로).
@@ -80,7 +154,7 @@ def _traverse_sql(seed_ids: list[int], depth: int = 2) -> set[int]:
     idx_edges_source, idx_edges_target 인덱스 활용.
     """
     if not seed_ids:
-        return set()
+        return _NeighborClassMap()
 
     ph = ",".join("?" * len(seed_ids))
     # WS-1.2: operational edge 제외
@@ -134,14 +208,16 @@ def _traverse_sql(seed_ids: list[int], depth: int = 2) -> set[int]:
     try:
         with sqlite_store._db() as conn:
             rows = conn.execute(sql_active, params).fetchall()
-            return {row[0] for row in rows}
+            result_ids = {row[0] for row in rows}
+            return _lookup_edge_classes(result_ids, seed_ids)
     except Exception:
         try:
             with sqlite_store._db() as conn:
                 rows = conn.execute(sql_fallback, params).fetchall()
-                return {row[0] for row in rows}
+                result_ids = {row[0] for row in rows}
+                return _lookup_edge_classes(result_ids, seed_ids)
         except Exception:
-            return set()  # CTE 실패 시 그래프 보너스 없이 계속
+            return _NeighborClassMap()  # CTE 실패 시 그래프 보너스 없이 계속
 
 
 # ─── _ucb_traverse() — B-12 ──────────────────────────────────────
@@ -151,7 +227,7 @@ def _ucb_traverse(
     seed_ids: list[int],
     depth: int = 2,
     c: float = UCB_C_AUTO,
-) -> set[int]:
+) -> dict[int, str]:
     """UCB 기반 그래프 탐색 (Upper Confidence Bound).
 
     Score(j) = w_ij + c * sqrt(ln(N_i + 1) / (N_j + 1))
@@ -162,12 +238,16 @@ def _ucb_traverse(
 
     각 hop에서 상위 20개만 탐색 (폭발 방지).
     """
+    if not seed_ids:
+        return _NeighborClassMap()
+
     visited = set(seed_ids)
+    node_best_class: dict[int, str] = {}
     frontier = set(seed_ids)
     undirected = graph.to_undirected(as_view=True)
 
     for _ in range(depth):
-        candidates: list[tuple[float, int]] = []
+        candidates: dict[int, tuple[float, str]] = {}
         for nid in frontier:
             if nid not in graph:
                 continue
@@ -178,31 +258,43 @@ def _ucb_traverse(
                 if graph.has_edge(nid, nbr):
                     edata = graph.edges[nid, nbr]
                     w_ij = edata.get("strength", 0.1)
-                    # v3.2: 관계 타입별 가중치 (인과 > 구조 > 약한)
                     rel = edata.get("relation", "")
-                    w_ij *= RELATION_WEIGHT.get(rel, RELATION_WEIGHT_DEFAULT)
                     generation_method = edata.get("generation_method", "")
-                    w_ij += GENERATION_METHOD_PENALTY.get(generation_method, 0.0)
                 elif graph.has_edge(nbr, nid):
                     edata = graph.edges[nbr, nid]
                     w_ij = edata.get("strength", 0.1)
                     rel = edata.get("relation", "")
-                    w_ij *= RELATION_WEIGHT.get(rel, RELATION_WEIGHT_DEFAULT)
                     generation_method = edata.get("generation_method", "")
-                    w_ij += GENERATION_METHOD_PENALTY.get(generation_method, 0.0)
                 else:
                     w_ij = 0.1
+                    rel = ""
+                    generation_method = ""
+                family = RELATION_FAMILY.get(rel, "co_occurs")
+                w_ij *= RELATION_FAMILY_WEIGHT.get(family, 1.0)
+                w_ij += GENERATION_METHOD_PENALTY.get(generation_method, 0.0)
                 w_ij = max(w_ij, 0.0)
                 n_j = graph.nodes[nbr].get("visit_count", 1)
                 score = w_ij + c * math.sqrt(math.log(n_i + 1) / (n_j + 1))
-                candidates.append((score, nbr))
+                edge_class = EDGE_CLASS.get(rel, "operational")
+                prev = candidates.get(nbr)
+                if prev is None or score > prev[0] or (
+                    score == prev[0] and _class_rank(edge_class) > _class_rank(prev[1])
+                ):
+                    candidates[nbr] = (score, edge_class)
 
-        candidates.sort(reverse=True)
-        next_frontier = {nbr for _, nbr in candidates[:20]}
+        ranked = sorted(
+            ((score, nbr, edge_class) for nbr, (score, edge_class) in candidates.items()),
+            reverse=True,
+        )
+        selected = ranked[:20]
+        next_frontier = {nbr for _, nbr, _ in selected}
+        for _, nbr, edge_class in selected:
+            if nbr not in node_best_class or _class_rank(edge_class) > _class_rank(node_best_class[nbr]):
+                node_best_class[nbr] = edge_class
         visited.update(next_frontier)
         frontier = next_frontier
 
-    return visited - set(seed_ids)  # seed 자신 제외
+    return _NeighborClassMap(node_best_class)
 
 
 def _auto_ucb_c(query: str, mode: str = "auto") -> float:
@@ -226,99 +318,63 @@ def _auto_ucb_c(query: str, mode: str = "auto") -> float:
     return UCB_C_AUTO
 
 
-# ─── _bcm_update() — B-12 + B-10 통합 ────────────────────────────
+# ─── _hebbian_update() — frequency-based learning ─────────────────
+# v4: BCM(연속 firing rate 모델)을 이산 recall 이벤트에 적합한
+# 단순 frequency 기반으로 교체. (ontology-repair 2026-04-09)
+#
+# 원칙: "자주 함께 recall되면 강해지고, 안 쓰이면 흐려진다"
+#   co-recall: strength += LEARN_RATE (양쪽 다 result일 때)
+#              strength += LEARN_RATE * 0.3 (한쪽만 result일 때)
+#   시간 감쇠: daily_enrich Phase 6에서 처리 (여기서는 안 함)
+#   하한선:    strength는 0.05 미만으로 안 떨어짐
+#   상한선:    strength는 2.0 초과 안 함
 
-def _bcm_update(
+LEARN_RATE = 0.015  # co-recall당 강화량
+LEARN_RATE_WEAK = 0.005  # 한쪽만 result일 때
+
+
+def _hebbian_update(
     result_ids: list[int],
     result_scores: list[float],
     all_edges: list[dict],
     query: str = "",
 ):
-    """BCM 학습 + 재공고화 + visit_count 갱신 (단일 트랜잭션).
+    """Frequency-based Hebbian learning + 재공고화 + visit_count.
 
-    BCM 공식: dw_ij/dt = η * ν_i * (ν_i - θ_m) * ν_j
-      η   : 레이어별 학습률 (LAYER_ETA)
-      ν_i : 소스 노드 활성화 강도 (정규화 score)
-      θ_m : 슬라이딩 윈도우 제곱평균 (runaway reinforcement 방지)
-      ν_j : 타깃 노드 활성화 강도
-
-    B-5 재공고화: activated edge의 description에 사용 맥락 JSON 추가.
-    visit_count: 결과 노드 전체에 +1 (UCB 다음 탐색 시 활용).
-
-    3N + K UPDATEs (N=활성 edge 수, K=결과 노드 수), 1 commit.
+    co-recall 시 edge strength를 단순 증가시킨다.
+    BCM의 theta_m/activity_history는 더 이상 갱신하지 않는다.
     """
     if not result_ids:
         return
 
     id_set = set(result_ids)
-    max_score = max(result_scores) if result_scores else 1.0
-    score_map = {
-        rid: (s / max_score if max_score > 0 else 0.0)
-        for rid, s in zip(result_ids, result_scores)
-    }
     now = datetime.now(timezone.utc).isoformat()
 
-    # v3.2: 한쪽만 result여도 학습 (이전: 양쪽 다 result 필수 → 89.5% 에지 학습 불가)
-    # 결과 노드(id_set)와 연결된 에지면 학습 대상. 비결과 endpoint의 v는 0.1로 처리.
-    # 양쪽 다 result인 에지를 우선, 한쪽만인 에지는 최대 50개까지.
+    # 양쪽 다 result인 에지 = 강한 co-recall
     both_side = [e for e in all_edges
                  if e.get("source_id") in id_set and e.get("target_id") in id_set]
+    # 한쪽만 result인 에지 = 약한 co-recall (최대 50개)
     one_side = [e for e in all_edges
                 if (e.get("source_id") in id_set) != (e.get("target_id") in id_set)]
-    activated_edges = both_side + one_side[:50]
+    activated_edges = [(e, LEARN_RATE) for e in both_side] + \
+                      [(e, LEARN_RATE_WEAK) for e in one_side[:50]]
 
     try:
         with sqlite_store._db() as conn:
-            # 1. BCM edge 강도 갱신 + θ_m 업데이트 + 재공고화
-            for edge in activated_edges:
+            # 1. Edge strength 갱신 + 재공고화
+            for edge, rate in activated_edges:
                 eid = edge["id"]
-                src = edge["source_id"]
-                tgt = edge["target_id"]
-                v_i = score_map.get(src, 0.0)
-                v_j = score_map.get(tgt, 0.0)
-
-                # 소스 노드 메타 로드 (레이어별 η, θ_m, activity_history)
-                row = conn.execute(
-                    "SELECT layer, theta_m, activity_history FROM nodes WHERE id=?",
-                    (src,),
-                ).fetchone()
-                if not row:
-                    continue
-                layer, theta_m, hist_raw = row
-                theta_m = theta_m if theta_m is not None else 0.5
-                eta = LAYER_ETA.get(layer or 2, 0.010)
-
-                try:
-                    history = json.loads(hist_raw) if hist_raw else []
-                    if not isinstance(history, list):
-                        history = []
-                except (json.JSONDecodeError, ValueError):
-                    history = []
-
-                # BCM delta_w: 양수면 강화, 음수면 약화
-                # v3.2: 비결과 endpoint는 v=0.1로 처리 (경로 근접 보상)
-                if v_j == 0.0:
-                    v_j = 0.1
-                if v_i == 0.0:
-                    v_i = 0.1
-                delta_w = eta * v_i * (v_i - theta_m) * v_j
-                new_strength = max(0.01, min(2.0, (edge.get("strength") or 1.0) + delta_w))
-                new_freq = max(0.0, (edge.get("frequency") or 0) + delta_w * 10)
-
-                # θ_m: 슬라이딩 제곱평균 갱신
-                history = (history + [v_i])[-BCM_HISTORY_WINDOW:]
-                new_theta = sum(h ** 2 for h in history) / len(history)
+                old_strength = edge.get("strength") or 1.0
+                old_freq = edge.get("frequency") or 0
+                new_strength = min(2.0, old_strength + rate)
+                new_freq = old_freq + 1
 
                 conn.execute(
                     "UPDATE edges SET frequency=?, strength=?, last_activated=? WHERE id=?",
                     (new_freq, new_strength, now, eid),
                 )
-                conn.execute(
-                    "UPDATE nodes SET theta_m=?, activity_history=? WHERE id=?",
-                    (new_theta, json.dumps(history), src),
-                )
 
-                # B-5 재공고화: edge.description에 맥락 JSON 추가
+                # 재공고화: edge.description에 사용 맥락 추가
                 if query:
                     raw = edge.get("description") or ""
                     try:
@@ -346,7 +402,7 @@ def _bcm_update(
 
             conn.commit()
     except Exception as e:
-        logging.warning("BCM update failed: %s", e)  # BCM 실패가 검색을 중단시키지 않음
+        logging.warning("Hebbian update failed: %s", e)
 
 
 # ─── _sprt_check() — C-11 SPRT 승격 판정 ─────────────────────────
@@ -502,6 +558,93 @@ def _apply_type_diversity(candidates: list[dict], top_k: int, max_same_type_rati
     return top[:top_k]
 
 
+def _content_signature(node: dict) -> str:
+    text = (node.get("content") or "").strip()
+    if not text:
+        return f"id:{node.get('id')}"
+    return hashlib.sha1(text.encode("utf-8")).hexdigest()
+
+
+def _dedupe_candidates_by_content(candidates: list[dict]) -> list[dict]:
+    """Exact duplicate content는 최고 점수 후보 1개만 남긴다."""
+    deduped: list[dict] = []
+    seen: set[str] = set()
+    for candidate in candidates:
+        sig = _content_signature(candidate)
+        if sig in seen:
+            continue
+        seen.add(sig)
+        deduped.append(candidate)
+    return deduped
+
+
+def _normalized_query_terms(query: str) -> list[str]:
+    terms: list[str] = []
+    for raw in query.lower().split():
+        token = raw.strip("`'\"“”‘’.,:;!?()[]{}<>|-_/\\")
+        if not token:
+            continue
+        try:
+            stripped = sqlite_store._strip_korean_particles(token)  # type: ignore[attr-defined]
+        except Exception:
+            stripped = token
+        if len(stripped) >= 2:
+            terms.append(stripped)
+    return list(dict.fromkeys(terms))
+
+
+def _query_match_features(query: str, node: dict) -> tuple[float, float]:
+    terms = _normalized_query_terms(query)
+    if not terms:
+        return 0.0, 0.0
+
+    fields = [
+        node.get("content") or "",
+        node.get("summary") or "",
+        node.get("key_concepts") or "",
+        node.get("retrieval_queries") or "",
+        node.get("atomic_claims") or "",
+        node.get("tags") or "",
+    ]
+    haystack = " ".join(str(field).lower() for field in fields if field).strip()
+    if not haystack:
+        return 0.0, 0.0
+
+    normalized_query = " ".join(terms)
+    bonus = 0.0
+    if normalized_query and normalized_query in haystack:
+        bonus += 0.12
+
+    matched = sum(1 for term in terms if term in haystack)
+    ratio = matched / len(terms)
+    if matched:
+        if len(terms) == 1:
+            bonus += 0.05 if ratio == 1.0 else 0.0
+        else:
+            bonus += 0.08 * ratio
+    return bonus, ratio
+
+
+def _source_path_penalty(node: dict) -> float:
+    source = (node.get("source") or "").lower()
+    penalty = 0.0
+
+    if any(pattern in source for pattern in (
+        "obsidian:agents.md",
+        "obsidian:claude.md",
+        "obsidian:gemini.md",
+        "obsidian:readme.md",
+        "obsidian:home.md",
+        ".rulesync\\rules\\",
+    )):
+        penalty -= 0.08
+
+    if "\\src\\experiments\\page-" in source:
+        penalty -= 0.04
+
+    return penalty
+
+
 # ─── hybrid_search() ─────────────────────────────────────────────
 
 def hybrid_search(
@@ -517,7 +660,7 @@ def hybrid_search(
     변경 이력:
     - Phase 1: excluded_project, mode 파라미터 추가
     - Phase 1: traverse() → _ucb_traverse() 교체
-    - Phase 1: _hebbian_update() → _bcm_update() 교체
+    - Phase 1: _hebbian_update() → _hebbian_update() 교체
     """
     _type_hints = _detect_type_hints(query)
 
@@ -564,8 +707,14 @@ def hybrid_search(
     _maturity = get_maturity_level()
     _gates = MATURITY_GATES.get(_maturity, MATURITY_GATES[0])
 
-    if not _gates["graph_channel"] or not seed_ids:
-        graph_neighbors = set()
+    use_graph_channel = bool(_gates["graph_channel"] and seed_ids)
+    # query embedding이 실패해 vector 채널이 비면, generic/auto 검색에서는
+    # FTS seed 위로 그래프를 과도하게 확장하지 않는다.
+    if not vec_results and mode == "auto":
+        use_graph_channel = False
+
+    if not use_graph_channel:
+        graph_neighbors = _NeighborClassMap()
     else:
         c = _auto_ucb_c(query, mode=mode)
         if c <= UCB_C_FOCUS:
@@ -573,6 +722,7 @@ def hybrid_search(
         else:
             all_edges, graph = _get_graph()
             graph_neighbors = _ucb_traverse(graph, seed_ids, depth=GRAPH_MAX_HOPS, c=c)
+    graph_neighbors = _normalize_graph_neighbors(graph_neighbors)
 
     # 5. Reciprocal Rank Fusion + source tracking
     scores: dict[int, float] = defaultdict(float)
@@ -583,9 +733,11 @@ def hybrid_search(
     for rank, (node_id, _, _) in enumerate(fts_results, 1):
         scores[node_id] += 1.0 / (RRF_K + rank)
         source_map[node_id].add("fts5")
-    for node_id in graph_neighbors:
-        scores[node_id] += GRAPH_BONUS
-        source_map[node_id].add("graph")
+    for node_id, edge_class in graph_neighbors.items():
+        bonus = GRAPH_BONUS_BY_CLASS.get(edge_class, GRAPH_BONUS_DEFAULT_CLASS)
+        if bonus > 0:
+            scores[node_id] += bonus
+            source_map[node_id].add("graph")
 
     # 5b. Layer A: typed vector RRF 채널 (타입별 동적 가중치)
     for hint_type, t_results in typed_vec_by_type.items():
@@ -621,6 +773,7 @@ def hybrid_search(
             + contradiction_penalty
         )
         node["_sources"] = sorted(source_map.get(node_id, set()))
+        node["_seed_ids"] = list(dict.fromkeys(seed_ids))
         candidates.append(node)
 
     if not candidates:
@@ -652,6 +805,24 @@ def hybrid_search(
                  COMPOSITE_WEIGHT_DECAY * decay +
                  COMPOSITE_WEIGHT_IMPORTANCE * importance)
 
+        source = node.get("source") or ""
+        score += SOURCE_BONUS.get(source, SOURCE_BONUS_DEFAULT)
+        score += _source_path_penalty(node)
+        match_bonus, match_ratio = _query_match_features(query, node)
+        score += match_bonus
+        if not vec_results:
+            term_count = len(_normalized_query_terms(query))
+            if term_count >= 2 and match_ratio < 0.5:
+                score -= 0.10 * (0.5 - match_ratio)
+
+        quality = node.get("quality_score")
+        if quality is not None:
+            score += (float(quality) - 0.5) * ENRICHMENT_QUALITY_WEIGHT
+
+        confidence = node.get("confidence")
+        if confidence is not None:
+            score += (float(confidence) - 0.5) * CONFIDENCE_WEIGHT
+
         # promoted multiplier (promotion_candidate 플래그)
         if node.get("promotion_candidate"):
             score *= PROMOTED_MULTIPLIER
@@ -660,6 +831,7 @@ def hybrid_search(
         del node["_base_rrf"]
 
     candidates.sort(key=lambda n: n["score"], reverse=True)
+    candidates = _dedupe_candidates_by_content(candidates)
 
     # ── 조건부 Reranker (local cross-encoder) ──
     from config import RERANKER_ENABLED, RERANKER_GAP_THRESHOLD, RERANKER_CANDIDATE_MULT
@@ -732,7 +904,7 @@ def _post_search_learn_impl(
     try:
         # 1. BCM 학습 + 재공고화 (B-12 + B-10)
         all_edges, _ = _get_graph()
-        _bcm_update(
+        _hebbian_update(
             [n["id"] for n in results],
             [n["score"] for n in results],
             all_edges,

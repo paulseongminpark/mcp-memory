@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""전체 re-embed — v4 포맷 ([Type|Project] summary + claims + queries + keywords).
+"""전체 re-embed — v5 포맷 (type/project + enrichment-aware text).
 
 PowerShell에서 실행:
   python scripts/reembed_v4.py
@@ -13,6 +13,7 @@ os.chdir(ROOT)
 from config import OPENAI_API_KEY
 from openai import OpenAI
 import chromadb
+from embedding.embed_text_builder import build_embed_text as _build
 
 DB = os.path.join(ROOT, "data", "memory.db")
 CHROMA_PATH = os.path.join(ROOT, "data", "chroma")
@@ -21,8 +22,15 @@ MAX_RETRIES = 3
 
 
 def build_embed_text(node):
-    """v4 임베딩 텍스트 — content only (대조 실험)."""
-    return node['content'] or ''
+    """v5 임베딩 텍스트 — enrichment 포함."""
+    return _build(
+        content=node['content'] or '',
+        summary=node['summary'] or '',
+        key_concepts=node['key_concepts'] or '',
+        retrieval_queries=node['retrieval_queries'] or '',
+        node_type=node['type'] or '',
+        project=node['project'] or '',
+    )
 
 
 def main():

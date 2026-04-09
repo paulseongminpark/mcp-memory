@@ -1,5 +1,37 @@
 # mcp-memory CHANGELOG
 
+## v6.0 Ontology Repair (2026-04-09)
+
+### Embedding: OpenAI → Local
+- embedding/local_embed.py: sentence-transformers multilingual-e5-large (1024d)
+- embedding/__init__.py: EMBEDDING_PROVIDER 스위치 (local|openai), default=local
+- config.py: EMBEDDING_PROVIDER, EMBEDDING_DIM=1024(local)/3072(openai)
+- 3,400개 노드 로컬 재임베딩 (183s, RTX 4060)
+- **실시간 경로 외부 API 의존 100% 제거**
+- NDCG@5: 0.280→0.285 (+1.8%, 품질 손실 없음)
+
+### Learning: BCM → Hebbian
+- hybrid.py: _bcm_update() → _hebbian_update() 교체
+- 연속 firing rate 모델(BCM) → 이산 frequency 기반 단순 학습
+- co-recall 시 strength += 0.015 (양쪽 result), += 0.005 (한쪽 result)
+- theta_m/activity_history 더 이상 갱신하지 않음
+
+### Growth: auto_promote
+- scripts/auto_promote.py: 승격 자동화 (Gate 1+2, MDL 제거)
+- daily_enrich.py Phase 0에 통합 (매일 enrichment 전 실행)
+- 38개 노드 자동 승격 (validated 130→168)
+
+### Data: 계층 분리 + 정화
+- SOURCE_BONUS 7단계 재설정 (user +0.12 ~ obsidian -0.05)
+- 28개 노이즈 archive (Unclassified 18 + license 10)
+- 206개 추가 archive (frontmatter 8 + near-duplicates 198)
+- NULL 수정: layer 56개, quality_score 10개
+- 자기참조 edge 3개 삭제
+
+### Structure
+- 27개 스크립트 archived (scripts/_archived/): 마이그레이션, backfill, 중복
+- scripts/reembed_local.py: 로컬 재임베딩 도구
+
 ## v5.1 WS-0~4 + Beads + Recall Fix (2026-04-08)
 
 ### WS-0: knowledge_core Context

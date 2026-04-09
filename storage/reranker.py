@@ -22,7 +22,14 @@ def _load_model():
 
     try:
         from sentence_transformers import CrossEncoder
-        _model = CrossEncoder(MODEL_NAME)
+        try:
+            from huggingface_hub import snapshot_download
+            local_model_path = snapshot_download(MODEL_NAME, local_files_only=True)
+        except Exception:
+            logger.info("Reranker model not cached locally. Reranker disabled.")
+            return
+
+        _model = CrossEncoder(local_model_path, local_files_only=True)
         logger.info(f"Reranker loaded: {MODEL_NAME}")
     except ImportError:
         logger.warning("sentence-transformers not installed. Reranker disabled.")

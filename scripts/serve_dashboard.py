@@ -16,6 +16,7 @@ sys.path.insert(0, str(__import__("pathlib").Path(__file__).parent.parent))
 
 from scripts.dashboard import generate_dashboard, _build_html
 from config import DB_PATH
+from scripts.health_metrics import get_active_orphan_count
 
 
 def _get_fresh_html() -> str:
@@ -29,27 +30,27 @@ def _get_fresh_html() -> str:
     conn = sqlite3.connect(str(DB_PATH))
     conn.row_factory = sqlite3.Row
 
-    total_nodes = conn.execute("SELECT COUNT(*) FROM nodes").fetchone()[0]
-    total_edges = conn.execute("SELECT COUNT(*) FROM edges").fetchone()[0]
+    total_nodes = conn.execute("SELECT COUNT(*) FROM nodes WHERE status='active'").fetchone()[0]
+    total_edges = conn.execute("SELECT COUNT(*) FROM edges WHERE status='active'").fetchone()[0]
 
     type_dist = conn.execute(
-        "SELECT type, COUNT(*) c FROM nodes GROUP BY type ORDER BY c DESC"
+        "SELECT type, COUNT(*) c FROM nodes WHERE status='active' GROUP BY type ORDER BY c DESC"
     ).fetchall()
     type_data = {r["type"]: r["c"] for r in type_dist}
 
     proj_dist = conn.execute(
-        "SELECT COALESCE(NULLIF(project,''), 'none') p, COUNT(*) c FROM nodes GROUP BY p ORDER BY c DESC"
+        "SELECT COALESCE(NULLIF(project,''), 'none') p, COUNT(*) c FROM nodes WHERE status='active' GROUP BY p ORDER BY c DESC"
     ).fetchall()
     proj_data = {r["p"]: r["c"] for r in proj_dist}
 
     rel_dist = conn.execute(
-        "SELECT relation, COUNT(*) c FROM edges GROUP BY relation ORDER BY c DESC"
+        "SELECT relation, COUNT(*) c FROM edges WHERE status='active' GROUP BY relation ORDER BY c DESC"
     ).fetchall()
     rel_data = {r["relation"]: r["c"] for r in rel_dist}
 
     recent = conn.execute("""
         SELECT id, type, content, project, tags, created_at
-        FROM nodes WHERE type != 'Conversation'
+        FROM nodes WHERE status='active' AND type != 'Conversation'
         ORDER BY created_at DESC LIMIT 20
     """).fetchall()
     recent_list = [dict(r) for r in recent]
@@ -60,14 +61,13 @@ def _get_fresh_html() -> str:
         FROM edges e
         JOIN nodes s ON s.id = e.source_id
         JOIN nodes t ON t.id = e.target_id
+        WHERE e.status='active'
+          AND s.status='active'
+          AND t.status='active'
     """).fetchall()
     edge_list = [dict(r) for r in edges]
 
-    orphan_count = conn.execute("""
-        SELECT COUNT(*) FROM nodes n
-        WHERE n.id NOT IN (SELECT source_id FROM edges)
-        AND n.id NOT IN (SELECT target_id FROM edges)
-    """).fetchone()[0]
+    orphan_count = get_active_orphan_count(conn)
 
     node_ids_in_graph = set()
     for e in edge_list:
@@ -77,11 +77,11 @@ def _get_fresh_html() -> str:
     graph_nodes = []
     for nid in node_ids_in_graph:
         n = conn.execute("SELECT * FROM nodes WHERE id = ?", (nid,)).fetchone()
-        if n:
+        if n and n["status"] == "active":
             graph_nodes.append({"id": n["id"], "type": n["type"], "label": n["content"][:50], "project": n["project"] or ""})
 
     extra = conn.execute("""
-        SELECT * FROM nodes WHERE type != 'Conversation'
+        SELECT * FROM nodes WHERE status='active' AND type != 'Conversation'
         ORDER BY created_at DESC LIMIT 15
     """).fetchall()
     for n in extra:

@@ -37,6 +37,22 @@ def test_get_edges_and_get_all_edges_hide_deleted_by_default(fresh_db):
     }
 
 
+def test_get_edges_and_get_all_edges_hide_edges_touching_archived_nodes(fresh_db):
+    left = sqlite_store.insert_node(type="Observation", content="left")
+    right = sqlite_store.insert_node(type="Observation", content="right")
+    stale_edge = sqlite_store.insert_edge(left, right, "supports", description="[]")
+
+    with sqlite_store._db() as conn:
+        conn.execute("UPDATE nodes SET status = 'archived' WHERE id = ?", (right,))
+        conn.commit()
+
+    assert sqlite_store.get_edges(left) == []
+    assert sqlite_store.get_all_edges() == []
+    assert {edge["id"] for edge in sqlite_store.get_edges(left, active_only=False)} == {
+        stale_edge,
+    }
+
+
 def test_search_fts_excludes_deleted_nodes(fresh_db):
     active_id = sqlite_store.insert_node(type="Observation", content="uniquedeletedtoken active")
     deleted_id = sqlite_store.insert_node(type="Observation", content="uniquedeletedtoken deleted")

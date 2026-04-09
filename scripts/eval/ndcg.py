@@ -5,8 +5,10 @@ Usage:
   python ndcg.py                # 기본 K=5,10
   python ndcg.py --k 5          # K=5만
   python ndcg.py --verbose      # 쿼리별 상세
+  python ndcg.py --offset 20 --limit 10 --json
 """
 import math
+import json
 import os
 import sys
 import yaml
@@ -70,12 +72,21 @@ def ndcg_at_k(relevant_ids: list[int], also_relevant: list[int],
     return actual_dcg / ideal_dcg if ideal_dcg > 0 else 0.0
 
 
-def run_eval(k_values: list[int] = None, verbose: bool = False) -> dict:
+def run_eval(
+    k_values: list[int] | None = None,
+    verbose: bool = False,
+    offset: int = 0,
+    limit: int | None = None,
+) -> dict:
     """전체 goldset에 대해 NDCG 측정."""
     if k_values is None:
         k_values = [5, 10]
 
     queries = load_goldset()
+    if offset:
+        queries = queries[offset:]
+    if limit is not None:
+        queries = queries[:limit]
     results = {f"ndcg@{k}": [] for k in k_values}
     hit_count = 0
 
@@ -88,7 +99,12 @@ def run_eval(k_values: list[int] = None, verbose: bool = False) -> dict:
         # recall 실행 (v4: mode-aware)
         query_mode = q.get("mode", "generic")
         try:
-            recall_result = recall(query=query_text, top_k=max(k_values), mode=query_mode)
+            recall_result = recall(
+                query=query_text,
+                top_k=max(k_values),
+                mode=query_mode,
+                mutate=False,
+            )
             retrieved_ids = [n["id"] for n in recall_result.get("results", [])]
         except Exception as e:
             if verbose:
@@ -119,15 +135,31 @@ def run_eval(k_values: list[int] = None, verbose: bool = False) -> dict:
 
 def main():
     verbose = "--verbose" in sys.argv
+    json_mode = "--json" in sys.argv
     k_values = [5, 10]
+    offset = 0
+    limit = None
     if "--k" in sys.argv:
         idx = sys.argv.index("--k")
         k_values = [int(sys.argv[idx + 1])]
+    if "--offset" in sys.argv:
+        idx = sys.argv.index("--offset")
+        offset = int(sys.argv[idx + 1])
+    if "--limit" in sys.argv:
+        idx = sys.argv.index("--limit")
+        limit = int(sys.argv[idx + 1])
 
     print(f"NDCG 측정 (goldset: {GOLDSET})")
     print(f"K values: {k_values}\n")
 
-    summary = run_eval(k_values=k_values, verbose=verbose)
+    summary = run_eval(k_values=k_values, verbose=verbose, offset=offset, limit=limit)
+    summary["offset"] = offset
+    summary["limit"] = limit
+    summary["query_window"] = summary["queries"]
+
+    if json_mode:
+        print(json.dumps(summary, ensure_ascii=False))
+        return
 
     print(f"\n=== Results ===")
     for key, val in summary.items():

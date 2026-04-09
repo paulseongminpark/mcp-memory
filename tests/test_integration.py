@@ -227,6 +227,7 @@ def test_server_promote_node_check_access_allows_paul_on_layer4_node(db_env: Pat
 
 def test_server_recall_clamps_top_k_to_50(db_env: Path):
     server = _import_server()
+    server._ready.wait(timeout=30)
 
     with patch.object(server, "_recall", return_value={"results": [], "count": 0, "message": "No memories found."}) as mock_recall:
         result = server.recall(query="alpha", top_k=999)
@@ -238,11 +239,13 @@ def test_server_recall_clamps_top_k_to_50(db_env: Path):
         project="",
         top_k=50,
         mode="auto",
+        mutate=True,
     )
 
 
 def test_server_recall_preserves_small_top_k(db_env: Path):
     server = _import_server()
+    server._ready.wait(timeout=30)
 
     with patch.object(server, "_recall", return_value={"results": [], "count": 0, "message": "No memories found."}) as mock_recall:
         server.recall(query="alpha", top_k=3)
@@ -253,6 +256,24 @@ def test_server_recall_preserves_small_top_k(db_env: Path):
         project="",
         top_k=3,
         mode="auto",
+        mutate=True,
+    )
+
+
+def test_server_recall_can_disable_mutation(db_env: Path):
+    server = _import_server()
+    server._ready.wait(timeout=30)
+
+    with patch.object(server, "_recall", return_value={"results": [], "count": 0, "message": "No memories found."}) as mock_recall:
+        server.recall(query="alpha", top_k=3, mutate=False)
+
+    mock_recall.assert_called_once_with(
+        query="alpha",
+        type_filter="",
+        project="",
+        top_k=3,
+        mode="auto",
+        mutate=False,
     )
 
 

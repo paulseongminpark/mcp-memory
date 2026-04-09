@@ -15,6 +15,7 @@ os.environ.setdefault("PYTHONIOENCODING", "utf-8")
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from config import DB_PATH, DATA_DIR
+from scripts.health_metrics import get_health_snapshot
 
 def run_review() -> str:
     if not DB_PATH.exists():
@@ -28,7 +29,9 @@ def run_review() -> str:
 
     # 1. 타입별 분포
     lines.append("## 1. 노드 타입 분포\n")
-    rows = conn.execute("SELECT type, COUNT(*) c FROM nodes GROUP BY type ORDER BY c DESC").fetchall()
+    rows = conn.execute(
+        "SELECT type, COUNT(*) c FROM nodes WHERE status='active' GROUP BY type ORDER BY c DESC"
+    ).fetchall()
     total = sum(r["c"] for r in rows)
     lines.append(f"총 {total}개 노드\n")
     lines.append("| 타입 | 개수 | 비율 |")
@@ -51,7 +54,7 @@ def run_review() -> str:
     # 3. Unclassified 분석
     lines.append("\n## 3. Unclassified 노드\n")
     unclassified = conn.execute(
-        "SELECT id, content, metadata FROM nodes WHERE type = 'Unclassified'"
+        "SELECT id, content, metadata FROM nodes WHERE status='active' AND type = 'Unclassified'"
     ).fetchall()
     if unclassified:
         lines.append(f"{len(unclassified)}건:")
@@ -64,30 +67,36 @@ def run_review() -> str:
 
     # 4. 관계 밀도
     lines.append("\n## 4. 관계 그래프 통계\n")
-    edge_count = conn.execute("SELECT COUNT(*) FROM edges").fetchone()[0]
+    health = get_health_snapshot(conn)
+    edge_count = health["active_edges"]
     lines.append(f"총 {edge_count}개 에지")
 
     if edge_count > 0:
         rel_dist = conn.execute(
-            "SELECT relation, COUNT(*) c FROM edges GROUP BY relation ORDER BY c DESC"
+            "SELECT relation, COUNT(*) c FROM edges WHERE status='active' GROUP BY relation ORDER BY c DESC"
         ).fetchall()
         lines.append("\n| 관계 | 개수 |")
         lines.append("|------|------|")
         for r in rel_dist:
             lines.append(f"| {r['relation']} | {r['c']} |")
 
-    # 고립 노드 (에지 없는 노드)
-    orphans = conn.execute("""
-        SELECT COUNT(*) FROM nodes n
-        WHERE n.id NOT IN (SELECT source_id FROM edges)
-        AND n.id NOT IN (SELECT target_id FROM edges)
-    """).fetchone()[0]
-    lines.append(f"\n고립 노드 (에지 없음): {orphans}개 / {total}개 ({orphans/total*100:.0f}%)")
+    lines.append(f"\n고립 노드 (active-only): {health['true_orphans']}개 / {total}개 ({health['true_orphans']/total*100:.0f}%)")
+    lines.append(
+        "enrichment coverage: "
+        f"summary {health['summary_present']}/{total}, "
+        f"key_concepts {health['key_concepts_present']}/{total}, "
+        f"retrieval_queries {health['retrieval_queries_present']}/{total}, "
+        f"atomic_claims {health['atomic_claims_present']}/{total}"
+    )
+    lines.append(
+        f"stale 30d / zero-visit: created_at {health['stale_zero_visit_created_30d']}, "
+        f"updated_at {health['stale_zero_visit_updated_30d']}"
+    )
 
     # 5. 프로젝트별 분포
     lines.append("\n## 5. 프로젝트별 분포\n")
     proj_rows = conn.execute(
-        "SELECT COALESCE(NULLIF(project,''), '(없음)') p, COUNT(*) c FROM nodes GROUP BY p ORDER BY c DESC"
+        "SELECT COALESCE(NULLIF(project,''), '(없음)') p, COUNT(*) c FROM nodes WHERE status='active' GROUP BY p ORDER BY c DESC"
     ).fetchall()
     lines.append("| 프로젝트 | 개수 |")
     lines.append("|----------|------|")
@@ -99,7 +108,8 @@ def run_review() -> str:
     recent = conn.execute("""
         SELECT DATE(created_at) d, COUNT(*) c
         FROM nodes
-        WHERE created_at > datetime('now', '-7 days')
+        WHERE status='active'
+          AND created_at > datetime('now', '-7 days')
         GROUP BY d ORDER BY d DESC
     """).fetchall()
     if recent:

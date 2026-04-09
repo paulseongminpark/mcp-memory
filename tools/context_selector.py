@@ -3,7 +3,7 @@
 v3.3: 단일 진실원. 두 진입점은 renderer만 담당.
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from storage import sqlite_store
 
 
@@ -19,14 +19,14 @@ def select_context(project: str = "") -> dict:
     conn.row_factory = __import__("sqlite3").Row
     sections = {}
 
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     cutoff_7d = (now - timedelta(days=7)).strftime("%Y-%m-%d")
     cutoff_30d = (now - timedelta(days=30)).strftime("%Y-%m-%d")
 
-    def _proj(alias=""):
+    def _proj(alias="", conj="AND"):
         prefix = f"{alias}." if alias else ""
         if project:
-            return f"AND {prefix}project = ?", [project]
+            return f"{conj} {prefix}project = ?", [project]
         return "", []
 
     # ── WS-1.0: knowledge_core 전용 (SoT primary) ──
@@ -203,8 +203,15 @@ def select_context(project: str = "") -> dict:
 
     # ── 최근 세션 ──
     try:
+        sc, sp = _proj(conj="WHERE")
         sess = conn.execute(
-            "SELECT session_id, summary, active_pipeline FROM sessions ORDER BY id DESC LIMIT 1"
+            f"""
+            SELECT session_id, summary, active_pipeline
+            FROM sessions
+            {sc}
+            ORDER BY id DESC LIMIT 1
+            """,
+            sp,
         ).fetchone()
         if sess and sess["summary"]:
             sections["last_session"] = {
@@ -218,10 +225,17 @@ def select_context(project: str = "") -> dict:
     # ── 세션 타임라인 (action_log 기반) ──
     try:
         # 마지막 세션의 시작 시간을 기준으로 이벤트 수집
+        sc, sp = _proj(conj="WHERE")
         last_sess = conn.execute(
-            "SELECT session_id, started_at FROM sessions ORDER BY id DESC LIMIT 1"
+            f"""
+            SELECT session_id, started_at
+            FROM sessions
+            {sc}
+            ORDER BY id DESC LIMIT 1
+            """,
+            sp,
         ).fetchone()
-        if last_sess and last_sess["started_at"]:
+        if last_sess and last_sess["session_id"]:
             timeline_rows = conn.execute("""
                 SELECT action_type, context, created_at,
                        json_extract(params, '$.type') as node_type,
@@ -231,10 +245,10 @@ def select_context(project: str = "") -> dict:
                     'decision_recorded', 'failure_recorded', 'question_recorded',
                     'pipeline_advanced', 'session_start', 'session_end'
                 )
-                AND created_at >= ?
+                AND session_id = ?
                 ORDER BY created_at ASC
                 LIMIT 20
-            """, [last_sess["started_at"]]).fetchall()
+            """, [last_sess["session_id"]]).fetchall()
             if timeline_rows:
                 _TYPE_LABELS = {
                     "decision_recorded": "decision",
@@ -257,13 +271,24 @@ def select_context(project: str = "") -> dict:
 
     # ── active_pipeline ──
     try:
+        sc, sp = _proj(conj="AND")
         row = conn.execute(
-            "SELECT active_pipeline FROM sessions WHERE active_pipeline != '' ORDER BY id DESC LIMIT 1"
+            f"""
+            SELECT active_pipeline
+            FROM sessions
+            WHERE active_pipeline != ''
+            {sc}
+            ORDER BY id DESC LIMIT 1
+            """,
+            sp,
         ).fetchone()
         if row:
             sections["active_pipeline"] = row["active_pipeline"]
     except Exception:
         pass
+
+    if sections.get("last_session") and not sections["last_session"].get("pipeline"):
+        sections["last_session"]["pipeline"] = sections.get("active_pipeline", "")
 
     conn.close()
     return sections

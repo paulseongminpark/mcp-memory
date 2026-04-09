@@ -7,7 +7,7 @@ from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 
-from config import ALL_RELATIONS, DB_PATH, PROMOTE_LAYER
+from config import ALL_RELATIONS, DB_PATH, PROMOTE_LAYER, canonicalize_relation_for_storage
 
 
 def _connect() -> sqlite3.Connection:
@@ -530,6 +530,7 @@ def insert_edge(
 ) -> int:
     now = datetime.now(timezone.utc).isoformat()
     original_relation = relation
+    relation = canonicalize_relation_for_storage(relation)
     if relation not in ALL_RELATIONS:
         # 미정의 relation → connects_with fallback + correction_log 기록
         relation = "connects_with"
@@ -720,9 +721,14 @@ def get_edges(node_id: int, active_only: bool = True) -> list[dict]:
         try:
             if active_only:
                 rows = conn.execute(
-                    """SELECT * FROM edges
-                       WHERE status = 'active'
-                         AND (source_id = ? OR target_id = ?)""",
+                    """SELECT e.*
+                       FROM edges e
+                       JOIN nodes s ON s.id = e.source_id
+                       JOIN nodes t ON t.id = e.target_id
+                       WHERE e.status = 'active'
+                         AND s.status = 'active'
+                         AND t.status = 'active'
+                         AND (e.source_id = ? OR e.target_id = ?)""",
                     (node_id, node_id),
                 ).fetchall()
             else:
@@ -743,7 +749,13 @@ def get_all_edges(active_only: bool = True) -> list[dict]:
         try:
             if active_only:
                 rows = conn.execute(
-                    "SELECT * FROM edges WHERE status = 'active'"
+                    """SELECT e.*
+                       FROM edges e
+                       JOIN nodes s ON s.id = e.source_id
+                       JOIN nodes t ON t.id = e.target_id
+                       WHERE e.status = 'active'
+                         AND s.status = 'active'
+                         AND t.status = 'active'"""
                 ).fetchall()
             else:
                 rows = conn.execute("SELECT * FROM edges").fetchall()

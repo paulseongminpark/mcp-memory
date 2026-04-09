@@ -242,6 +242,7 @@ def recall(
     project: str = "",
     top_k: int = 5,
     mode: str = "auto",
+    mutate: bool = True,
 ) -> dict:
     """Search memories using 3-way hybrid search (Vector + FTS5 + Graph).
 
@@ -254,6 +255,7 @@ def recall(
         project: Filter by project name
         top_k: Number of results to return (default 5, max 50)
         mode: Search mode — "auto" (default), "focus" (strong connections), "dmn" (exploratory)
+        mutate: When false, skip learning/log/stat write-back for read-only evaluation
     """
     _ready.wait()
     top_k = min(top_k, MAX_TOP_K)
@@ -263,6 +265,7 @@ def recall(
         project=project,
         top_k=top_k,
         mode=mode,
+        mutate=mutate,
     )
 
 

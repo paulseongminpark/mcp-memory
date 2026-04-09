@@ -29,20 +29,33 @@ def main():
         results["remember"] = f"FAIL: {e}"
         print(f"  FAIL: {e}")
 
-    # PATH 2: recall + side effects
-    print("\n=== PATH 2: recall() ===")
+    # PATH 2: recall (read-only eval path)
+    print("\n=== PATH 2: recall() [read-only] ===")
     try:
         from tools.recall import recall
-        r = recall("단일 진실 소스", top_k=5)
+        with store._db() as conn:
+            before_recall_log = conn.execute("SELECT COUNT(*) FROM recall_log").fetchone()[0]
+            row = conn.execute("SELECT value FROM meta WHERE key='total_recall_count'").fetchone()
+            before_total_recall = int(row[0]) if row and row[0] is not None else 0
+
+        r = recall("단일 진실 소스", top_k=5, mutate=False)
         count = len(r.get("results", []))
         results["recall"] = "OK" if count > 0 else "FAIL"
         print(f"  Results: {count}")
         with store._db() as conn:
-            meta_count = conn.execute("SELECT COUNT(*) FROM meta").fetchone()[0]
-            recall_log_count = conn.execute("SELECT COUNT(*) FROM recall_log").fetchone()[0]
-        results["meta_populated"] = "OK" if meta_count > 0 else "FAIL"
-        results["recall_log_populated"] = "OK" if recall_log_count > 0 else "FAIL (not implemented)"
-        print(f"  meta={meta_count}, recall_log={recall_log_count}")
+            after_recall_log = conn.execute("SELECT COUNT(*) FROM recall_log").fetchone()[0]
+            row = conn.execute("SELECT value FROM meta WHERE key='total_recall_count'").fetchone()
+            after_total_recall = int(row[0]) if row and row[0] is not None else 0
+        no_mutation = (
+            before_recall_log == after_recall_log
+            and before_total_recall == after_total_recall
+        )
+        results["recall_read_only"] = "OK" if no_mutation else "FAIL"
+        print(
+            f"  read_only: {'OK' if no_mutation else 'FAIL'} "
+            f"(recall_log {before_recall_log}->{after_recall_log}, "
+            f"total_recall_count {before_total_recall}->{after_total_recall})"
+        )
     except Exception as e:
         results["recall"] = f"FAIL: {e}"
         print(f"  FAIL: {e}")

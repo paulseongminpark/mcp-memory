@@ -25,6 +25,7 @@ from config import DB_PATH
 from storage.sqlite_store import insert_edge, get_all_edges
 from storage.vector_store import _get_collection
 from enrichment.relation_extractor import extract_relations
+from scripts.health_metrics import get_active_orphan_count
 
 
 def existing_edge_pairs() -> set:
@@ -45,7 +46,7 @@ def build_vector_edges(threshold: float = 0.35, top_k: int = 3, batch: int = 100
     conn.row_factory = sqlite3.Row
 
     # 전체 노드 ID 목록
-    all_nodes = conn.execute("SELECT id, type FROM nodes ORDER BY id").fetchall()
+    all_nodes = conn.execute("SELECT id, type FROM nodes WHERE status='active' ORDER BY id").fetchall()
     total = len(all_nodes)
     print(f"대상: {total}개 노드")
 
@@ -87,8 +88,10 @@ def build_vector_edges(threshold: float = 0.35, top_k: int = 3, batch: int = 100
 
             # 타입 기반 관계 결정
             src_type = node["type"]
-            tgt_row = conn.execute("SELECT type FROM nodes WHERE id=?", (target_id,)).fetchone()
+            tgt_row = conn.execute("SELECT type FROM nodes WHERE id=? AND status='active'", (target_id,)).fetchone()
             tgt_type = tgt_row["type"] if tgt_row else "Conversation"
+            if not tgt_row:
+                continue
 
             if src_type == tgt_type:
                 relation = "supports"
@@ -127,9 +130,9 @@ def build_gpt_edges(model: str = "gpt-4.1-mini", cluster_size: int = 8, max_node
     # 비-Conversation + edge 적은 노드 우선
     rows = conn.execute(f"""
         SELECT n.id, n.content, n.type, n.project,
-               (SELECT COUNT(*) FROM edges e WHERE e.source_id=n.id OR e.target_id=n.id) as edge_cnt
+               (SELECT COUNT(*) FROM edges e WHERE (e.source_id=n.id OR e.target_id=n.id) AND e.status='active') as edge_cnt
         FROM nodes n
-        WHERE n.type != 'Conversation'
+        WHERE n.status='active' AND n.type != 'Conversation'
         ORDER BY edge_cnt ASC, n.created_at DESC
         LIMIT {max_nodes}
     """).fetchall()
@@ -192,13 +195,9 @@ if __name__ == "__main__":
 
     # 최종 통계
     conn = sqlite3.connect(str(DB_PATH))
-    total_nodes = conn.execute("SELECT COUNT(*) FROM nodes").fetchone()[0]
-    total_edges = conn.execute("SELECT COUNT(*) FROM edges").fetchone()[0]
-    orphans = conn.execute("""
-        SELECT COUNT(*) FROM nodes
-        WHERE id NOT IN (SELECT source_id FROM edges)
-        AND id NOT IN (SELECT target_id FROM edges)
-    """).fetchone()[0]
+    total_nodes = conn.execute("SELECT COUNT(*) FROM nodes WHERE status='active'").fetchone()[0]
+    total_edges = conn.execute("SELECT COUNT(*) FROM edges WHERE status='active'").fetchone()[0]
+    orphans = get_active_orphan_count(conn)
     conn.close()
 
     print(f"\n=== 최종 ===")

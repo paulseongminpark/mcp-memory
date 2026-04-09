@@ -19,14 +19,21 @@ DB = os.path.join(ROOT, "data", "memory.db")
 BATCH_SIZE = 10
 MAX_RETRIES = 5
 
+MISSING_RETRIEVAL_WHERE = """
+    status='active'
+    AND (
+        retrieval_queries IS NULL OR retrieval_queries = '' OR retrieval_queries = '[]'
+        OR atomic_claims IS NULL OR atomic_claims = '' OR atomic_claims = '[]'
+    )
+"""
 
-def get_remaining():
-    conn = sqlite3.connect(DB)
+
+def get_remaining(db_path=DB):
+    conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
-    rows = conn.execute("""
+    rows = conn.execute(f"""
         SELECT id, type, content, summary, key_concepts, project
-        FROM nodes WHERE status='active'
-          AND (retrieval_queries IS NULL OR retrieval_queries = '')
+        FROM nodes WHERE {MISSING_RETRIEVAL_WHERE}
         ORDER BY id
     """).fetchall()
     conn.close()

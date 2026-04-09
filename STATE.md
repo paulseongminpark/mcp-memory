@@ -1,35 +1,32 @@
 # mcp-memory — STATE
-_Updated: 2026-04-08_
+_Updated: 2026-04-09_
 
 ## Current
-- **Version**: v5.1 (Ontology Maturation — WS-0~4 + Beads v6.1)
+- **Version**: v6.0 (Ontology Repair — local embedding + Hebbian + auto-promote)
 - **Branch**: main
-- **Active Nodes**: 5,260
-- **Active Edges**: 9,571 (+2,562 semantic auto)
-- **Ontology**: 15 active types + Correction(system) + Unclassified, 49 relation types
-- **knowledge_core**: 123 (9→123, WS-2.3 승격)
-- **validated**: 130
-- **Metadata fill**: node_role **100%** (blank 0), generation_method **100%** (legacy_unknown 0)
-- **Recall modes**: generic, recollection, troubleshooting, correction (4종)
-- **Orphan**: **0.0%**
-- **Semantic edges**: 6,947 (72.6%), operational: 2,624 (27.4%)
-- **KB semantic 0-1 edge**: 16.5% (61.2%→16.5%)
-- **Correction**: 7 nodes, 7 contradicts edges
-- **Quality**: NDCG@5 0.232, hit_rate 0.683 (goldset v4 FROZEN, 82 queries) — recall 수정 후 재측정 대기
-- **Reranker**: ms-marco-MiniLM-L-6-v2 (cross-encoder), weight=0.35
-- **Maturity**: level 3 (core >= 100), maturity gating 활성
-- **SoT 결정**: get_context() primary, proven_knowledge.md fallback
-- **Beads**: tasks.db 4도구 (create_task/query_tasks/complete_task/generate_next)
-- **API**: OpenAI (gpt-5-mini / o3-mini / gpt-4.1 / gpt-5.2 / o3)
+- **Active Nodes**: 3,197 (5,260→3,197: noise archive + dedup)
+- **Active Edges**: ~6,100
+- **Ontology**: 15 active types + Correction(system), 49 relation types
+- **knowledge_core**: 161 (123→161, auto_promote)
+- **validated**: 168 (130→168)
+- **Embedding**: LOCAL (multilingual-e5-large 1024d) — OpenAI API 의존 제거
+- **Learning**: Hebbian frequency-based (BCM 교체)
+- **Quality**: NDCG@5 0.285, NDCG@10 0.290, hit_rate 68.3% (goldset v4, 82 queries)
+- **Reranker**: ms-marco-MiniLM-L-6-v2 (cross-encoder, local), weight=0.35
+- **Source tiers**: user(+0.12) > claude(+0.08) > checkpoint(+0.04) > neutral > save_session(-0.02) > obsidian(-0.05)
+- **Auto-promote**: daily_enrich Phase 0에 통합, 세션 종료 시 자동 실행
+- **Scripts**: 44개 운영 (71→44, 27개 archived)
+- **Beads**: tasks.db 4도구
+- **API**: enrichment 배치만 OpenAI (실시간 경로 = 0 API)
 
 ## Architecture
-- 18 MCP tools (+flag_node +create_task +query_tasks +complete_task +generate_next), 4 layers (L0-L3+Unclassified), 15+1 node types, 49 relation types
-- Hybrid search: Vector (ChromaDB) + FTS5 (SQLite) + Graph (UCB/BCM)
-- Embedding: text-embedding-3-large, [Type]+summary+key_concepts+content[:200]
-- RRF_K=18, GRAPH_BONUS=0.005, scoring=단순화(tier+contradiction only), reranker=ON, maturity gating
-- Context selector 통합: get_context.py + session_context.py → context_selector.py
-- 3-Layer type-aware search: C(타입 태그 임베딩) + A(typed vector RRF 채널) + D(다양성 보장)
+- 18 MCP tools, 4 layers (L0-L3), 15+1 node types, 49 relation types
+- Hybrid search: Vector (ChromaDB local) + FTS5 (SQLite) + Graph (UCB/Hebbian)
+- Embedding: intfloat/multilingual-e5-large (1024d, local, EMBEDDING_PROVIDER=local)
+- RRF_K=18, GRAPH_BONUS=0.005, reranker=ON, maturity gating
+- Learning: frequency-based Hebbian (co-recall → strength +0.015, 재공고화 유지)
 - Source tracking: recall_log.sources JSON (vector/fts5/graph/typed_vector)
+- Growth cycle: auto_promote (daily_enrich Phase 0) → Hebbian learning (recall) → enrichment
 
 ## v3.1.0-dev Changes (2026-03-16, 온톨로지 강화)
 - **Gate 2 재캘리브**: Bayesian Beta(1,10) → visit_count ≥ 10 직접 threshold

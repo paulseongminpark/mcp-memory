@@ -3,7 +3,7 @@
 import chromadb
 
 from config import CHROMA_PATH, EMBEDDING_DIM
-from embedding.openai_embed import embed_text
+from embedding import embed_text
 
 
 _client: chromadb.ClientAPI | None = None

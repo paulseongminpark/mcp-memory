@@ -131,30 +131,29 @@ class TestRecall:
     @patch("tools.recall.sqlite_store")
     @patch("tools.recall.hybrid_search")
     def test_no_patch_when_project_specified(self, mock_hs, mock_sqls, mock_psl, mock_inc):
-        """project 명시 시 패치 전환 없음 → 패치 검색 추가 없이 Correction 검색만."""
+        """project 명시 시 패치 전환 없음 → 추가 검색 없음."""
         pf_results = _make_results(["pf", "pf", "pf", "pf", "pf"])
-        # 1차: 원래 검색, 2차: Correction top-inject (score 낮게 → 필터 통과 안 됨)
-        mock_hs.side_effect = [pf_results, _make_results([], score=0.0)]
+        mock_hs.return_value = pf_results
         mock_sqls.get_edges.return_value = []
 
         from tools.recall import recall
         recall("포트폴리오", project="portfolio")
-        assert mock_hs.call_count == 2  # 원래 검색 1 + Correction top-inject 1
+        assert mock_hs.call_count == 1
 
     @patch("tools.recall._increment_recall_count")
     @patch("tools.recall.post_search_learn")
     @patch("tools.recall.sqlite_store")
     @patch("tools.recall.hybrid_search")
     def test_patch_switch_on_saturation(self, mock_hs, mock_sqls, mock_psl, mock_inc):
-        """100% 포화 → hybrid_search 3회 호출 (원래 + 2차 패치 + Correction top-inject)."""
+        """100% 포화 → hybrid_search 2회 호출 (원래 + 2차 패치)."""
         saturated = _make_results(["pf"] * 5)
         alt = _make_results(["orch", "mcp", "tr"])
-        mock_hs.side_effect = [saturated, alt, []]  # 3차: Correction (없음)
+        mock_hs.side_effect = [saturated, alt]
         mock_sqls.get_edges.return_value = []
 
         from tools.recall import recall
         result = recall("포트폴리오")
-        assert mock_hs.call_count == 3
+        assert mock_hs.call_count == 2
         # 2차 호출에 excluded_project 전달 확인
         _, kwargs2 = mock_hs.call_args_list[1]
         assert kwargs2.get("excluded_project") == "pf"
@@ -163,15 +162,44 @@ class TestRecall:
     @patch("tools.recall.post_search_learn")
     @patch("tools.recall.sqlite_store")
     @patch("tools.recall.hybrid_search")
+    def test_patch_switch_deduplicates_same_node_ids(self, mock_hs, mock_sqls, mock_psl, mock_inc):
+        saturated = _make_results(["pf"] * 5)
+        alt = [
+            {
+                "id": 1, "type": "Observation", "content": "dup",
+                "project": "orch", "tags": "", "score": 0.99,
+                "created_at": "2026-03-05",
+            },
+            {
+                "id": 9, "type": "Observation", "content": "new",
+                "project": "mcp", "tags": "", "score": 0.88,
+                "created_at": "2026-03-05",
+            },
+        ]
+        mock_hs.side_effect = [saturated, alt]
+        mock_sqls.get_edges.return_value = []
+
+        from tools.recall import recall
+        result = recall("포트폴리오")
+        ids = [r["id"] for r in result["results"]]
+
+        assert ids.count(1) == 1
+        assert 9 in ids
+        assert len(ids) == len(set(ids))
+
+    @patch("tools.recall._increment_recall_count")
+    @patch("tools.recall.post_search_learn")
+    @patch("tools.recall.sqlite_store")
+    @patch("tools.recall.hybrid_search")
     def test_patch_no_switch_top_k_2(self, mock_hs, mock_sqls, mock_psl, mock_inc):
-        """top_k=2 → 결과 < 3 → 포화 판단 불가 → 패치 전환 없음 (Correction 검색만 추가)."""
+        """top_k=2 → 결과 < 3 → 포화 판단 불가 → 추가 검색 없음."""
         results = _make_results(["pf", "pf"])
-        mock_hs.side_effect = [results, []]  # 2차: Correction (없음)
+        mock_hs.return_value = results
         mock_sqls.get_edges.return_value = []
 
         from tools.recall import recall
         recall("포트폴리오", top_k=2)
-        assert mock_hs.call_count == 2  # 원래 검색 1 + Correction top-inject 1
+        assert mock_hs.call_count == 1
 
     @patch("tools.recall._increment_recall_count")
     @patch("tools.recall.post_search_learn")
@@ -185,6 +213,129 @@ class TestRecall:
         from tools.recall import recall
         recall("테스트")
         mock_inc.assert_called_once()
+
+    @patch("tools.recall._log_recall_results")
+    @patch("tools.recall._record_edge_contribution")
+    @patch("tools.recall._increment_recall_count")
+    @patch("tools.recall.post_search_learn")
+    @patch("tools.recall.sqlite_store")
+    @patch("tools.recall.hybrid_search")
+    def test_mutate_false_skips_all_writebacks(
+        self, mock_hs, mock_sqls, mock_psl, mock_inc, mock_edge, mock_log
+    ):
+        """mutate=False면 학습/통계 write-back 전부 생략."""
+        mock_hs.return_value = [(
+            {
+                "id": 1, "type": "Observation", "content": "테스트 내용",
+                "project": "mcp-memory", "tags": "", "score": 0.9,
+                "created_at": "2026-03-05",
+            }
+        )]
+        mock_sqls.get_edges.return_value = []
+
+        from tools.recall import recall
+        result = recall("테스트", mutate=False)
+
+        assert result["count"] == 1
+        mock_psl.assert_not_called()
+        mock_inc.assert_not_called()
+        mock_edge.assert_not_called()
+        mock_log.assert_not_called()
+
+    @patch("tools.recall._increment_recall_count")
+    @patch("tools.recall.post_search_learn")
+    @patch("tools.recall.sqlite_store")
+    @patch("tools.recall.hybrid_search")
+    def test_patch_switch_applies_role_filter_to_alt_results(self, mock_hs, mock_sqls, mock_psl, mock_inc):
+        """패치 전환 결과도 intent role 필터를 다시 거친다."""
+        saturated = _make_results(["pf"] * 5)
+        alt = [
+            {
+                "id": 10, "type": "Observation", "content": "noise",
+                "project": "orch", "tags": "", "score": 0.95,
+                "created_at": "2026-03-05", "node_role": "work_item",
+            },
+            {
+                "id": 11, "type": "Observation", "content": "keep",
+                "project": "mcp", "tags": "", "score": 0.85,
+                "created_at": "2026-03-05", "node_role": "knowledge_candidate",
+            },
+        ]
+        mock_hs.side_effect = [saturated, alt]
+        mock_sqls.get_edges.return_value = []
+
+        from tools.recall import recall
+        result = recall("포트폴리오")
+        ids = [r["id"] for r in result["results"]]
+
+        assert 10 not in ids
+        assert 11 in ids
+
+    @patch("tools.recall._increment_recall_count")
+    @patch("tools.recall.post_search_learn")
+    @patch("tools.recall.sqlite_store")
+    @patch("tools.recall.hybrid_search")
+    def test_generic_filters_pdr_and_precompact_noise(self, mock_hs, mock_sqls, mock_psl, mock_inc):
+        mock_hs.return_value = [
+            {
+                "id": 1, "type": "Narrative", "content": "pdr anchor",
+                "project": "mcp-memory", "tags": "", "score": 0.9,
+                "created_at": "2026-03-05", "node_role": "session_anchor",
+                "source": "pdr",
+            },
+            {
+                "id": 2, "type": "Observation", "content": "pdr observation",
+                "project": "mcp-memory", "tags": "", "score": 0.8,
+                "created_at": "2026-03-05", "node_role": "knowledge_candidate",
+                "source": "pdr",
+            },
+            {
+                "id": 3, "type": "Narrative", "content": "relay snapshot",
+                "project": "mcp-memory", "tags": "", "score": 0.7,
+                "created_at": "2026-03-05", "node_role": "knowledge_candidate",
+                "source": "hook:PreCompact:relay",
+            },
+            {
+                "id": 4, "type": "Failure", "content": "keep me",
+                "project": "mcp-memory", "tags": "", "score": 0.6,
+                "created_at": "2026-03-05", "node_role": "knowledge_candidate",
+                "source": "pdr",
+            },
+        ]
+        mock_sqls.get_edges.return_value = []
+
+        from tools.recall import recall
+        result = recall("테스트", mode="generic")
+        ids = [r["id"] for r in result["results"]]
+
+        assert ids == [4]
+
+    @patch("tools.recall._increment_recall_count")
+    @patch("tools.recall.post_search_learn")
+    @patch("tools.recall.sqlite_store")
+    @patch("tools.recall.hybrid_search")
+    def test_recollection_keeps_pdr_narrative(self, mock_hs, mock_sqls, mock_psl, mock_inc):
+        mock_hs.return_value = [
+            {
+                "id": 1, "type": "Narrative", "content": "pdr anchor",
+                "project": "mcp-memory", "tags": "", "score": 0.9,
+                "created_at": "2026-03-05", "node_role": "session_anchor",
+                "source": "pdr",
+            },
+            {
+                "id": 2, "type": "Observation", "content": "normal",
+                "project": "mcp-memory", "tags": "", "score": 0.8,
+                "created_at": "2026-03-05", "node_role": "knowledge_candidate",
+                "source": "claude",
+            },
+        ]
+        mock_sqls.get_edges.return_value = []
+
+        from tools.recall import recall
+        result = recall("회고", mode="recollection")
+        ids = [r["id"] for r in result["results"]]
+
+        assert ids == [1, 2]
 
     @patch("tools.recall._increment_recall_count")
     @patch("tools.recall.post_search_learn")

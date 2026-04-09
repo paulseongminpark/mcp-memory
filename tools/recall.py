@@ -34,6 +34,15 @@ def _canonicalize_type_filter(type_filter: str) -> str:
     # v4: intent modes — 검색 의도별 필터/부스트 분리
 INTENT_MODES = {"generic", "recollection", "troubleshooting", "correction"}
 SEARCH_MODES = {"auto", "focus", "dmn"}
+GENERIC_EXCLUDED_SOURCE_TYPES = {
+    ("pdr", "Narrative"),
+    ("pdr", "Observation"),
+    ("hook:PreCompact:relay", "Narrative"),
+}
+TROUBLESHOOTING_EXCLUDED_SOURCE_TYPES = {
+    ("pdr", "Narrative"),
+    ("hook:PreCompact:relay", "Narrative"),
+}
 
 
 def _resolve_mode(mode: str) -> tuple[str, str]:
@@ -49,12 +58,89 @@ def _resolve_mode(mode: str) -> tuple[str, str]:
     return "auto", "generic"
 
 
+def _collect_seed_ids(results: list[dict]) -> list[int]:
+    """Collect hidden hybrid-search seed ids from raw results."""
+    ordered_ids: list[int] = []
+    seen: set[int] = set()
+    for result in results:
+        for seed_id in result.get("_seed_ids", []):
+            if isinstance(seed_id, int) and seed_id not in seen:
+                seen.add(seed_id)
+                ordered_ids.append(seed_id)
+    return ordered_ids
+
+
+def _apply_intent_filters(results: list[dict], intent: str) -> list[dict]:
+    """Intent별 node_role 필터링."""
+    if intent == "generic":
+        return [
+            r for r in results
+            if r.get("node_role", "") not in GENERIC_RECALL_EXCLUDE_ROLES
+            and (r.get("source", ""), r.get("type", "")) not in GENERIC_EXCLUDED_SOURCE_TYPES
+        ]
+    if intent == "recollection":
+        exclude = {"work_item", "external_noise"}
+        return [
+            r for r in results
+            if r.get("node_role", "") not in exclude
+        ]
+    if intent == "troubleshooting":
+        return [
+            r for r in results
+            if r.get("node_role", "") != "external_noise"
+            and (r.get("source", ""), r.get("type", "")) not in TROUBLESHOOTING_EXCLUDED_SOURCE_TYPES
+        ]
+    return results
+
+
+def _dedupe_results_by_id(results: list[dict]) -> list[dict]:
+    """Keep highest-ranked occurrence for each node id."""
+    seen: set[int] = set()
+    unique: list[dict] = []
+    for result in results:
+        node_id = result.get("id")
+        if node_id in seen:
+            continue
+        seen.add(node_id)
+        unique.append(result)
+    return unique
+
+
+def _record_edge_contribution(results: list[dict], seed_ids: list[int]) -> None:
+    """Increment frequency for active edges that supported top recall results."""
+    if not results or not seed_ids:
+        return
+
+    top_ids = [result["id"] for result in results[:5] if result.get("id") is not None]
+    if not top_ids:
+        return
+
+    try:
+        with sqlite_store._db() as conn:
+            ph_top = ",".join("?" * len(top_ids))
+            ph_seed = ",".join("?" * len(seed_ids))
+            conn.execute(
+                f"""
+                UPDATE edges
+                   SET frequency = COALESCE(frequency, 0) + 1
+                 WHERE status = 'active'
+                   AND ((source_id IN ({ph_seed}) AND target_id IN ({ph_top}))
+                    OR  (target_id IN ({ph_seed}) AND source_id IN ({ph_top})))
+                """,
+                seed_ids + top_ids + seed_ids + top_ids,
+            )
+            conn.commit()
+    except Exception:
+        pass
+
+
 def recall(
     query: str,
     type_filter: str = "",
     project: str = "",
     top_k: int = DEFAULT_TOP_K,
     mode: str = "auto",   # search: "auto"|"focus"|"dmn"  intent: "generic"|"recollection"|"troubleshooting"|"correction"
+    mutate: bool = True,
 ) -> dict:
     """기억 검색.
 
@@ -112,27 +198,7 @@ def recall(
         return {"results": [], "count": 0, "message": "No memories found."}
 
     # v4: intent별 node_role 필터링
-    if intent == "generic":
-        results = [
-            r for r in results
-            if r.get("node_role", "") not in GENERIC_RECALL_EXCLUDE_ROLES
-        ]
-    elif intent == "recollection":
-        # session_anchor 포함, work_item/external_noise만 제외
-        exclude = {"work_item", "external_noise"}
-        results = [
-            r for r in results
-            if r.get("node_role", "") not in exclude
-        ]
-    elif intent == "correction":
-        # correction 노드 억제 해제 — 모든 role 포함
-        pass
-    elif intent == "troubleshooting":
-        # external_noise만 제외
-        results = [
-            r for r in results
-            if r.get("node_role", "") != "external_noise"
-        ]
+    results = _apply_intent_filters(results, intent)
 
     # overfetch 후 필터 완료 → top_k로 절단
     results = results[:top_k]
@@ -148,12 +214,17 @@ def recall(
             mode=search_mode,
             excluded_project=dominant,
         )
+        alt = _apply_intent_filters(alt, intent)
         # 원본 상위 절반 + 새 패치 결과 절반
         results = results[:top_k // 2] + alt[:top_k - top_k // 2]
+        results = _dedupe_results_by_id(results)
         results.sort(key=lambda r: r["score"], reverse=True)
+        results = results[:top_k]
 
-    # 학습 경로: BCM + SPRT + action_log (검색과 분리)
-    post_search_learn(results, query)
+    # 학습/통계 write-back 경로는 read-only 평가에서 비활성화 가능
+    if mutate:
+        # 학습 경로: BCM + SPRT + action_log (검색과 분리)
+        post_search_learn(results, query)
 
     # v4 correction mode: contradicts edge 정보 결과에 주입
     if intent == "correction":
@@ -172,7 +243,7 @@ def recall(
     # type_filter 명시 시 Correction 주입 스킵 (필터 의도 존중)
     # v4 correction mode: threshold 낮춤 (0.5→0.3) + 더 많이 주입
     correction_threshold = 0.3 if intent == "correction" else 0.5
-    if not type_filter:
+    if intent == "correction" and not type_filter:
         corrections_raw = hybrid_search(
             query, type_filter="Correction", project=project, top_k=top_k, mode=search_mode
         )
@@ -182,11 +253,16 @@ def recall(
             corrections_new = [c for c in corrections_filtered if c["id"] not in existing_ids]
             results = (corrections_new + results)[:top_k]
 
-    # total_recall_count 갱신 (통계/UCB 정규화용)
-    _increment_recall_count()
+    results = _dedupe_results_by_id(results)
 
-    # recall_log 기록 (Gate 1 SWR input)
-    _log_recall_results(query, results, intent)
+    if mutate:
+        _record_edge_contribution(results, _collect_seed_ids(results))
+
+        # total_recall_count 갱신 (통계/UCB 정규화용)
+        _increment_recall_count()
+
+        # recall_log 기록 (Gate 1 SWR input)
+        _log_recall_results(query, results, intent)
 
     # v3.2: context package — seed별 1홉 이웃을 관계 라벨과 함께 구조화
     formatted = []

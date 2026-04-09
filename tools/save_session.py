@@ -4,6 +4,7 @@ v3.3: knowledge gate — short Decision/Question → work_item role.
 """
 
 import json
+import re
 from datetime import datetime, timezone
 
 from config import (
@@ -14,6 +15,34 @@ from config import (
 from storage import sqlite_store
 from tools.remember import remember
 
+_SAVE_SESSION_TACTICAL_PATTERNS = (
+    "확인", "검토", "점검", "검증", "여부", "필요", "미정", "미완", "미구현",
+    "수정", "조정", "반영", "연결", "구현", "실행", "재실행", "재수집",
+    "커밋", "푸시", "push", "배포", "동기화", "적용", "삭제", "롤백",
+    "untracked", "빌드 에러", "스케줄", "schedule", "enable", "disable",
+    "정비", "정리", "미실행", "미확인", "누락", "실패", "버그", "잔여",
+    "로드맵", "일정", "유지 vs", "실측", "미커밋",
+)
+_SAVE_SESSION_STRONG_TACTICAL_PATTERNS = (
+    "미완", "미구현", "미실행", "미확인", "재실행", "재수집", "누락",
+    "정리 필요", "반영 필요", "추가 필요", "수정 필요", "실패", "버그",
+    "잔여", "로드맵", "일정", "유지 vs", "실측", "미커밋",
+)
+_SAVE_SESSION_DURABLE_PATTERNS = (
+    "온톨로지", "기억", "memory", "recall", "pattern", "principle",
+    "layer", "gate", "threshold", "quality", "weight", "weights", "bonus",
+    "swr", "ndcg", "goldset", "checkpoint", "가중치", "bias", "enrichment",
+    "정책", "규칙", "원칙", "철학", "역할", "스코프", "금지", "workflow",
+    "relation", "node", "edge", "tone", "독자", "서사", "글쓰기",
+    "컨텍스트", "구조", "시스템", "단일 소스", "타입 매핑", "패턴",
+    "sot", "scope",
+)
+_SAVE_SESSION_FILE_HINT_RE = re.compile(
+    r"(\b(scene|diagram|hero|toc|svg|github|vercel|readme|master|origin|schedule|cron)\b|"
+    r"[A-Za-z0-9_./-]+\.(md|py|tsx|ts|js|json|html|css|ya?ml))",
+    re.IGNORECASE,
+)
+
 
 def _should_skip(content: str) -> bool:
     """SKIP_PATTERNS 매칭 시 노드 미생성."""
@@ -23,9 +52,49 @@ def _should_skip(content: str) -> bool:
     return any(p in stripped for p in SAVE_SESSION_SKIP_PATTERNS)
 
 
-def _classify_role(content: str, min_len: int) -> str:
-    """길이 기반 node_role 분류."""
-    if len(content.strip()) < min_len:
+def _looks_tactical(content: str) -> bool:
+    stripped = content.strip()
+    lowered = stripped.lower()
+    return (
+        any(p in lowered for p in _SAVE_SESSION_TACTICAL_PATTERNS)
+        or _SAVE_SESSION_FILE_HINT_RE.search(stripped) is not None
+    )
+
+
+def _looks_strongly_tactical(content: str) -> bool:
+    stripped = content.strip()
+    lowered = stripped.lower()
+    return (
+        any(p in lowered for p in _SAVE_SESSION_STRONG_TACTICAL_PATTERNS)
+        or _SAVE_SESSION_FILE_HINT_RE.search(stripped) is not None
+    )
+
+
+def _looks_durable(content: str) -> bool:
+    lowered = _SAVE_SESSION_FILE_HINT_RE.sub(" ", content.strip().lower())
+    return any(p in lowered for p in _SAVE_SESSION_DURABLE_PATTERNS)
+
+
+def classify_session_item_role(content: str, item_type: str) -> str:
+    """save_session 항목을 durable vs work_item으로 분류."""
+    stripped = content.strip()
+    if item_type == "Question":
+        min_len = SAVE_SESSION_QUESTION_MIN_LEN
+        tactical_max_len = 90
+    else:
+        min_len = SAVE_SESSION_DECISION_MIN_LEN
+        tactical_max_len = 70
+
+    if len(stripped) < min_len:
+        return "work_item"
+    tactical = _looks_tactical(stripped)
+    strong_tactical = _looks_strongly_tactical(stripped)
+    durable = _looks_durable(stripped)
+    if item_type == "Question" and tactical and not durable:
+        return "work_item"
+    if strong_tactical and not durable:
+        return "work_item"
+    if len(stripped) < tactical_max_len and tactical and not durable:
         return "work_item"
     return "knowledge_candidate"
 
@@ -110,7 +179,10 @@ def save_session(
             if _should_skip(d):
                 skipped["decisions"] += 1
                 continue
-            role = _classify_role(d, SAVE_SESSION_DECISION_MIN_LEN)
+            role = classify_session_item_role(d, "Decision")
+            if role == "work_item":
+                skipped["decisions"] += 1
+                continue
             r = remember(
                 content=d,
                 type="Decision",
@@ -131,7 +203,10 @@ def save_session(
             if _should_skip(q):
                 skipped["questions"] += 1
                 continue
-            role = _classify_role(q, SAVE_SESSION_QUESTION_MIN_LEN)
+            role = classify_session_item_role(q, "Question")
+            if role == "work_item":
+                skipped["questions"] += 1
+                continue
             r = remember(
                 content=q,
                 type="Question",

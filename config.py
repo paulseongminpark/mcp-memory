@@ -8,8 +8,10 @@ BASE_DIR = Path(__file__).parent
 load_dotenv(BASE_DIR / ".env")
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
-EMBEDDING_MODEL = "text-embedding-3-large"
-EMBEDDING_DIM = 3072
+EMBEDDING_PROVIDER = os.getenv("EMBEDDING_PROVIDER", "local")  # "local" or "openai"
+EMBEDDING_MODEL = "text-embedding-3-large"  # OpenAI 모델 (EMBEDDING_PROVIDER=openai 시)
+EMBEDDING_DIM = 1024 if EMBEDDING_PROVIDER == "local" else 3072
+LOCAL_EMBEDDING_MODEL = "intfloat/multilingual-e5-large"  # 로컬 모델
 
 DATA_DIR = BASE_DIR / "data"
 DB_PATH = DATA_DIR / "memory.db"
@@ -22,6 +24,15 @@ SIMILARITY_THRESHOLD = 0.55  # 자동 edge 생성 임계값 (v3.2: 0.3→0.55 �
 GRAPH_MAX_HOPS = 2
 RRF_K = 18  # Reciprocal Rank Fusion 상수 (tuned 2026-03-08: 60→18, NDCG+12.5%)
 GRAPH_BONUS = 0.005  # 복원 (0.364 baseline 시점 값). graph neighbor가 vector rank를 밀어내지 않도록
+# v5: edge class별 graph bonus (RRF 합산 시 차등 적용)
+GRAPH_BONUS_BY_CLASS: dict[str, float] = {
+    "semantic": 0.015,
+    "evidence": 0.012,
+    "temporal": 0.005,
+    "structural": 0.002,
+    "operational": 0.0,
+}
+GRAPH_BONUS_DEFAULT_CLASS = 0.005
 
 # WS-1.2: reasoning graph에서 제외할 operational edge
 GRAPH_EXCLUDED_METHODS = {
@@ -64,6 +75,68 @@ RELATION_WEIGHT: dict[str, float] = {
 }
 RELATION_WEIGHT_DEFAULT = 1.0
 
+# v5: read-time relation family mapping (legacy relations -> compact families)
+RELATION_FAMILY: dict[str, str] = {
+    # causes
+    "led_to": "causes", "resulted_in": "causes", "triggered_by": "causes",
+    "caused_by": "causes", "causes": "causes",
+    # resolves
+    "resolved_by": "resolves", "enabled_by": "resolves",
+    "blocked_by": "resolves", "prevented_by": "resolves",
+    "resolves": "resolves",
+    # contains
+    "contains": "contains", "part_of": "contains",
+    "composed_of": "contains", "assembles": "contains",
+    # supports
+    "supports": "supports", "reinforces_mutually": "supports",
+    "validates": "supports",
+    # contradicts
+    "contradicts": "contradicts", "refuted_by": "contradicts",
+    # abstracts
+    "generalizes_to": "abstracts", "abstracted_from": "abstracts",
+    "crystallized_into": "abstracts", "abstracts": "abstracts",
+    # expresses
+    "expressed_as": "expresses", "instantiated_as": "expresses",
+    "exemplifies": "expresses", "realizes": "expresses",
+    "realized_as": "expresses", "showcases": "expresses",
+    "expresses": "expresses",
+    # evolves
+    "succeeded_by": "evolves", "preceded_by": "evolves",
+    "evolved_from": "evolves", "derived_from": "evolves",
+    "born_from": "evolves", "extends": "evolves", "evolves": "evolves",
+    # mirrors
+    "mirrors": "mirrors", "analogous_to": "mirrors",
+    "parallel_with": "mirrors", "variation_of": "mirrors",
+    "differs_in": "mirrors",
+    # influences
+    "influenced_by": "influences", "inspired_by": "influences",
+    "transfers_to": "influences", "correlated_with": "influences",
+    "influences": "influences",
+    # governs
+    "governed_by": "governs", "governs": "governs",
+    "constrains": "governs", "generates": "governs",
+    "contextualizes": "governs", "questions": "governs",
+    # co_occurs
+    "co_retrieved": "co_occurs", "connects_with": "co_occurs",
+    "simultaneous_with": "co_occurs", "interpreted_as": "co_occurs",
+    "viewed_through": "co_occurs", "co_occurs": "co_occurs",
+}
+
+RELATION_FAMILY_WEIGHT: dict[str, float] = {
+    "causes": 1.5,
+    "resolves": 1.3,
+    "supports": 1.2,
+    "contradicts": 1.2,
+    "abstracts": 1.1,
+    "expresses": 1.0,
+    "evolves": 1.0,
+    "governs": 1.0,
+    "mirrors": 0.8,
+    "influences": 0.8,
+    "contains": 0.7,
+    "co_occurs": 0.3,
+}
+
 # v5: Edge class 분류 — reasoning graph에서 semantic/evidence만 주력 사용
 EDGE_CLASS: dict[str, str] = {
     # semantic — reasoning 핵심 (supports, led_to, governs 등)
@@ -92,6 +165,11 @@ EDGE_CLASS: dict[str, str] = {
     "connects_with": "operational", "simultaneous_with": "operational",
     "differs_in": "operational", "variation_of": "operational",
     "interpreted_as": "operational", "viewed_through": "operational",
+    # v5 families
+    "causes": "semantic", "resolves": "semantic", "supports": "semantic",
+    "contradicts": "semantic", "governs": "semantic", "mirrors": "semantic",
+    "influences": "semantic", "abstracts": "evidence", "expresses": "evidence",
+    "evolves": "temporal", "contains": "structural", "co_occurs": "operational",
 }
 EDGE_CLASS_DEFAULT = "semantic"
 # generic reasoning에서 사용할 class (operational 제외)
@@ -229,9 +307,50 @@ RELATION_TYPES = {
     "behavioral": [
         "co_retrieved",
     ],
+    "family": [
+        "causes", "resolves", "supports", "contradicts", "abstracts",
+        "expresses", "evolves", "mirrors", "influences", "governs",
+        "contains", "co_occurs",
+    ],
 }
 
-ALL_RELATIONS = [r for group in RELATION_TYPES.values() for r in group]
+class _RelationAllowList(tuple):
+    """Iterates schema relations only, but membership also accepts family aliases."""
+
+    def __new__(cls, schema_relations: list[str], aliases: list[str] | None = None):
+        obj = super().__new__(cls, schema_relations)
+        obj._allowed = set(schema_relations)
+        if aliases:
+            obj._allowed.update(aliases)
+        return obj
+
+    def __contains__(self, item):
+        return item in self._allowed
+
+
+_SCHEMA_RELATIONS = [
+    relation
+    for group_name, group in RELATION_TYPES.items()
+    if group_name != "family"
+    for relation in group
+]
+ALL_RELATIONS = _RelationAllowList(
+    _SCHEMA_RELATIONS,
+    RELATION_TYPES.get("family", []),
+)
+
+RELATION_STORAGE_CANONICAL: dict[str, str] = {
+    "abstracts": "generalizes_to",
+    "co_occurs": "connects_with",
+    "expresses": "expressed_as",
+    "influences": "correlated_with",
+    "realizes": "expressed_as",
+}
+
+
+def canonicalize_relation_for_storage(relation: str) -> str:
+    """Map family aliases or legacy names to concrete relation_defs entries."""
+    return RELATION_STORAGE_CANONICAL.get(relation, relation)
 
 # ─── 규칙 기반 relation 매핑 (α) ─────────────────────────
 # (source_type, target_type) → relation
@@ -307,7 +426,7 @@ RELATION_RULES: dict[tuple[str, str], str] = {
 def infer_relation(src_type: str, src_layer: int | None,
                    tgt_type: str, tgt_layer: int | None,
                    src_project: str = "", tgt_project: str = "") -> str:
-    """타입+레이어 조합으로 relation 추론. 못 풀면 'connects_with' 반환."""
+    """타입+레이어 조합으로 relation family를 추론한다."""
     # 1. 정확한 타입 조합 매치
     key = (src_type, tgt_type)
     if key in RELATION_RULES:
@@ -330,6 +449,7 @@ def infer_relation(src_type: str, src_layer: int | None,
         }
         if rev_rel in reverse_map:
             return reverse_map[rev_rel]
+        return rev_rel
 
     # 2. 레이어 기반 fallback
     if src_layer is not None and tgt_layer is not None:
@@ -346,13 +466,13 @@ def infer_relation(src_type: str, src_layer: int | None,
         if src_type == tgt_type:
             return "mirrors" if is_cross_project else "supports"
         if is_cross_project:
-            return "influenced_by"
+            return "correlated_with"
         if src_project and tgt_project and src_project == tgt_project:
-            return "part_of"
-        return "parallel_with"
+            return "contains"
+        return "connects_with"
 
     # 5. 최종 fallback
-    return "transfers_to" if is_cross_project else "connects_with"
+    return "connects_with"
 
 
 # 유효한 승격 경로 — v3: 15 active 타입 기준
@@ -404,15 +524,21 @@ RERANKER_WEIGHT = 0.35        # CE score 가중치 (0=RRF only, 1=CE only)
 RERANKER_GAP_THRESHOLD = 0.05 # top1-top2 gap이 이 미만이면 rerank 실행
 RERANKER_CANDIDATE_MULT = 3   # top_k * N개 후보를 reranker에 전달
 
-# v3.2: Source quality bonus (additive on base RRF)
-# 의도적 저장(claude)이 자동 덤프보다 높은 정밀도
+# v4: Source quality bonus — 데이터 계층 분리 (ontology-repair 2026-04-09)
+# Tier 0 (core): Paul 직접 입력 + validated → 최고 가중치
+# Tier 1 (experiential): Claude 대화 중 판단 + checkpoint → 표준
+# Tier 2 (automated): save_session + pdr → 낮은 가중치
+# Tier 3 (reference): obsidian 벌크 인제스트 → 최저 가중치
 SOURCE_BONUS: dict[str, float] = {
-    "claude": 0.05,        # 대화 중 Claude가 의도적 저장
-    "save_session": 0.0,   # 세션 자동 덤프 (중립)
-    "pdr": 0.0,            # post-deployment review
-    "checkpoint": -0.02,   # checkpoint 덤프 (낮은 정밀도)
+    "user": 0.12,          # Paul 직접 입력 (최고 가치)
+    "claude": 0.08,        # 대화 중 Claude 판단 (경험적)
+    "checkpoint": 0.04,    # checkpoint 추출 (반자동)
+    "save_session": -0.02, # 세션 자동 덤프 (저활용)
+    "pdr": -0.02,          # PDR 자동 생성 (저활용)
+    "obsidian": -0.05,     # 벌크 인제스트 (참조용)
+    "hook": -0.04,         # 훅 자동 (미사용)
 }
-SOURCE_BONUS_DEFAULT = 0.0  # obsidian, hook 등 기타
+SOURCE_BONUS_DEFAULT = -0.03  # 기타 자동 소스
 
 # ── v3.3: 온톨로지 정책 상수 ─────────────────────────────────
 
