@@ -401,6 +401,14 @@ def init_db() -> None:
         except Exception:
             pass
 
+    # v7: nodes.embedding BLOB (1-Store: ChromaDB → SQLite)
+    with _db() as _mig:
+        try:
+            _mig.execute("ALTER TABLE nodes ADD COLUMN embedding BLOB")
+            _mig.commit()
+        except Exception:
+            pass  # already exists
+
     # --- dirty_topics (wiki-compiler 연동) ---
     with _db() as conn:
         try:

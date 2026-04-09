@@ -21,7 +21,8 @@ _Updated: 2026-04-09_
 
 ## Architecture
 - 18 MCP tools, 4 layers (L0-L3), 15+1 node types, 49 relation types
-- Hybrid search: Vector (ChromaDB local) + FTS5 (SQLite) + Graph (UCB/Hebbian)
+- Hybrid search: Vector (SQLite BLOB + numpy) + FTS5 (SQLite) + Graph (UCB/Hebbian)
+- 1-Store: SQLite 단일 저장소 (ChromaDB 제거, 벡터 BLOB 13MB, brute-force cosine)
 - Embedding: intfloat/multilingual-e5-large (1024d, local, EMBEDDING_PROVIDER=local)
 - RRF_K=18, GRAPH_BONUS=0.005, reranker=ON, maturity gating
 - Learning: frequency-based Hebbian (co-recall → strength +0.015, 재공고화 유지)

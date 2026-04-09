@@ -26,12 +26,15 @@ from tools.promote_node import swr_readiness, promotion_frequency_check
 def find_candidates(verbose: bool = False) -> list[dict]:
     """승격 가능한 노드를 찾는다.
 
-    조건:
+    조건 (2026-04-09 완화):
       1. 현재 타입이 VALID_PROMOTIONS에 소스로 존재
       2. Gate 2: visit_count >= 3
-      3. Gate 1: SWR readiness > threshold
+      3. Quality floor: quality_score >= 0.75
       4. edges >= 3 (고립 노드 제외)
-      5. 이웃 project >= 2 (크로스도메인 연결)
+         — visit >= 10이면 edges >= 2로 완화 (충분히 검증된 노드)
+      5. 이웃 project >= 1 (같은 프로젝트 내 연결도 유효)
+         — edges >= 5이면 project 조건 면제 (풍부한 연결 자체가 증거)
+      6. Gate 1: SWR readiness > threshold (경고만)
     """
     candidates = []
     promotable_types = list(VALID_PROMOTIONS.keys())
@@ -64,19 +67,20 @@ def find_candidates(verbose: bool = False) -> list[dict]:
                     print(f"  SKIP #{nid} ({ntype}): quality {qs:.2f} < 0.75")
                 continue
 
-            # Edge count check
+            # Edge count check — visit >= 10이면 edges >= 2로 완화
             edge_count = conn.execute(
                 """SELECT COUNT(*) FROM edges
                    WHERE (source_id=? OR target_id=?) AND status='active'""",
                 (nid, nid),
             ).fetchone()[0]
 
-            if edge_count < 3:
+            min_edges = 2 if vc >= 10 else 3
+            if edge_count < min_edges:
                 if verbose:
-                    print(f"  SKIP #{nid} ({ntype}): edges {edge_count} < 3")
+                    print(f"  SKIP #{nid} ({ntype}): edges {edge_count} < {min_edges}")
                 continue
 
-            # Cross-domain check
+            # Cross-domain check — edges >= 5이면 project 조건 면제
             neighbor_projects = conn.execute(
                 """SELECT DISTINCT n.project FROM edges e
                    JOIN nodes n ON n.id = CASE WHEN e.source_id=? THEN e.target_id ELSE e.source_id END
@@ -86,9 +90,9 @@ def find_candidates(verbose: bool = False) -> list[dict]:
             ).fetchall()
             n_projects = len(set(p[0] for p in neighbor_projects))
 
-            if n_projects < 2:
+            if edge_count < 5 and n_projects < 1:
                 if verbose:
-                    print(f"  SKIP #{nid} ({ntype}): neighbor projects {n_projects} < 2")
+                    print(f"  SKIP #{nid} ({ntype}): neighbor projects {n_projects} < 1 (edges {edge_count} < 5)")
                 continue
 
             # Gate 1: SWR readiness (optional — 통과 못하면 경고만)

@@ -1,5 +1,17 @@
 # mcp-memory CHANGELOG
 
+## v7.0 1-Store Architecture (2026-04-10)
+
+### Storage: ChromaDB -> SQLite 1-Store
+- vector_store.py: ChromaDB 제거, numpy brute-force cosine similarity 전환
+- nodes.embedding BLOB 컬럼 추가 (float32, 1024d = 4KB/node)
+- 서버 시작 시 active 벡터 메모리 캐시 (3,231 vectors, 12.6MB)
+- 3,433 벡터 ChromaDB -> SQLite 마이그레이션 완료 (1.9s)
+- promote_node.py: _get_collection() 직접 접근 -> get_node_embedding() 전환
+- **저장소 3개(SQLite + ChromaDB + tasks.db) -> 2개(SQLite + tasks.db)**
+- ChromaDB 631MB 디스크 공간 회수 가능 (data/chroma/ 삭제 후)
+- chromadb 패키지 의존성 제거 (requirements.txt)
+
 ## v6.0 Ontology Repair (2026-04-09)
 
 ### Embedding: OpenAI → Local

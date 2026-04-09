@@ -1,7 +1,8 @@
 mcp>=1.26.0
 openai>=2.24.0
-chromadb>=1.5.2
+numpy>=1.26.0
 networkx>=3.6.1
 python-dotenv>=1.2.1
 pyyaml>=6.0
 pyvis>=0.3.2
+# chromadb>=1.5.2  # removed: 1-Store architecture (vectors in SQLite)

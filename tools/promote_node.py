@@ -120,10 +120,11 @@ def _mdl_gate(node: dict, related_nodes: list[dict]) -> tuple[bool, str]:
         import numpy as np
         from storage import vector_store
 
-        coll = vector_store._get_collection()
-        ids = [str(n["id"]) for n in related_nodes]
-        result = coll.get(ids=ids, include=["embeddings"])
-        embs = result.get("embeddings") or []
+        embs = []
+        for n in related_nodes:
+            emb = vector_store.get_node_embedding(n["id"])
+            if emb:
+                embs.append(emb)
     except Exception as e:
         return True, f"embedding_unavailable:{e}"
 
