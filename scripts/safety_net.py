@@ -13,8 +13,44 @@ os.environ.setdefault("PYTHONIOENCODING", "utf-8")
 from pathlib import Path
 from datetime import datetime, timezone, timedelta
 
-# mcp-memory 데이터 경로
-DB_PATH = Path(__file__).parent.parent / "data" / "memory.db"
+# mcp-memory 프로젝트 루트
+PROJECT_ROOT = Path(__file__).parent.parent
+DB_PATH = PROJECT_ROOT / "data" / "memory.db"
+
+
+def run_auto_promote() -> str:
+    """성장 사이클: 세션 종료 시 승격 후보를 찾아 자동 승격.
+
+    API 비용 0 — DB 연산만. daily_enrich Phase 0과 동일 로직이지만
+    세션마다 돌아서 remember()→recall()→Hebbian 강화→승격 사이클이 실시간 작동.
+    """
+    saved_cwd = os.getcwd()
+    try:
+        # auto_promote는 PROJECT_ROOT 기준 import 필요 (config, storage 등)
+        if str(PROJECT_ROOT) not in sys.path:
+            sys.path.insert(0, str(PROJECT_ROOT))
+        os.chdir(str(PROJECT_ROOT))
+
+        from scripts.auto_promote import find_candidates, execute_promotions
+
+        candidates = find_candidates()
+        if not candidates:
+            return ""
+
+        result = execute_promotions(candidates, dry_run=False)
+        promoted = result["promoted"]
+        failed = result["failed"]
+        total = result["total_candidates"]
+
+        if promoted > 0:
+            return f"🔺 memory: {promoted}건 자동 승격 (후보 {total}, 실패 {failed})"
+        elif failed > 0:
+            return f"⚠️ memory: 승격 실패 {failed}건 (후보 {total})"
+        return ""
+    except Exception as e:
+        return f"⚠️ auto_promote: {e}"
+    finally:
+        os.chdir(saved_cwd)
 
 
 def check_session_health() -> str:
@@ -49,6 +85,11 @@ def check_session_health() -> str:
 
     if q_count > 0:
         lines.append(f"📋 memory: 미해결 질문 {q_count}건")
+
+    # 성장 사이클: 승격 체크
+    promote_msg = run_auto_promote()
+    if promote_msg:
+        lines.append(promote_msg)
 
     return "\n".join(lines)
 

@@ -31,17 +31,13 @@ _remember = None
 _recall = None
 _get_context = None
 _save_session = None
-_suggest_type = None
 _visualize = None
 _analyze_signals = None
 _promote_node = None
 _get_becoming = None
-_inspect_node = None
-_ingest_vault = None
 _ontology_review = None
 _generate_dashboard = None
 insert_session_event = None
-query_session_events = None
 resolve_session_event = None
 _export_ontology = None
 _flag_node = None
@@ -52,11 +48,11 @@ def _init_worker():
     global PROMOTE_LAYER, validate_node_type, suggest_closest_type
     global check_access, LAYER_PERMISSIONS
     global _remember, _recall, _get_context, _save_session
-    global _suggest_type, _visualize, _analyze_signals
-    global _promote_node, _get_becoming, _inspect_node
-    global _ingest_vault, _ontology_review, _generate_dashboard
-    global insert_session_event, query_session_events
-    global resolve_session_event, _export_ontology, _flag_node
+    global _visualize, _analyze_signals
+    global _promote_node, _get_becoming
+    global _ontology_review, _generate_dashboard
+    global insert_session_event, resolve_session_event
+    global _export_ontology, _flag_node
 
     from config import OPENAI_API_KEY, PROMOTE_LAYER as _PL
     PROMOTE_LAYER = _PL
@@ -67,11 +63,10 @@ def _init_worker():
 
     from storage.sqlite_store import (
         init_db, sync_schema,
-        insert_session_event as _ise, query_session_events as _qse,
+        insert_session_event as _ise,
         resolve_session_event as _rse, export_ontology as _eo,
     )
     insert_session_event = _ise
-    query_session_events = _qse
     resolve_session_event = _rse
     _export_ontology = _eo
 
@@ -87,13 +82,10 @@ def _init_worker():
     from tools.recall import recall as rc
     from tools.get_context import get_context as gc
     from tools.save_session import save_session as ss
-    from tools.suggest_type import suggest_type as st
     from tools.visualize import visualize as vz
     from tools.analyze_signals import analyze_signals as az
     from tools.promote_node import promote_node as pn
     from tools.get_becoming import get_becoming as gb
-    from tools.inspect_node import inspect_node as ins
-    from ingestion.obsidian import ingest_vault as iv
     from scripts.ontology_review import run_review as orv
     from scripts.dashboard import generate_dashboard as gd
     from tools.flag_node import flag_node as fn
@@ -102,13 +94,10 @@ def _init_worker():
     _recall = rc
     _get_context = gc
     _save_session = ss
-    _suggest_type = st
     _visualize = vz
     _analyze_signals = az
     _promote_node = pn
     _get_becoming = gb
-    _inspect_node = ins
-    _ingest_vault = iv
     _ontology_review = orv
     _generate_dashboard = gd
     _flag_node = fn
@@ -313,36 +302,6 @@ def save_session(
 
 
 @mcp.tool()
-def suggest_type(
-    content: str,
-    reason: str = "",
-    attempted_type: str = "",
-    tags: str = "",
-    project: str = "",
-) -> dict:
-    """Store as Unclassified when no existing type fits, and queue for review.
-
-    Use when a memory doesn't fit any of the 26 node types.
-    3+ similar Unclassified → automatic suggestion for new type.
-
-    Args:
-        content: The memory content
-        reason: Why existing types don't fit
-        attempted_type: What type was tried
-        tags: Comma-separated tags
-        project: Project name
-    """
-    _ready.wait()
-    return _suggest_type(
-        content=content,
-        reason=reason,
-        attempted_type=attempted_type,
-        tags=tags,
-        project=project,
-    )
-
-
-@mcp.tool()
 def analyze_signals(
     domain: str = "",
     min_cluster_size: int = 2,
@@ -447,37 +406,6 @@ def flag_node(
 
 
 @mcp.tool()
-def inspect(node_id: int) -> dict:
-    """Get full detail of a memory node: all metadata, edges, enrichment status, promotion history.
-
-    Args:
-        node_id: The node ID to inspect
-    """
-    _ready.wait()
-    return _inspect_node(node_id=node_id)
-
-
-@mcp.tool()
-def ingest_obsidian(
-    vault_path: str = "/c/dev/",
-    force: bool = False,
-    max_files: int = 0,
-) -> dict:
-    """Ingest Obsidian vault markdown files into memory.
-
-    Chunks by ## headings, embeds, and stores. Incremental by default
-    (skips already-ingested files unless force=True).
-
-    Args:
-        vault_path: Vault root path (default /c/dev/)
-        force: Re-process already ingested files
-        max_files: Limit number of files (0 = all)
-    """
-    _ready.wait()
-    return _ingest_vault(vault_path=vault_path, force=force, max_files=max_files)
-
-
-@mcp.tool()
 def visualize(
     center: str = "",
     depth: int = 2,
@@ -552,31 +480,6 @@ def emit_event(
     if event_type not in valid_types:
         return {"error": f"Invalid event_type: {event_type}. Valid: {valid_types}"}
     return insert_session_event(event_id, session_id, event_type, summary, project, metadata, target, task_id)
-
-
-@mcp.tool()
-def poll_events(
-    exclude_session: str = "",
-    since: str = "",
-    status: str = "ACTIVE",
-    limit: int = 20,
-    target: str = "",
-    event_type: str = "",
-) -> dict:
-    """Poll session events from other sessions (cross-session awareness).
-    Use target to filter inbox (Gas Town mailbox).
-
-    Args:
-        exclude_session: Skip events from this session (typically your own)
-        since: ISO timestamp cursor — only events after this time
-        status: Filter by status (ACTIVE/RESOLVED/EXPIRED)
-        limit: Max results
-        target: Filter by target agent (e.g. 'codex' for Codex inbox)
-        event_type: Filter by event type (e.g. 'TASK_ASSIGN')
-    """
-    _ready.wait()
-    events = query_session_events(exclude_session, since, status, limit, target, event_type)
-    return {"events": events, "count": len(events)}
 
 
 @mcp.tool()

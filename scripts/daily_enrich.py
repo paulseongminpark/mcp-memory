@@ -281,6 +281,7 @@ def phase6_pruning(conn: sqlite3.Connection, dry_run: bool = True) -> dict:
     """
     Phase 6: Pruning (edge → node 순서)
 
+    Step 0: Edge time decay (strength *= 0.999^days_since_last_activated)
     Step A: B-6 edge pruning (ctx_log diversity 기반 strength 평가)
     Step B: D-6 node BSP Stage 2 (pruning_candidate 표시)
     Step C: D-6 node BSP Stage 3 (30일 경과 → archived)
@@ -288,6 +289,7 @@ def phase6_pruning(conn: sqlite3.Connection, dry_run: bool = True) -> dict:
 
     Returns:
         {
+          "decay": {"processed": int, "decayed": int, "skipped_floor": int},
           "edges": {"keep": int, "archive": int, "delete": int},
           "nodes": {
             "candidates": int,
@@ -299,6 +301,15 @@ def phase6_pruning(conn: sqlite3.Connection, dry_run: bool = True) -> dict:
         }
     """
     results: dict = {"dry_run": dry_run}
+
+    # Step 0: Edge time decay (시냅스 감쇠 — API 비용 0)
+    print("\n[Phase 6-0] Edge time decay (strength *= 0.999^days)...")
+    decay_stats = _run_edge_time_decay(conn, dry_run=dry_run)
+    results["decay"] = decay_stats
+    print(
+        f"  decay → processed={decay_stats['processed']} "
+        f"decayed={decay_stats['decayed']} floor={decay_stats['skipped_floor']}"
+    )
 
     # Step A: Edge Pruning
     print("\n[Phase 6-A] Edge pruning (ctx_log diversity)...")
@@ -335,6 +346,74 @@ def phase6_pruning(conn: sqlite3.Connection, dry_run: bool = True) -> dict:
         _log_pruning_action(conn, results)
 
     return results
+
+
+def _run_edge_time_decay(conn: sqlite3.Connection, dry_run: bool) -> dict:
+    """
+    Edge strength 시간 감쇠: new_strength = strength * (0.999 ^ days_since_last_activated).
+
+    - last_activated가 NULL이면 created_at 기준
+    - 하한선: strength는 0.05 미만으로 안 떨어짐 (완전 소멸 방지)
+    - API 비용 0 (순수 규칙 기반)
+    """
+    DECAY_RATE = 0.999
+    STRENGTH_FLOOR = 0.05
+
+    stats = {"processed": 0, "decayed": 0, "skipped_floor": 0}
+
+    edges = conn.execute(
+        "SELECT id, strength, last_activated, created_at "
+        "FROM edges WHERE status != 'deleted'"
+    ).fetchall()
+
+    now_utc = datetime.now(timezone.utc)
+
+    for edge in edges:
+        stats["processed"] += 1
+        strength = edge["strength"] or 0.0
+        ref_time = edge["last_activated"] or edge["created_at"]
+
+        if not ref_time:
+            continue
+
+        try:
+            ref_dt = datetime.fromisoformat(ref_time)
+            if ref_dt.tzinfo is None:
+                ref_dt = ref_dt.replace(tzinfo=timezone.utc)
+            days = max(0, (now_utc - ref_dt).days)
+        except (ValueError, TypeError):
+            continue
+
+        if days == 0:
+            continue
+
+        new_strength = strength * (DECAY_RATE ** days)
+
+        # 하한선 적용
+        if new_strength < STRENGTH_FLOOR:
+            if strength > STRENGTH_FLOOR:
+                new_strength = STRENGTH_FLOOR
+                stats["skipped_floor"] += 1
+            else:
+                # 이미 floor 이하 — 건드리지 않음
+                stats["skipped_floor"] += 1
+                continue
+
+        if abs(new_strength - strength) < 1e-9:
+            continue
+
+        stats["decayed"] += 1
+
+        if not dry_run:
+            conn.execute(
+                "UPDATE edges SET strength = ? WHERE id = ?",
+                (round(new_strength, 6), edge["id"]),
+            )
+
+    if not dry_run:
+        conn.commit()
+
+    return stats
 
 
 def _run_edge_pruning(conn: sqlite3.Connection, dry_run: bool) -> dict:
