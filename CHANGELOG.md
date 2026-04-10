@@ -1,5 +1,41 @@
 # mcp-memory CHANGELOG
 
+## v7.3 Performance Optimization (2026-04-10)
+
+### 콜드 스타트 제거 (P0)
+- `_init_worker()`에서 SentenceTransformer + CrossEncoder + 벡터 캐시 사전 로드
+- 첫 recall/remember 타임아웃 제거 (153초 블로킹 → 서버 시작 시 백그라운드 로드)
+
+### get_edges N+1 제거 (P1)
+- `sqlite_store.get_contradicted_node_ids()` 일괄 쿼리 추가
+- `hybrid.py` composite scoring 루프에서 개별 get_edges 50회 → 1회 batch
+- 예상 350ms → 10ms
+
+### 커넥션 캐싱 (P2)
+- `sqlite_store._db()` thread-local 연결 재사용 (DB_PATH 변경 시 자동 무효화)
+- `PRAGMA cache_size` 2MB → 20MB
+
+### 임베딩 캐싱 (P3)
+- `local_embed.embed_text()` dict 캐시 (max 32, 동일 쿼리 반복 제거)
+- recall 내 동일 쿼리 6회 임베딩 → 1회 (108ms → 18ms)
+
+### 수정 파일
+- `server.py`, `embedding/local_embed.py`, `storage/sqlite_store.py`, `storage/hybrid.py`
+- Tests: 96 passed, 0 new failures
+
+## v7.3-enrichment Gemini Cross-Domain Enrichment (2026-04-10)
+
+### Gemini 2.5 Flash 크로스도메인 에지 생성
+- GCP project-d8e75491-ca74-415f-802 (Vertex AI) 연결
+- 200개 isolated 노드 enrichment → 489개 크로스도메인 에지 생성
+- generation_method='gemini-enrichment', strength=0.7
+- **Cross-domain: 19.3% → 25.1%** (+5.8pp)
+- scripts/gemini_cross_domain.py 신규
+
+### Observation 활성화
+- 5개 프로젝트 Observation 타입 recall 50+건 (Hebbian 학습)
+- zero-visit Observation 재활성화 시작
+
 ## v7.2 Data Cleanup + NDCG Recovery (2026-04-10)
 
 ### Goldset v4 업데이트

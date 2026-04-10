@@ -4,8 +4,8 @@ _Updated: 2026-04-10_
 ## Current
 - **Version**: v7.0 (1-Store + Ontology Simulation)
 - **Branch**: main
-- **Active Nodes**: 3,212 (3,259→3,212: orphan Narrative/Question archived)
-- **Active Edges**: 6,201 (6,197→6,201: false positive 32 archived)
+- **Active Nodes**: 3,224 (3,259→3,224: orphan archived + simulation)
+- **Active Edges**: 6,734 (6,197→6,734: +489 Gemini cross-domain + co-retrieval)
 - **Ontology**: 15 active types + Correction(system), 49 relation types
 - **knowledge_core**: 161
 - **validated**: 1,095 (205→1,095: 시뮬레이션 대규모 승격, 33.6%)
@@ -18,6 +18,13 @@ _Updated: 2026-04-10_
 - **Scripts**: 44개 운영 (71→44, 27개 archived)
 - **Beads**: tasks.db 4도구
 - **API**: enrichment 배치만 OpenAI (실시간 경로 = 0 API)
+
+## Performance Optimization (2026-04-10)
+- **P0 Warmup**: 서버 시작 시 SentenceTransformer + CrossEncoder + 벡터 캐시 사전 로드 (콜드스타트 153초 제거)
+- **P1 N+1 제거**: hybrid_search 모순 체크 get_edges 50회→get_contradicted_node_ids 1회 (350ms→10ms)
+- **P2 커넥션 캐싱**: thread-local SQLite 연결 재사용 + PRAGMA cache_size 2MB→20MB
+- **P3 임베딩 캐싱**: embed_text dict 캐시 (동일 쿼리 반복 호출 108ms→18ms)
+- **Tests**: 96 passed (기존 실패 2건: bcm→hebbian 리네임 미갱신, sessions 테이블 미생성 — 별도)
 
 ## Architecture
 - 18 MCP tools, 4 layers (L0-L3), 15+1 node types, 49 relation types
