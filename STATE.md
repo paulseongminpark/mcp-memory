@@ -4,14 +4,14 @@ _Updated: 2026-04-10_
 ## Current
 - **Version**: v7.0 (1-Store + Ontology Simulation)
 - **Branch**: main
-- **Active Nodes**: 3,259 (3,197→3,259: simulation +24 insight nodes)
-- **Active Edges**: 6,197 (6,101→6,197: +96 co-retrieval edges)
+- **Active Nodes**: 3,212 (3,259→3,212: orphan Narrative/Question archived)
+- **Active Edges**: 6,201 (6,197→6,201: false positive 32 archived)
 - **Ontology**: 15 active types + Correction(system), 49 relation types
 - **knowledge_core**: 161
 - **validated**: 1,095 (205→1,095: 시뮬레이션 대규모 승격, 33.6%)
 - **Embedding**: LOCAL (multilingual-e5-large 1024d) — missing 0 (2→0)
 - **Learning**: Hebbian frequency-based (BCM 교체), co-retrieval 145 edges active
-- **Quality**: NDCG@5 0.292, NDCG@10 0.300, hit_rate 70.7% (goldset v4, 82 queries)
+- **Quality**: NDCG@5 0.425, NDCG@10 0.432, hit_rate 87.8% (goldset v4 updated, 82 queries)
 - **Reranker**: ms-marco-MiniLM-L-6-v2 (cross-encoder, local), weight=0.35
 - **Source tiers**: user(+0.12) > claude(+0.08) > checkpoint(+0.04) > neutral > save_session(-0.02) > obsidian(-0.05)
 - **Auto-promote**: daily_enrich Phase 0에 통합, 세션 종료 시 자동 실행

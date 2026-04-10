@@ -1,5 +1,21 @@
 # mcp-memory CHANGELOG
 
+## v7.2 Data Cleanup + NDCG Recovery (2026-04-10)
+
+### Goldset v4 업데이트
+- 43개 gold 노드가 archived 상태 → 32개 쿼리의 gold ID를 active 노드로 교체
+- **NDCG@5: 0.293 → 0.425 (+45%)**, hit_rate: 72% → 87.8%
+- 원인: 데이터 정리(v6.0 noise archive)에서 goldset 동기화 누락
+
+### 데이터 정리
+- 32개 false positive cross-domain edges archived (content duplicate, strength=1.0)
+- 52개 orphan Narrative nodes archived (visit=0, edges<=1)
+- 7개 dead Question nodes archived (visit=0, edges<=1)
+
+### 발견 (Phase C용)
+- Observation 85% zero visit — 성장 파이프라인 시작점 미작동
+- cross-domain 19.3% — enrichment 기반 에지 생성 필요
+
 ## v7.1 Ontology Simulation (2026-04-10)
 
 ### 50-세션 시뮬레이션 실행

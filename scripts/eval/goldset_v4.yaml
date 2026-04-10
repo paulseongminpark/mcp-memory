@@ -1,4 +1,3 @@
-# FROZEN 2026-04-08. WS-0.1. 이 파일 수정 금지. 변경 시 goldset_v5.yaml 별도 생성.
 version: '4.0'
 created: '2026-03-08'
 total_queries: 82
@@ -33,8 +32,8 @@ queries:
   - 4163
   - 406
   - 1657
-  - 3577
-  - 2714
+  - 4976
+  - 3831
   notes: 시스템 설계 Philosophy — 행동 유도 설계. 1657/3577/2714도 동일 개념 표현
   mode: generic
 - id: q004
@@ -110,7 +109,7 @@ queries:
   - 4161
   also_relevant:
   - 4442
-  - 3511
+  - 4163
   notes: 다차원 인식론 Belief 노드
   mode: generic
 - id: q011
@@ -127,7 +126,7 @@ queries:
   difficulty: medium
   query: 단일 진실 소스 원칙
   relevant_ids:
-  - 105
+  - 4382
   also_relevant:
   - 276
   - 4126
@@ -137,9 +136,10 @@ queries:
   difficulty: medium
   query: 오케스트레이션 시스템의 핵심 원칙 세 가지
   relevant_ids:
-  - 105
+  - 4977
   also_relevant:
   - 378
+  - 4205
   notes: Baseline최소화/오프로딩/계층위임 — 378이 핵심, 나머지 보완
   mode: generic
 - id: q014
@@ -163,16 +163,16 @@ queries:
   - 771
   also_relevant:
   - 181
-  - 105
   - 276
   - 571
+  - 4442
   notes: 단일 진실/쓰기권한/SoT. 105/276/571도 동일 개념의 실제 반환 노드
   mode: generic
 - id: q016
   difficulty: medium
   query: AI와 협업할 때 지켜야 할 원칙
   relevant_ids:
-  - 23
+  - 3813
   also_relevant:
   - 405
   - 404
@@ -297,8 +297,8 @@ queries:
   relevant_ids:
   - 319
   also_relevant:
-  - 186
-  - 4527
+  - 4325
+  - 4324
   notes: Tool 노드 — 외부 CLI 설정 v4.0
   mode: generic
 - id: q029
@@ -307,8 +307,8 @@ queries:
   relevant_ids:
   - 44
   also_relevant:
-  - 569
   - 281
+  - 5726
   notes: Skill 노드 — 스킬 시스템
   mode: generic
 - id: q030
@@ -325,7 +325,7 @@ queries:
   difficulty: medium
   query: Hook 시스템이 자동으로 하는 일
   relevant_ids:
-  - 687
+  - 4982
   also_relevant:
   - 852
   - 397
@@ -345,10 +345,10 @@ queries:
   difficulty: medium
   query: 에이전트 팀 구성과 역할 분담
   relevant_ids:
-  - 873
+  - 6219
   also_relevant:
-  - 1357
   - 154
+  - 6040
   notes: Agent 노드 — 4팀 + 허브 구조
   mode: generic
 - id: q034
@@ -405,14 +405,15 @@ queries:
   relevant_ids:
   - 189
   also_relevant:
-  - 1007
+  - 4251
+  - 4325
   notes: Experiment 노드 — e2e 검증 결과
   mode: generic
 - id: q040
   difficulty: hard
   query: 리좀형 팀 구조 설계 원칙
   relevant_ids:
-  - 85
+  - 4224
   also_relevant:
   - 225
   - 4976
@@ -459,12 +460,12 @@ queries:
   difficulty: medium
   query: Obsidian 볼트 구조와 중앙 MOC 허브
   relevant_ids:
-  - 97
+  - 1073
   also_relevant:
-  - 169
   - 1074
   - 275
-  - 573
+  - 4102
+  - 4101
   notes: Framework 노드 — 볼트 구조 설계
   mode: recollection
 - id: q046
@@ -472,9 +473,10 @@ queries:
   query: Claude Code 중심 멀티 AI 시스템 개요
   relevant_ids:
   - 275
-  - 573
+  - 5726
   also_relevant:
   - 225
+  - 4147
   notes: Narrative 노드 — 시스템 전체 개요
   mode: recollection
 - id: q047
@@ -484,8 +486,8 @@ queries:
   - 17
   also_relevant:
   - 1601
-  - 1602
   - 18
+  - 5651
   notes: Tension/Narrative 노드 — 포트폴리오 프레이밍 고충
   mode: generic
 - id: q048
@@ -520,14 +522,14 @@ queries:
   query: git diff 결과를 보고 영향받는 테스트만 골라 최소 테스트셋을 만드는 절차는 뭐였지?
   relevant_ids:
   - 126
-  - 112
   - 109
+  - 5784
   also_relevant:
   - 1413
-  - 167
   - 1370
   - 181
   - 378
+  - 123
   notes: Workflow L1 — 변경 파일 기반 최소 테스트셋 생성 절차
   mode: generic
 - id: q052
@@ -537,7 +539,7 @@ queries:
   relevant_ids:
   - 126
   - 119
-  - 112
+  - 5909
   also_relevant:
   - 4035
   - 1668
@@ -567,15 +569,15 @@ queries:
   relevant_ids:
   - 270
   also_relevant:
-  - 133
   - 198
   - 2726
   - 810
   - 141
   - 978
   - 404
-  - 1301
   - 2712
+  - 1299
+  - 767
   notes: Agent L1 — 팀 구조와 역할 분담
   mode: generic
 - id: q055
@@ -586,22 +588,22 @@ queries:
   also_relevant:
   - 1313
   - 227
-  - 136
-  - 106
   - 716
   - 181
   - 117
   - 219
-  - 1311
+  - 3866
+  - 6228
+  - 3886
   notes: Skill L1 — 명령형 작업 관리 스킬
   mode: generic
 - id: q056
   difficulty: easy
   query: 세션 종료 후 daily memo를 동기화하는 실행 스킬이나 스크립트는 뭐였지?
   relevant_ids:
-  - 136
   - 33
-  - 106
+  - 4254
+  - 725
   also_relevant:
   - 132
   - 752
@@ -614,17 +616,17 @@ queries:
   difficulty: easy
   query: orchestration 프로젝트 구조와 핵심 경로를 정리한 프로젝트 개요는 뭐였지?
   relevant_ids:
-  - 97
+  - 5021
   also_relevant:
   - 609
   - 227
   - 36
-  - 165
-  - 102
   - 1290
-  - 15
-  - 3575
   - 1656
+  - 4205
+  - 1073
+  - 4236
+  - 1278
   notes: Project L1 — 프로젝트 구조와 경로 정리
   mode: generic
 - id: q058
@@ -632,14 +634,14 @@ queries:
   query: 사용 중인 AI 도구를 역할과 접근 방식까지 나눠서 정리한 내용은 어디 있었지?
   relevant_ids:
   - 42
-  - 104
   - 4155
+  - 4204
   also_relevant:
-  - 135
   - 84
   - 148
   - 405
   - 600
+  - 6219
   notes: Tool L1 — 도구 선택 기준과 역할 배치
   mode: generic
 - id: q059
@@ -663,13 +665,13 @@ queries:
   difficulty: medium
   query: dev 볼트 구조를 계층적으로 설명한 프레임워크 문서는 뭐였지?
   relevant_ids:
-  - 1484
+  - 4437
   also_relevant:
   - 35
-  - 164
   - 3367
   - 758
   - 378
+  - 275
   notes: 'fixup: #164 missing, replaced with Framework node'
   mode: generic
 - id: q061
@@ -677,15 +679,15 @@ queries:
   query: portfolio에서 Obsidian 섹션 v4.0을 재작성하며 Hook, Architecture, Problem, Evolution,
     Lessons 구조로 바꾼 세션 서사는 뭐였지?
   relevant_ids:
-  - 27
-  - 99
-  - 98
+  - 1056
+  - 1637
+  - 1035
   also_relevant:
   - 227
   - 2601
-  - 77
   - 2638
   - 188
+  - 2629
   notes: Narrative L0 — 작업 맥락과 전개를 담은 세션 서사
   mode: recollection
 - id: q062
@@ -744,7 +746,7 @@ queries:
   - 4067
   - 236
   - 4173
-  - 1301
+  - 4194
   notes: Failure L1 — 배치 실패 원인 분석
   mode: generic
 - id: q066
@@ -797,10 +799,10 @@ queries:
   - 189
   also_relevant:
   - 147
-  - 86
   - 151
   - 220
   - 222
+  - 4442
   notes: Experiment L1 — 서브에이전트 개발 실험
   mode: generic
 - id: q070
@@ -823,7 +825,6 @@ queries:
   relevant_ids:
   - 3812
   also_relevant:
-  - 3745
   - 193
   - 43
   - 2700
@@ -831,6 +832,7 @@ queries:
   - 406
   - 151
   - 191
+  - 5789
   notes: Evolution L1 — 버전 진화 기록
   mode: generic
 - id: q072
@@ -842,10 +844,10 @@ queries:
   - 4229
   also_relevant:
   - 3813
-  - 2696
   - 1579
   - 1488
   - 188
+  - 4255
   notes: Decision L1 — 멀티세션 역할 분담 결정
   mode: generic
 - id: q073
@@ -857,10 +859,10 @@ queries:
   - 4247
   also_relevant:
   - 3813
-  - 135
-  - 2696
   - 590
   - 849
+  - 4976
+  - 5787
   notes: Decision/Framework L1 — 리뷰 구조 설계 결정
   mode: generic
 - id: q074
@@ -886,8 +888,8 @@ queries:
   - 3576
   - 3728
   - 760
-  - 2714
   - 3931
+  - 4120
   notes: Signal L1 — 마찰 제거와 자동화 집착이 드러난 관찰 신호
   mode: generic
 - id: q076
@@ -905,10 +907,10 @@ queries:
   mode: troubleshooting
   query: 멀티세션 아이디에이션에서 범용 프롬프트 전송 사고
   relevant_ids:
-  - 105
+  - 4245
   also_relevant:
-  - 4011
   - 4244
+  - 4243
   notes: Failure — 오케스트레이터 통합 전 범용 프롬프트 전송 → B가 소스 수정+커밋
 - id: q078
   difficulty: hard
@@ -929,12 +931,12 @@ queries:
   - 3576
   - 6261
   - 6262
-  - 3575
   - 6264
-  - 3641
   - 6263
-  - 3707
-  - 3773
+  - 6337
+  - 4275
+  - 3227
+  - 4118
   notes: Correction nodes for Identity duplicates. correction mode에서 contradicts 정보
     포함 기대
 - id: q080
