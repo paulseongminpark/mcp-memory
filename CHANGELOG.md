@@ -1,5 +1,18 @@
 # mcp-memory CHANGELOG
 
+## v7.4.1 Phase 0 Truth Freeze (2026-04-10)
+
+### STATE automation
+- `scripts/generate_state.py` now reads live DB truth and can apply the `## Current` block directly to `STATE.md`
+- `STATE.md` current snapshot is now marker-based to separate live metrics from manual narrative
+- `PHASE0-CHECKLIST.md` added as the execution checklist for Phase 0
+
+### Snapshot synced
+- active nodes 3,229 / active edges 7,443
+- cross-domain 30.6%, direction assigned 93.4%
+- FTS drift still present: live 5 columns, missing `domains`, `facets`
+- generation_method drift still present: `gemini-enrichment`, `vector-similarity`
+
 ## v7.3 Performance Optimization (2026-04-10)
 
 ### 콜드 스타트 제거 (P0)
