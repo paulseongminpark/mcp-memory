@@ -113,6 +113,23 @@ def _init_worker():
     except Exception:
         pass
 
+    # P0: 모델 + 캐시 사전 로드 (콜드 스타트 제거)
+    try:
+        from embedding import embed_text
+        embed_text("warmup")
+    except Exception:
+        pass
+    try:
+        from storage.vector_store import _ensure_cache
+        _ensure_cache()
+    except Exception:
+        pass
+    try:
+        from storage.reranker import _load_model as _load_reranker
+        _load_reranker()
+    except Exception:
+        pass
+
     _ready.set()
 
 

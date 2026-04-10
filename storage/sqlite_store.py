@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+import threading
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
@@ -10,24 +11,45 @@ from pathlib import Path
 from config import ALL_RELATIONS, DB_PATH, PROMOTE_LAYER, canonicalize_relation_for_storage
 
 
+_local = threading.local()
+
+
 def _connect() -> sqlite3.Connection:
+    """새 연결 생성. 직접 lifecycle 관리하는 호출자용."""
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(str(DB_PATH))
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL")
     conn.execute("PRAGMA busy_timeout=30000")
     conn.execute("PRAGMA foreign_keys=ON")
+    conn.execute("PRAGMA cache_size=-20000")
     return conn
 
 
 @contextmanager
 def _db():
-    """DB 연결 context manager. 자동으로 conn.close() 보장."""
-    conn = _connect()
+    """Thread-local cached connection. DB_PATH 변경 시 자동 무효화."""
+    conn = getattr(_local, '_conn', None)
+    cached_path = getattr(_local, '_conn_path', None)
+    current_path = str(DB_PATH)
+    if conn is None or cached_path != current_path:
+        if conn is not None:
+            try:
+                conn.close()
+            except Exception:
+                pass
+        conn = _connect()
+        _local._conn = conn
+        _local._conn_path = current_path
     try:
         yield conn
-    finally:
-        conn.close()
+    except Exception:
+        try:
+            conn.rollback()
+        except Exception:
+            _local._conn = None
+            _local._conn_path = None
+        raise
 
 
 def init_db() -> None:
@@ -750,6 +772,28 @@ def get_edges(node_id: int, active_only: bool = True) -> list[dict]:
                 (node_id, node_id),
             ).fetchall()
     return [dict(r) for r in rows]
+
+
+def get_contradicted_node_ids(node_ids: list[int]) -> set[int]:
+    """node_ids 중 contradicts 관계가 있는 노드 ID 집합 반환 (P1: N+1 제거)."""
+    if not node_ids:
+        return set()
+    ph = ",".join("?" * len(node_ids))
+    with _db() as conn:
+        rows = conn.execute(f"""
+            SELECT DISTINCT e.source_id FROM edges e
+            JOIN nodes s ON s.id = e.source_id AND s.status = 'active'
+            JOIN nodes t ON t.id = e.target_id AND t.status = 'active'
+            WHERE e.relation = 'contradicts' AND e.status = 'active'
+              AND e.source_id IN ({ph})
+            UNION
+            SELECT DISTINCT e.target_id FROM edges e
+            JOIN nodes s ON s.id = e.source_id AND s.status = 'active'
+            JOIN nodes t ON t.id = e.target_id AND t.status = 'active'
+            WHERE e.relation = 'contradicts' AND e.status = 'active'
+              AND e.target_id IN ({ph})
+        """, node_ids + node_ids).fetchall()
+    return {r[0] for r in rows}
 
 
 def get_all_edges(active_only: bool = True) -> list[dict]:

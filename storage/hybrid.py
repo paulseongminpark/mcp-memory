@@ -748,9 +748,11 @@ def hybrid_search(
 
     # 6. 필터 + composite scoring (Phase 2: RRF + decay + importance)
     sorted_ids = sorted(scores, key=lambda x: scores[x], reverse=True)
+    candidate_node_ids = sorted_ids[:top_k * 10]
+    contradicted_ids = sqlite_store.get_contradicted_node_ids(candidate_node_ids)
     now_utc = datetime.now(timezone.utc)
     candidates = []
-    for node_id in sorted_ids[:top_k * 10]:
+    for node_id in candidate_node_ids:
         node = sqlite_store.get_node(node_id, active_only=True)
         if not node:
             continue
@@ -763,10 +765,7 @@ def hybrid_search(
         # base RRF score — WS-1.1: 차별력 없는 신호 제거 (quality 96% 동일, confidence 70% 동일)
         tier = node.get("tier", 2)
         tier_bonus = {0: 0.15, 1: 0.05, 2: 0.0}.get(tier, 0.0)
-        contradiction_penalty = 0.0
-        edges = sqlite_store.get_edges(node_id, active_only=True)
-        if any(edge.get("relation") == "contradicts" for edge in edges):
-            contradiction_penalty = CONTRADICTION_PENALTY
+        contradiction_penalty = CONTRADICTION_PENALTY if node_id in contradicted_ids else 0.0
         node["_base_rrf"] = (
             scores[node_id]
             + tier_bonus
