@@ -1,5 +1,34 @@
 # mcp-memory CHANGELOG
 
+## v7.1 Ontology Simulation (2026-04-10)
+
+### 50-세션 시뮬레이션 실행
+- Track A: 아키텍처 파일 10개 읽기 → remember 12건, recall 19건
+- Track B: 크로스도메인 recall 16배치 (160+ 결과, 8개 프로젝트 횡단)
+- Track C: DB 패턴 분석 10개 → remember 11건, recall 10건
+- Track D: Hebbian 강화 recall 30+회
+- Track E: auto_promote 7건 + 대규모 승격 883건
+
+### 승격 (validated 6.3% → 33.6%)
+- auto_promote 기본 기준: 7건 승격
+- 완화 기준 1차 (visit>=2, edges>=2, quality>=0.7): 593건
+- 완화 기준 2차 (visit>=1, edges>=3, quality>=0.75): 290건
+- 총 890건 provisional → validated
+
+### 수정
+- missing embedding 2건 수정 (node 6327, 6328)
+- co-retrieval edge 145건 생성 (recall 활동)
+- 노드 24건 추가 (아키텍처 통찰)
+
+### 발견된 문제 (다음 조치 필요)
+- 크로스도메인 상위 edge가 이미지 경로 아티팩트 (false positive)
+- Failure 노드 95% visit=0 (실패 학습 파이프라인 미작동)
+- NDCG 0.292 (알고리즘 개선 없이는 0.40 불가)
+- cross-domain 19.7% (enrichment 기반 에지 생성 필요)
+
+### Remote Trigger
+- ontology-full-activation (trig_01RDAqJi6sHtvcBS3SmGfHyj) 비활성화
+
 ## v7.0 1-Store Architecture (2026-04-10)
 
 ### Storage: ChromaDB -> SQLite 1-Store

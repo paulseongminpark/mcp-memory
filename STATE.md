@@ -1,17 +1,17 @@
 # mcp-memory — STATE
-_Updated: 2026-04-09_
+_Updated: 2026-04-10_
 
 ## Current
-- **Version**: v6.0 (Ontology Repair — local embedding + Hebbian + auto-promote)
+- **Version**: v7.0 (1-Store + Ontology Simulation)
 - **Branch**: main
-- **Active Nodes**: 3,197 (5,260→3,197: noise archive + dedup)
-- **Active Edges**: ~6,100
+- **Active Nodes**: 3,259 (3,197→3,259: simulation +24 insight nodes)
+- **Active Edges**: 6,197 (6,101→6,197: +96 co-retrieval edges)
 - **Ontology**: 15 active types + Correction(system), 49 relation types
-- **knowledge_core**: 161 (123→161, auto_promote)
-- **validated**: 168 (130→168)
-- **Embedding**: LOCAL (multilingual-e5-large 1024d) — OpenAI API 의존 제거
-- **Learning**: Hebbian frequency-based (BCM 교체)
-- **Quality**: NDCG@5 0.285, NDCG@10 0.290, hit_rate 68.3% (goldset v4, 82 queries)
+- **knowledge_core**: 161
+- **validated**: 1,095 (205→1,095: 시뮬레이션 대규모 승격, 33.6%)
+- **Embedding**: LOCAL (multilingual-e5-large 1024d) — missing 0 (2→0)
+- **Learning**: Hebbian frequency-based (BCM 교체), co-retrieval 145 edges active
+- **Quality**: NDCG@5 0.292, NDCG@10 0.300, hit_rate 70.7% (goldset v4, 82 queries)
 - **Reranker**: ms-marco-MiniLM-L-6-v2 (cross-encoder, local), weight=0.35
 - **Source tiers**: user(+0.12) > claude(+0.08) > checkpoint(+0.04) > neutral > save_session(-0.02) > obsidian(-0.05)
 - **Auto-promote**: daily_enrich Phase 0에 통합, 세션 종료 시 자동 실행
