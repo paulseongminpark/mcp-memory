@@ -2,16 +2,18 @@
 _Updated: 2026-04-10_
 
 ## Current
-- **Version**: v7.0 (1-Store + Ontology Simulation)
+- **Version**: v7.4 (Ontology Full Activation)
 - **Branch**: main
-- **Active Nodes**: 3,224 (3,259→3,224: orphan archived + simulation)
-- **Active Edges**: 6,734 (6,197→6,734: +489 Gemini cross-domain + co-retrieval)
+- **Active Nodes**: 3,226
+- **Active Edges**: 7,224 (cross-domain 30.1%, direction 96.2%)
 - **Ontology**: 15 active types + Correction(system), 49 relation types
-- **knowledge_core**: 161
-- **validated**: 1,095 (205→1,095: 시뮬레이션 대규모 승격, 33.6%)
-- **Embedding**: LOCAL (multilingual-e5-large 1024d) — missing 0 (2→0)
-- **Learning**: Hebbian frequency-based (BCM 교체), co-retrieval 145 edges active
-- **Quality**: NDCG@5 0.425, NDCG@10 0.432, hit_rate 87.8% (goldset v4 updated, 82 queries)
+- **knowledge_core**: 205
+- **validated**: 1,107 (34.3%)
+- **Embedding**: LOCAL (multilingual-e5-large 1024d) — missing 0
+- **Learning**: Hebbian frequency-based, co-retrieval 145 edges (strength avg 0.908)
+- **Quality**: NDCG@5 0.425, NDCG@10 0.432, hit_rate 87.8% (goldset v4, 82 queries)
+- **Maturity**: avg 0.498, min 0.105, max 0.985 (v7.4 활성화)
+- **Growth**: observation_count nonzero 653, direction 96.2% assigned
 - **Reranker**: ms-marco-MiniLM-L-6-v2 (cross-encoder, local), weight=0.35
 - **Source tiers**: user(+0.12) > claude(+0.08) > checkpoint(+0.04) > neutral > save_session(-0.02) > obsidian(-0.05)
 - **Auto-promote**: daily_enrich Phase 0에 통합, 세션 종료 시 자동 실행
@@ -118,4 +120,5 @@ _Updated: 2026-04-10_
 - [ ] ingest cleanup: 56노드 정리 (계획: 00_pending/ingest-cleanup-0311.md)
 - [ ] Identity dedup: 5노드 (#3773/3575/2712/3641/3707)
 - [ ] schema.yaml v3 업데이트 (deprecated 타입 제거)
+
 

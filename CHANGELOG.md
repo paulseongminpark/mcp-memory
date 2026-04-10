@@ -23,6 +23,24 @@
 - `server.py`, `embedding/local_embed.py`, `storage/sqlite_store.py`, `storage/hybrid.py`
 - Tests: 96 passed, 0 new failures
 
+## v7.4 Ontology Full Activation (2026-04-10)
+
+### P0 수정 3건
+- **maturity 활성화**: 전부 0.0 → avg 0.498 (visit×0.4 + edges×0.3 + quality×0.3)
+- **observation_count 역산**: 전부 0 → 653개 nonzero, max 18
+- **edge direction 추론**: 77.8% NULL → 96.2% assigned (5,215 에지 매핑)
+
+### P1 수정
+- co_retrieval strength: avg 0.417 → 0.908 (visit 비례 동적 강화)
+- promotion_candidate 17개 중 2개 추가 승격
+
+### cross-domain 30% 달성
+- 벡터 유사도 기반 analogous_to 에지 200개 생성 (cosine > 0.60)
+- **Cross-domain: 28.0% → 30.1%**
+
+### ONTOLOGY-MASTER-REPORT.md 작성
+- 524줄 종합 보고서: 태초의도/버전/아키텍처/스펙/파라미터/DB실측/문제점/Scope/기술스택
+
 ## v7.3-enrichment Gemini Cross-Domain Enrichment (2026-04-10)
 
 ### Gemini 2.5 Flash 크로스도메인 에지 생성
