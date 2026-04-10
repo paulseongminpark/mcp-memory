@@ -5,7 +5,7 @@ _Updated: 2026-04-10_
 - **Version**: v7.4 (Ontology Full Activation)
 - **Branch**: main
 - **Active Nodes**: 3,226
-- **Active Edges**: 7,224 (cross-domain 30.1%, direction 96.2%)
+- **Active Edges**: 7,439 (cross-domain 32.1%, direction 96.2%)
 - **Ontology**: 15 active types + Correction(system), 49 relation types
 - **knowledge_core**: 205
 - **validated**: 1,107 (34.3%)
