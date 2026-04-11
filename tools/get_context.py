@@ -41,4 +41,16 @@ def get_context(project: str = "") -> dict:
     if "active_pipeline" in sections:
         result["active_pipeline"] = sections["active_pipeline"]
 
+    # v8 Phase 0 Build R1: context_pack 병행 반환 (Loop 3 policy injection)
+    try:
+        from tools.context_pack import build_context_pack
+        result["v8_context_pack"] = build_context_pack(
+            session_id="",
+            task_hint=project,
+            token_budget=2000,
+            log_to_db=True,
+        )
+    except Exception as _e:
+        result["v8_context_pack_error"] = str(_e)
+
     return result

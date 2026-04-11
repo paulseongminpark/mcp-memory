@@ -445,6 +445,144 @@ def init_db() -> None:
         except Exception:
             pass
 
+    # --- v8 Ontology Redesign (2026-04-12, Build R1 Day 1) ---
+    # SoT: 07_ontology-redesign_0410/30_build-r1/03_impl-plan.md
+    # Phase 0 — SQLite 위에서 5-Plane 증명 (7 신규 테이블)
+    # Migration Contract (principles.md R1-R10): UUID v7 독립 id 공간, concepts(=nodes)와 loose link
+    with _db() as conn:
+        try:
+            conn.executescript("""
+            -- ============================================================
+            -- Evidence Plane: captures (append-only 원문 보존, 불변식 1)
+            -- ============================================================
+            CREATE TABLE IF NOT EXISTS captures (
+                id TEXT PRIMARY KEY,                 -- UUID v7
+                source_type TEXT NOT NULL,           -- 'user_message' | 'file_change' | 'checkpoint' | 'manual'
+                actor TEXT NOT NULL,                 -- 'paul' | 'claude' | 'system'
+                content TEXT NOT NULL,               -- 원문 (수정 금지)
+                project TEXT DEFAULT '',
+                session_id TEXT DEFAULT '',
+                created_at TEXT NOT NULL,
+                metadata TEXT DEFAULT '{}'
+            );
+            CREATE INDEX IF NOT EXISTS idx_captures_actor ON captures(actor);
+            CREATE INDEX IF NOT EXISTS idx_captures_session ON captures(session_id);
+            CREATE INDEX IF NOT EXISTS idx_captures_created ON captures(created_at);
+            CREATE INDEX IF NOT EXISTS idx_captures_source_type ON captures(source_type);
+
+            -- 불변식 1 물리 강제: captures는 append-only
+            CREATE TRIGGER IF NOT EXISTS captures_no_update BEFORE UPDATE ON captures
+            BEGIN
+                SELECT RAISE(FAIL, 'captures is append-only (invariant 1)');
+            END;
+            CREATE TRIGGER IF NOT EXISTS captures_no_delete BEFORE DELETE ON captures
+            BEGIN
+                SELECT RAISE(FAIL, 'captures is append-only (invariant 1)');
+            END;
+
+            -- ============================================================
+            -- Evidence Plane: feedback_events (polymorphic target, D3-2)
+            -- ============================================================
+            CREATE TABLE IF NOT EXISTS feedback_events (
+                id TEXT PRIMARY KEY,                 -- UUID v7
+                target_type TEXT NOT NULL,           -- 'claim' | 'trait' | 'concept' | 'policy_rule'
+                target_id TEXT NOT NULL,             -- polymorphic (D3-2, FK 없음)
+                feedback_type TEXT NOT NULL,         -- 'reject' | 'approve' | 'correct' | 'flag'
+                content TEXT DEFAULT '',             -- Paul 코멘트
+                actor TEXT NOT NULL DEFAULT 'paul',
+                created_at TEXT NOT NULL,
+                metadata TEXT DEFAULT '{}'
+            );
+            CREATE INDEX IF NOT EXISTS idx_feedback_target ON feedback_events(target_type, target_id);
+            CREATE INDEX IF NOT EXISTS idx_feedback_type ON feedback_events(feedback_type);
+            CREATE INDEX IF NOT EXISTS idx_feedback_created ON feedback_events(created_at);
+
+            -- ============================================================
+            -- Epistemic Plane: claims (capture 해석, 불변식 2: FK NOT NULL)
+            -- ============================================================
+            CREATE TABLE IF NOT EXISTS claims (
+                id TEXT PRIMARY KEY,                 -- UUID v7
+                capture_id TEXT NOT NULL,            -- loose link to captures.id (shortcut 차단)
+                text TEXT NOT NULL,
+                claim_type TEXT DEFAULT '',          -- 'observation' | 'preference' | 'decision' | ...
+                confidence REAL DEFAULT 0.5,
+                extractor_model TEXT DEFAULT '',     -- 'qwen2.5-7b-instruct-q4_K_M'
+                extracted_at TEXT NOT NULL,
+                status TEXT DEFAULT 'provisional',   -- Migration Contract enum
+                metadata TEXT DEFAULT '{}'
+            );
+            CREATE INDEX IF NOT EXISTS idx_claims_capture ON claims(capture_id);
+            CREATE INDEX IF NOT EXISTS idx_claims_status ON claims(status);
+            CREATE INDEX IF NOT EXISTS idx_claims_extracted ON claims(extracted_at);
+
+            -- ============================================================
+            -- Self Model Plane: traits (D3 물리 분리)
+            -- ============================================================
+            CREATE TABLE IF NOT EXISTS self_model_traits (
+                id TEXT PRIMARY KEY,                 -- UUID v7
+                dimension TEXT NOT NULL,             -- 8차원 중 하나
+                content TEXT NOT NULL,
+                status TEXT DEFAULT 'provisional',   -- provisional|verified|protected|dormant|archived
+                approval TEXT DEFAULT 'pending',     -- pending|approved|rejected|expired
+                created_at TEXT NOT NULL,
+                verified_at TEXT,
+                metadata TEXT DEFAULT '{}'
+            );
+            CREATE INDEX IF NOT EXISTS idx_traits_dimension ON self_model_traits(dimension);
+            CREATE INDEX IF NOT EXISTS idx_traits_status ON self_model_traits(status);
+            CREATE INDEX IF NOT EXISTS idx_traits_approval ON self_model_traits(approval);
+
+            -- ============================================================
+            -- Self Model Plane: evidence bridge (D20 — 유일한 Self↔Epistemic 경로)
+            -- ============================================================
+            CREATE TABLE IF NOT EXISTS self_trait_evidence (
+                id TEXT PRIMARY KEY,                 -- UUID v7
+                trait_id TEXT NOT NULL,              -- → self_model_traits.id (loose link)
+                claim_id TEXT NOT NULL,              -- → claims.id (불변식 9: 직결 금지, claim 경유)
+                strength REAL DEFAULT 1.0,
+                created_at TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_trevidence_trait ON self_trait_evidence(trait_id);
+            CREATE INDEX IF NOT EXISTS idx_trevidence_claim ON self_trait_evidence(claim_id);
+
+            -- ============================================================
+            -- Self Model Plane: conflicts (Paul 교정 + 모순 기록)
+            -- ============================================================
+            CREATE TABLE IF NOT EXISTS self_trait_conflicts (
+                id TEXT PRIMARY KEY,                 -- UUID v7
+                trait_id TEXT NOT NULL,
+                conflicting_source_type TEXT,        -- 'claim' | 'feedback' | 'correction'
+                conflicting_source_id TEXT,
+                description TEXT,
+                resolved INTEGER DEFAULT 0,          -- 0 | 1
+                created_at TEXT NOT NULL,
+                resolved_at TEXT
+            );
+            CREATE INDEX IF NOT EXISTS idx_trconflicts_trait ON self_trait_conflicts(trait_id);
+            CREATE INDEX IF NOT EXISTS idx_trconflicts_resolved ON self_trait_conflicts(resolved);
+
+            -- ============================================================
+            -- Governance Plane: retrieval_logs (context_pack + cross-domain + feedback 연결)
+            -- ============================================================
+            CREATE TABLE IF NOT EXISTS retrieval_logs (
+                id TEXT PRIMARY KEY,                 -- UUID v7
+                session_id TEXT DEFAULT '',
+                query TEXT DEFAULT '',
+                context_pack_id TEXT DEFAULT '',     -- 어떤 pack으로 retrieve했는지
+                returned_ids TEXT NOT NULL DEFAULT '[]',  -- JSON array of concept ids
+                slot_distribution TEXT DEFAULT '{}', -- JSON: {task_frame: N, episodes: N, ...}
+                cross_domain INTEGER DEFAULT 0,
+                feedback_linked INTEGER DEFAULT 0,
+                created_at TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_rlogs_session ON retrieval_logs(session_id);
+            CREATE INDEX IF NOT EXISTS idx_rlogs_created ON retrieval_logs(created_at);
+            CREATE INDEX IF NOT EXISTS idx_rlogs_context_pack ON retrieval_logs(context_pack_id);
+            """)
+            conn.commit()
+        except Exception:
+            pass  # idempotent — 부분 존재 시 무시
+
 
 def mark_dirty(project: str, node_id: int) -> None:
     """wiki-compiler용: 토픽을 dirty로 마킹한다."""

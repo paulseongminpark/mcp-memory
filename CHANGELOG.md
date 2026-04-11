@@ -1,5 +1,52 @@
 # mcp-memory CHANGELOG
 
+## v8.0 Build R1 Day 1-5 당기기 완료 (2026-04-12)
+
+### 1 세션 내 Day 1-5 전부 완료
+
+**Stream A — 스키마 + 데이터**
+- v8 10 테이블 추가 (`storage/sqlite_store.py` init_db)
+  - captures/claims/self_model_traits/self_trait_evidence/self_trait_conflicts/feedback_events/retrieval_logs
+  - append-only trigger 2개 (captures UPDATE/DELETE 차단)
+  - 20 index
+- Migration (`scripts/v8_migrate.py`): Identity 41 → self_model_traits 시드, edges 39 → self_trait_evidence bridge
+- Cleanup: 문서 헤더 25개 archive (v7.4 Identity 타입 loose 정정)
+- Self-model 최종: 54 verified traits, 8차원 모두 ≥ 3, avg evidence 2.07
+
+**Stream B — Loop 1 Capture**
+- `~/.claude/hooks/post_user_prompt_capture.py` — UserPromptSubmit hook (non-blocking)
+- `settings.json` UserPromptSubmit 섹션 등록
+- `tools/claim_extractor.py` — Qwen2.5-7B-Instruct-Q4_K_M via Ollama (`localhost:11434`)
+- `prompts/claim_extraction.md` — 프롬프트 SoT (v2 검증됨)
+
+**Stream C — Loop 2 Self-Model**
+- `tools/self_model_builder.py` — classify/extract/boost_evidence 3 subcommands
+- `scripts/approve_traits.py` — trait approval review parser
+- metacognition 수동 재분류 (자기인지 패턴 3개)
+- bulk approval (Paul 지시)
+
+**Stream D — Loop 3 Policy**
+- `~/.claude/policy/rules/response_no_trailing_summary.json` — Exit 4 Single-Rule
+- `~/.claude/policy/packs/default.json` — Phase 0 기본 pack
+- `tools/context_pack.py` — 6슬롯 빌더 + slot precedence (D18) + retrieval_logs 기록
+- `tools/get_context.py` — v8_context_pack 병행 반환 통합
+
+**Exit 측정 도구**
+- `tools/exit1_runner.py` — Day 6 blind A/B 20 질문 헬퍼
+- `tools/exit5_injector.py` — inject→reject→verify 자동 폐회로
+
+### Exit 상태 (Day 5 종료 시점)
+- **Exit 2 불변식**: ✅ PASS (orphan claims 0, self-model direct edge 0, append-only trigger 작동)
+- **Exit 3**: ✅ **PASS 4/4** (traits 54, 8차원 8/8, verified 54, evidence 2.07)
+- **Exit 5**: ✅ **PASS** (자동 inject→reject→verify 폐회로)
+- Exit 1: Day 6 수동 측정 대기 (질문 세트 준비 완료)
+- Exit 4: Day 6 수동 측정 대기 (policy rule + pack 준비 완료)
+
+### 기타
+- `trait_approval_review.md` — 42 pending 전부 bulk approved (Paul 지시)
+- `exit1_question_set.md` — 20 질문 + 기대 답 (Paul 검토 완료)
+- Diagnose 단계에서 migration 품질 문제 발견 → pre-filter 25 archive 정정
+
 ## v8.0 Ontology Redesign — Build R1 진입 (2026-04-12T08:00)
 
 ### Build R1 선행 합의 3개 확정
