@@ -1,5 +1,71 @@
 # mcp-memory CHANGELOG
 
+## v8.0 Ontology Redesign — Build R1 진입 (2026-04-12T08:00)
+
+### Build R1 선행 합의 3개 확정
+- **합의 1 — Migration Contract 10개 규칙 (R1-R10)**
+  - 실데이터 분석(5440 nodes, 17292 edges) 기반 도출
+  - R1: 기존 `nodes` = Epistemic Plane `concepts`로 리브랜딩 (source_kind 93% 해석물 확인)
+  - R4: `Identity` 63(active 41) → self_model_traits 시드 + 관련 에지 80건 → evidence/conflicts 시드
+  - R10: Paul 원문 capture 경로 확보 최우선 (baseline 1.5%, 목표 60%+)
+- **합의 2 — Exit 5가지 정량 측정 방식**
+  - Exit 1: Blind A/B 20 질문 세트 ≥ 14/20 (70%)
+  - Exit 2: shortcut 0건 (FK 강제) + 추출률 ≥ 50% + reject율 ≤ 20%
+  - Exit 3: 50+ traits / 8차원 ≥ 3씩 / verified ≥ 20 / evidence ≥ 2/trait
+  - Exit 4: Single-Rule A/B — **"응답 말미 요약 금지"**
+  - Exit 5: 의도적 잘못된 trait 주입 → reject → 24h 내 context pack 제외
+- **합의 3 — 실행 결정 D3-1~5**
+  - D3-1: `policy_rules` = JSON 파일 (테이블 아님, 최소형)
+  - D3-2: `feedback_events` = polymorphic target
+  - D3-3: `claim-extractor` = 로컬 Qwen2.5-7B-Instruct-Q4_K_M via Ollama
+  - D3-4: PostUserPrompt hook = 독립 파일 `post_user_prompt_capture.py`
+  - D3-5: Paul 승인 세션 2회 × 30분 (Day 3, Day 4)
+
+### Foundation 3축 작성
+- `foundation/philosophy.md` — 배경, 한 문장 목표, 비목표, 핵심 긴장 5개, 설계 태도 D13
+- `foundation/principles.md` — 9가지 불변식, F1-F6 방화벽, Slot Precedence, Migration Contract, R1-R10
+- `foundation/workflow.md` — 5-Plane 아키텍처, 4가지 루프, Context Pack 6슬롯, Phase 0-5 실행 전략
+
+### Build R1 산출물
+- `30_build-r1/00_index.md` — 상태 + 네비게이션
+- `30_build-r1/02_context.md` — Phase 전환 계약서 (P3, D18 7개 섹션)
+- `30_build-r1/03_impl-plan.md` — Day 1-6 실행 SoT
+- **기간**: 5-6일 + 버퍼 1일 / Paul 개입 ~4시간
+
+### Diagnose 실데이터 분석 (추가 발견)
+- 타입 분포: Decision 20.3% / Tool 12% / Insight 8.4% / Observation 8.2% / Pattern 8.2% / Question 7.9% (v3 누락)
+- 승격 파이프라인 고장: Obs→Signal 승격률 13.5%, promotion_candidate=1 단 15개
+- Paul 원문 발화 기록률: 1.5% (user 22 / 전체 1427, 30일)
+- Identity 63개 품질 우수 → self-model 시드 확보
+
+## v8.0 Ontology Redesign — Architect Complete (2026-04-12)
+
+### Diagnose R1 (2026-04-10~11)
+- 78개 태초 설계 목표 전수 인벤토리 + 현실 대조: 7.7% 작동, 48.7% 미구현
+- 6-Level 정의 계층 확립 (Level 0 존재 목적 → Level 6 인프라 제약)
+- 3소스 독립 분석 통합: Claude + Codex + deep-research (362 .md 전수 조사)
+- Codex 독립 설계 수신: 4-Plane Cognitive System, 10개 코어 타입
+
+### Architect R1 (2026-04-11~12)
+- 5-Plane 아키텍처 확정 (Evidence → Epistemic → Self Model → Policy → Governance)
+- 4 Loop 설계 (Capture → Consolidation → Policy → Governance)
+- v1 → v2 → Codex CONDITIONAL GO → v3 최종 확정
+- D1-D20 결정 확정 (29_architect-merged/)
+
+### Codex CONDITIONAL GO 반영 (D16-D20)
+- D16: Phase 0 범위 확장 4→8개 (claims, feedback_events, retrieval_logs, 최소 policy compile 추가)
+- D17: 기술 스택 도입에 trigger condition 필수
+- D18: Context pack slot precedence + 충돌 해소 규칙 추가
+- D19: 타입 코드 경로 하드코딩 금지 (config lookup)
+- D20: Self Model 연결은 evidence bridge 경유만
+
+### Phase 0 증명 대상 (Build 대기)
+1. captures (append-only) + claims (해석 분리)
+2. self_model_traits + feedback_events + retrieval_logs
+3. get_context() 동적 재설계 (정적 top-30 → topic-aware subgraph)
+4. 최소 policy compile/injection (trait→rule→행동 변화)
+5. PostUserPrompt 자동 관찰 hook
+
 ## v7.4.1 Phase 0 Truth Freeze (2026-04-10)
 
 ### STATE automation
