@@ -21,6 +21,7 @@ os.chdir(PROJECT_ROOT)
 from config import VALID_PROMOTIONS, PROMOTE_LAYER
 from storage import sqlite_store
 from tools.promote_node import swr_readiness, promotion_frequency_check
+from utils.growth import compute_growth_score
 
 
 def find_candidates(verbose: bool = False) -> list[dict]:
@@ -42,7 +43,7 @@ def find_candidates(verbose: bool = False) -> list[dict]:
     with sqlite_store._db() as conn:
         rows = conn.execute(
             f"""SELECT id, type, visit_count, quality_score, project,
-                       node_role, epistemic_status
+                       node_role, epistemic_status, created_at
                 FROM nodes
                 WHERE status = 'active'
                   AND type IN ({','.join('?' for _ in promotable_types)})
@@ -53,18 +54,12 @@ def find_candidates(verbose: bool = False) -> list[dict]:
         ).fetchall()
 
         for row in rows:
-            nid, ntype, vc, qs, project, role, epist = row
+            nid, ntype, vc, qs, project, role, epist, created_at = row
             vc = vc or 0
             qs = qs or 0.0
 
             # Gate 2: frequency check
             if vc < 3:
-                continue
-
-            # Quality floor
-            if qs < 0.75:
-                if verbose:
-                    print(f"  SKIP #{nid} ({ntype}): quality {qs:.2f} < 0.75")
                 continue
 
             # Edge count check — visit >= 10이면 edges >= 2로 완화
@@ -95,6 +90,30 @@ def find_candidates(verbose: bool = False) -> list[dict]:
                     print(f"  SKIP #{nid} ({ntype}): neighbor projects {n_projects} < 1 (edges {edge_count} < 5)")
                 continue
 
+            # Contradiction check
+            has_contradiction = conn.execute(
+                """SELECT COUNT(*) FROM edges
+                   WHERE (source_id=? OR target_id=?) AND status='active'
+                     AND relation='contradicts'""",
+                (nid, nid),
+            ).fetchone()[0] > 0
+
+            # Growth score (canonical maturity)
+            growth = compute_growth_score(
+                quality_score=qs,
+                active_edge_count=edge_count,
+                visit_count=vc,
+                neighbor_project_count=n_projects,
+                created_at=created_at,
+                has_contradiction=has_contradiction,
+            )
+
+            # Growth score floor — replaces old quality-only floor
+            if growth < 0.5:
+                if verbose:
+                    print(f"  SKIP #{nid} ({ntype}): growth_score {growth:.2f} < 0.5")
+                continue
+
             # Gate 1: SWR readiness (optional — 통과 못하면 경고만)
             swr_ok, swr_score = swr_readiness(nid)
 
@@ -108,6 +127,7 @@ def find_candidates(verbose: bool = False) -> list[dict]:
                 "target": target,
                 "visit_count": vc,
                 "quality": qs,
+                "growth_score": round(growth, 3),
                 "edges": edge_count,
                 "neighbor_projects": n_projects,
                 "swr_ok": swr_ok,
@@ -184,6 +204,7 @@ if __name__ == "__main__":
         swr_mark = "OK" if c["swr_ok"] else "WARN"
         print(f"  #{c['id']:>5} {c['type']:>12} -> {c['target']:<12} "
               f"vc={c['visit_count']:>3} qs={c['quality']:.2f} "
+              f"gs={c['growth_score']:.3f} "
               f"edges={c['edges']:>2} projects={c['neighbor_projects']} "
               f"swr={c['swr_score']:.3f}[{swr_mark}]")
 

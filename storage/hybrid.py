@@ -899,7 +899,7 @@ def _post_search_learn_impl(
     results: list[dict],
     query: str,
 ):
-    """BCM + SPRT 학습 로직 (background)."""
+    """BCM + SPRT + observation_count 학습 로직 (background)."""
     try:
         # 1. BCM 학습 + 재공고화 (B-12 + B-10)
         all_edges, _ = _get_graph()
@@ -910,10 +910,19 @@ def _post_search_learn_impl(
             query=query,
         )
 
-        # 2. SPRT 승격 판정 (C-11) — score를 0-1 정규화 후 판정
+        # 2. SPRT 승격 판정 (C-11) + observation_count 증가
         try:
             with sqlite_store._db() as sprt_conn:
                 max_score = results[0]["score"] if results else 1.0
+                node_ids = [node["id"] for node in results if node.get("id")]
+                # observation_count += 1 for all recalled nodes
+                if node_ids:
+                    placeholders = ",".join("?" * len(node_ids))
+                    sprt_conn.execute(
+                        f"UPDATE nodes SET observation_count = COALESCE(observation_count, 0) + 1 "
+                        f"WHERE id IN ({placeholders})",
+                        node_ids,
+                    )
                 for node in results:
                     if node.get("type") == "Signal":
                         normalized = node.get("score", 0.0) / max_score if max_score > 0 else 0.0

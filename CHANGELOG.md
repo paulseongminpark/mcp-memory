@@ -1,5 +1,19 @@
 # mcp-memory CHANGELOG
 
+## Growth Semantics Audit — dead field 활성화 + naming 표준화 (2026-04-12)
+
+- **utils/growth.py**: `compute_growth_score()` canonical 공식 (quality 30% + edges 20% + visits 20% + diversity 20% + recency 10%)
+- **observation_count 활성화**: `post_search_learn` recall 시 +1 (dead field → live 증가 경로)
+- **get_becoming.py**: maturity→`growth_score` 키 변경, 계산 로직을 공용 함수 호출로 대체
+- **analyze_signals.py**: `_compute_maturity`→`_compute_cluster_readiness` rename, 출력 키 표준화
+- **auto_promote.py**: quality floor(0.75) → `growth_score ≥ 0.5` 통합 기준으로 교체
+- **daily_enrich.py**: Phase 0a `_batch_update_growth_scores()` — 전체 active 노드 DB maturity 배치 갱신
+- **generate_state.py**: 보고서 라벨 `Maturity` → `Growth Score (DB maturity)`
+- **growth_audit_report.py**: type별 분포 보고서 스크립트 (신규)
+- **test_growth_semantics.py**: 11개 테스트 (unit 8 + observation 2 + batch 1)
+
+수정 파일: utils/growth.py(신규), tools/get_becoming.py, tools/analyze_signals.py, scripts/auto_promote.py, scripts/daily_enrich.py, storage/hybrid.py, scripts/generate_state.py, scripts/growth_audit_report.py(신규), tests/test_growth_semantics.py(신규)
+
 ## v8.0 Harden R1 — 3에이전트 검증 + 불변식 강화 (2026-04-12)
 
 - **3에이전트 병렬 검증**: V-Check(D1-D20) + Cross-validation(5기준) + Edge case(18 tests)

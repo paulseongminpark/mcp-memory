@@ -672,6 +672,61 @@ def generate_report(budget: TokenBudget, phase_stats: dict,
     return path
 
 
+# ─── Phase 0a: growth score batch update ──────────────────
+
+def _batch_update_growth_scores(conn: sqlite3.Connection, compute_fn) -> int:
+    """모든 active 노드의 DB maturity 컬럼을 canonical growth_score로 갱신.
+
+    API 비용 0 — 순수 로컬 계산.
+    """
+    nodes = conn.execute(
+        "SELECT id, quality_score, visit_count, created_at FROM nodes WHERE status='active'"
+    ).fetchall()
+
+    # 노드별 active edge count + neighbor projects + contradiction 사전 계산
+    edge_data: dict[int, dict] = {}
+    edges = conn.execute(
+        "SELECT source_id, target_id, relation FROM edges WHERE status='active'"
+    ).fetchall()
+
+    # 프로젝트 매핑
+    project_map: dict[int, str] = {}
+    for row in conn.execute("SELECT id, project FROM nodes WHERE status='active' AND project IS NOT NULL AND project != ''"):
+        project_map[row[0]] = row[1]
+
+    for edge in edges:
+        src, tgt, rel = edge["source_id"], edge["target_id"], edge["relation"]
+        for nid, neighbor_id in [(src, tgt), (tgt, src)]:
+            if nid not in edge_data:
+                edge_data[nid] = {"count": 0, "projects": set(), "contradiction": False}
+            edge_data[nid]["count"] += 1
+            if neighbor_id in project_map:
+                edge_data[nid]["projects"].add(project_map[neighbor_id])
+            if rel == "contradicts":
+                edge_data[nid]["contradiction"] = True
+
+    updated = 0
+    for node in nodes:
+        nid = node["id"]
+        ed = edge_data.get(nid, {"count": 0, "projects": set(), "contradiction": False})
+        score = compute_fn(
+            quality_score=node["quality_score"],
+            active_edge_count=ed["count"],
+            visit_count=node["visit_count"],
+            neighbor_project_count=len(ed["projects"]),
+            created_at=node["created_at"],
+            has_contradiction=ed["contradiction"],
+        )
+        conn.execute(
+            "UPDATE nodes SET maturity = ? WHERE id = ?",
+            (round(score, 4), nid),
+        )
+        updated += 1
+
+    conn.commit()
+    return updated
+
+
 # ─── main ─────────────────────────────────────────────────
 
 def main():
@@ -701,6 +756,15 @@ def main():
     print(f"mcp-memory enrichment pipeline")
     print(f"dry_run={dry_run}  large={args.budget_large:,}  small={args.budget_small:,}")
     print("=" * 50)
+
+    # Phase 0a: growth score batch update (no API cost)
+    print("\n--- Phase 0a: growth score update ---")
+    try:
+        from utils.growth import compute_growth_score
+        gs_updated = _batch_update_growth_scores(conn, compute_growth_score)
+        print(f"  Updated {gs_updated} nodes' maturity (growth_score)")
+    except Exception as e:
+        print(f"  Growth score update error: {e}")
 
     # Phase 0: auto-promote (no API cost, runs before enrichment)
     print("\n--- Phase 0: auto-promote ---")

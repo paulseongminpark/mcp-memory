@@ -210,7 +210,7 @@ def render_current(metrics: dict[str, object]) -> str:
             f"(contradicts {metrics['contradicts']:,})"
         ),
         (
-            "- **Maturity**: "
+            "- **Growth Score** (DB maturity): "
             f"avg {metrics['maturity_avg']:.3f}, "
             f"min {metrics['maturity_min']:.3f}, "
             f"max {metrics['maturity_max']:.3f}, "

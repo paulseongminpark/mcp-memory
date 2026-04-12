@@ -92,7 +92,7 @@ def analyze_signals(
         if len(cluster_ids) < min_cluster_size:
             continue
         cluster_nodes = [node_map[nid] for nid in cluster_ids if nid in node_map]
-        maturity = _compute_maturity(cluster_nodes)
+        cluster_readiness = _compute_cluster_readiness(cluster_nodes)
 
         # Bayesian 클러스터 평균
         bayesian_p = _bayesian_cluster_score(cluster_nodes, total_queries)
@@ -106,16 +106,16 @@ def analyze_signals(
         results.append({
             "node_ids": cluster_ids,
             "size": len(cluster_ids),
-            "maturity": round(maturity, 2),
+            "cluster_readiness": round(cluster_readiness, 2),
             "bayesian_p": round(bayesian_p, 3),
             "sprt_flagged": sprt_flagged,
-            "recommendation": _recommend_v2(maturity, bayesian_p, sprt_flagged),
+            "recommendation": _recommend_v2(cluster_readiness, bayesian_p, sprt_flagged),
             "themes": [n.get("summary") or n["content"][:80] for n in cluster_nodes[:3]],
             "domains": _collect_domains(cluster_nodes),
             "can_promote_to": VALID_PROMOTIONS.get("Signal", []),
         })
 
-    results.sort(key=lambda c: c["maturity"], reverse=True)
+    results.sort(key=lambda c: c["cluster_readiness"], reverse=True)
 
     return {
         "clusters": results[:top_k],
@@ -125,8 +125,8 @@ def analyze_signals(
     }
 
 
-def _compute_maturity(nodes: list[dict]) -> float:
-    """클러스터 성숙도 (0-1). 크기·품질·도메인 다양성 합산."""
+def _compute_cluster_readiness(nodes: list[dict]) -> float:
+    """Signal 클러스터 통합 준비도 (0-1). size(50%) + quality(30%) + domain(20%)."""
     size_score = min(1.0, len(nodes) / 10)
     qs_list = [n.get("quality_score") or 0.5 for n in nodes]
     quality_avg = sum(qs_list) / len(qs_list) if qs_list else 0.5
@@ -135,28 +135,28 @@ def _compute_maturity(nodes: list[dict]) -> float:
     return size_score * 0.5 + quality_avg * 0.3 + domain_score * 0.2
 
 
-def _recommend(maturity: float) -> str:
+def _recommend(cluster_readiness: float) -> str:
     """레거시 — 하위호환용. 신규는 _recommend_v2() 사용."""
-    if maturity > 0.9:
+    if cluster_readiness > 0.9:
         return "auto_promote"
-    elif maturity > 0.6:
+    elif cluster_readiness > 0.6:
         return "user_review"
     return "not_ready"
 
 
-def _recommend_v2(maturity: float, bayesian_p: float, sprt_flagged: int) -> str:
-    """기존 maturity + Bayesian P + SPRT flag 통합 판단.
+def _recommend_v2(cluster_readiness: float, bayesian_p: float, sprt_flagged: int) -> str:
+    """cluster_readiness + Bayesian P + SPRT flag 통합 판단.
 
     우선순위:
-      auto_promote: maturity 매우 높음 AND Bayesian 강한 증거
+      auto_promote: cluster_readiness 매우 높음 AND Bayesian 강한 증거
       user_review: Bayesian 중간 증거 OR SPRT 2개 이상 플래그
       not_ready: 그 외
     """
-    if maturity > 0.9 and bayesian_p > 0.6:
+    if cluster_readiness > 0.9 and bayesian_p > 0.6:
         return "auto_promote"
     if bayesian_p > 0.5 or sprt_flagged >= 2:
         return "user_review"
-    if maturity > 0.6:
+    if cluster_readiness > 0.6:
         return "user_review"
     return "not_ready"
 
