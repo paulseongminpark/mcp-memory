@@ -53,39 +53,195 @@ def _tokens(text: str) -> int:
 
 
 def get_task_frame(session_id: str, task_hint: str) -> dict:
-    return {
-        'session_id': session_id,
-        'task_hint': task_hint,
-        'project': 'mcp-memory',
-        'phase': 'Build R1 Phase 0',
-    }
+    """고도화: 파이프라인 00_index.md + STATE.md에서 현재 작업 맥락 동적 로드."""
+    import re
+    frame = {'session_id': session_id, 'task_hint': task_hint}
+    root = DB_PATH.parent.parent  # data/ → mcp-memory root
+
+    # 활성 파이프라인 00_index.md 파싱
+    for idx_path in sorted(root.glob('*/00_index.md'), reverse=True):
+        try:
+            text = idx_path.read_text(encoding='utf-8')
+            if 'status: ACTIVE' not in text:
+                continue
+            for pat, key in [
+                (r'pipeline:\s*([^|]+)', 'pipeline'),
+                (r'phase:\s*([^|]+)', 'phase'),
+                (r'current_task:\s*([^|]+)', 'current_task'),
+                (r'next:\s*([^|]+)', 'next'),
+            ]:
+                m = re.search(pat, text)
+                if m:
+                    frame[key] = m.group(1).strip()
+
+            # Decisions 섹션 (최근 5개)
+            decisions = []
+            in_dec = False
+            for line in text.split('\n'):
+                if line.startswith('## Decisions'):
+                    in_dec = True
+                    continue
+                if in_dec and line.startswith('## '):
+                    break
+                if in_dec and line.startswith('- '):
+                    decisions.append(line[2:].strip()[:120])
+            frame['recent_decisions'] = decisions[-5:]
+            break
+        except Exception:
+            pass
+
+    # 활성 파이프라인의 02_context.md CONFIRMED DECISIONS 전체 로드
+    if 'pipeline' in frame:
+        for pipeline_dir in sorted(root.glob('*'), reverse=True):
+            if not pipeline_dir.is_dir():
+                continue
+            if frame['pipeline'].replace('-', '_') not in pipeline_dir.name.replace('-', '_'):
+                continue
+            # 최신 build-r1 또는 현재 phase의 02_context.md
+            for ctx_path in sorted(pipeline_dir.glob('*/02_context.md'), reverse=True):
+                try:
+                    ctx_text = ctx_path.read_text(encoding='utf-8')
+                    # CONFIRMED DECISIONS 섹션 추출
+                    lines = ctx_text.split('\n')
+                    in_confirmed = False
+                    confirmed = []
+                    for line in lines:
+                        if '## CONFIRMED DECISIONS' in line:
+                            in_confirmed = True
+                            continue
+                        if in_confirmed and line.startswith('## ') and 'CONFIRMED' not in line:
+                            break
+                        if in_confirmed:
+                            confirmed.append(line)
+                    if confirmed:
+                        frame['confirmed_decisions_full'] = '\n'.join(confirmed).strip()
+
+                    # CARRY FORWARD 섹션도 로드
+                    in_carry = False
+                    carry = []
+                    for line in lines:
+                        if '## CARRY FORWARD' in line:
+                            in_carry = True
+                            continue
+                        if in_carry and line.startswith('## '):
+                            break
+                        if in_carry:
+                            carry.append(line)
+                    if carry:
+                        frame['carry_forward'] = '\n'.join(carry).strip()
+
+                    frame['context_source'] = str(ctx_path.relative_to(root))
+                    break
+                except Exception:
+                    pass
+            break
+
+    # STATE.md에서 현재 프로젝트 상태 요약
+    state_path = root / 'STATE.md'
+    if state_path.exists():
+        try:
+            text = state_path.read_text(encoding='utf-8')
+            lines = text.split('\n')
+            section = []
+            capture = False
+            for line in lines:
+                if 'Ontology Redesign' in line or 'v8' in line:
+                    capture = True
+                if capture:
+                    section.append(line)
+                    if len(section) >= 8:
+                        break
+                if capture and line.startswith('## ') and 'Ontology' not in line and 'v8' not in line:
+                    break
+            if section:
+                frame['project_state'] = '\n'.join(section[:8])
+        except Exception:
+            pass
+
+    return frame
 
 
-def get_relevant_episodes(conn: sqlite3.Connection, limit: int = 3) -> list[dict]:
+def get_relevant_episodes(conn: sqlite3.Connection, limit: int = 5) -> list[dict]:
+    """고도화: 최근 Paul 발화 원문 + 세션 요약."""
+    episodes = []
+
+    # 최근 Paul 발화 원문 (세션 맥락 핵심)
     rows = conn.execute(
         """
-        SELECT session_id, COUNT(*) AS cnt, MIN(created_at) AS started
-        FROM captures
-        WHERE session_id != ''
-        GROUP BY session_id
-        ORDER BY started DESC LIMIT ?
+        SELECT content, created_at, session_id FROM captures
+        WHERE actor='paul' AND LENGTH(content) > 10
+        ORDER BY created_at DESC LIMIT ?
         """,
         (limit,),
     ).fetchall()
-    return [{'session_id': r[0], 'capture_count': r[1], 'started': r[2]} for r in rows]
+    for r in rows:
+        episodes.append({
+            'type': 'paul_message',
+            'content': (r[0] or '')[:200],
+            'at': r[1],
+            'session': r[2],
+        })
+
+    # 최근 세션 요약 (기존 sessions 테이블)
+    sessions = conn.execute(
+        """
+        SELECT session_id, summary, project FROM sessions
+        WHERE summary != '' AND summary IS NOT NULL
+        ORDER BY started_at DESC LIMIT 3
+        """
+    ).fetchall()
+    for s in sessions:
+        episodes.append({
+            'type': 'session_summary',
+            'session': s[0],
+            'summary': (s[1] or '')[:200],
+            'project': s[2],
+        })
+
+    return episodes
 
 
 def get_applicable_principles(conn: sqlite3.Connection, limit: int = 10) -> list[dict]:
-    """verified Self Model traits + Epistemic Plane Principle 노드."""
-    rows = conn.execute(
+    """고도화: verified traits + 프로젝트 최근 결정 + 8차원 균형."""
+    result = []
+
+    # 1. 8차원에서 골고루 (차원당 최대 2개, 다양성 확보)
+    dims = conn.execute(
         """
-        SELECT id, dimension, content FROM self_model_traits
-        WHERE status='verified' AND approval='approved'
-        ORDER BY verified_at DESC LIMIT ?
-        """,
-        (limit,),
+        SELECT DISTINCT dimension FROM self_model_traits
+        WHERE status='verified' AND approval='approved' AND dimension != 'unclassified'
+        """
     ).fetchall()
-    return [{'trait_id': r[0], 'dimension': r[1], 'content': r[2]} for r in rows]
+    for (dim,) in dims:
+        rows = conn.execute(
+            """
+            SELECT id, dimension, content FROM self_model_traits
+            WHERE status='verified' AND approval='approved' AND dimension=?
+            ORDER BY verified_at DESC LIMIT 2
+            """,
+            (dim,),
+        ).fetchall()
+        for r in rows:
+            result.append({'trait_id': r[0], 'dimension': r[1], 'content': r[2][:200]})
+
+    # 2. 프로젝트 최근 결정 (Decision 타입 nodes, mcp-memory/ontology/v8 관련)
+    decisions = conn.execute(
+        """
+        SELECT id, content FROM nodes
+        WHERE type='Decision' AND status='active'
+          AND (content LIKE '%mcp-memory%' OR content LIKE '%ontology%' OR content LIKE '%v8%'
+               OR content LIKE '%Phase 0%' OR content LIKE '%redesign%')
+        ORDER BY created_at DESC LIMIT 5
+        """
+    ).fetchall()
+    for d in decisions:
+        result.append({
+            'type': 'project_decision',
+            'node_id': d[0],
+            'content': (d[1] or '')[:200],
+        })
+
+    return result[:limit + 5]  # traits + decisions 합산
 
 
 def get_preferences_and_boundaries(conn: sqlite3.Connection) -> list[dict]:
@@ -174,7 +330,7 @@ def get_active_rejects(conn: sqlite3.Connection) -> set[str]:
 def build_context_pack(
     session_id: str = '',
     task_hint: str = '',
-    token_budget: int = 2000,
+    token_budget: int = 12000,
     log_to_db: bool = True,
 ) -> dict:
     if not DB_PATH.exists():
