@@ -1,5 +1,15 @@
 # mcp-memory CHANGELOG
 
+## v8.0 Harden R1 — 3에이전트 검증 + 불변식 강화 (2026-04-12)
+
+- **3에이전트 병렬 검증**: V-Check(D1-D20) + Cross-validation(5기준) + Edge case(18 tests)
+- **claims_capture_fk trigger**: 불변식 2 물리 강제 (capture_id 존재 검증)
+- **F1 guard**: self_model_builder에 created_by + trait_status/approval 명시
+- **test_v8_schema.py**: 18개 edge case 자동 테스트 (32 total passed)
+- **최종 판정**: D1-D20 GO 13/WARN 2/FAIL 0, 불변식 9/9 GO, 테스트 32/32
+
+수정 파일: sqlite_store.py, self_model_builder.py, tests/test_v8_schema.py (신규)
+
 ## v8.0 Build R2 — Codex Finding 수정 + Build Merged (2026-04-12)
 
 **Codex CONDITIONAL GO → GO 전환**

@@ -275,6 +275,10 @@ def cmd_extract(args) -> int:
                 continue
 
             trait_id = uuid_v7()
+            # F1 방화벽: 시스템 생성 trait은 반드시 provisional/pending
+            # Paul approval 없이 verified/approved 불가
+            trait_status = 'provisional'
+            trait_approval = 'pending'
             metadata = {
                 'extracted_from_node_id': node_id,
                 'source_type': node_type,
@@ -282,15 +286,17 @@ def cmd_extract(args) -> int:
                 'dimension_reason': reason,
                 'dimension_confidence': conf,
                 'extracted_at': time.strftime('%Y-%m-%dT%H:%M:%S'),
+                'created_by': 'system',  # F1: actor 추적
             }
             try:
                 cur.execute(
                     """
                     INSERT INTO self_model_traits
                     (id, dimension, content, status, approval, created_at, metadata)
-                    VALUES (?, ?, ?, 'provisional', 'pending', datetime('now'), ?)
+                    VALUES (?, ?, ?, ?, ?, datetime('now'), ?)
                     """,
                     (trait_id, dim, trait_content,
+                     trait_status, trait_approval,
                      json.dumps(metadata, ensure_ascii=False)),
                 )
                 # D20 evidence bridge: concept → capture → claim → evidence (placeholder 금지)

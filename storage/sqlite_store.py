@@ -515,6 +515,15 @@ def init_db() -> None:
             CREATE INDEX IF NOT EXISTS idx_claims_status ON claims(status);
             CREATE INDEX IF NOT EXISTS idx_claims_extracted ON claims(extracted_at);
 
+            -- 불변식 2 물리 강제: capture_id는 captures 테이블에 존재해야 함
+            CREATE TRIGGER IF NOT EXISTS claims_capture_fk BEFORE INSERT ON claims
+            BEGIN
+                SELECT CASE
+                    WHEN NEW.capture_id NOT IN (SELECT id FROM captures)
+                    THEN RAISE(FAIL, 'Invariant 2: capture_id must reference existing capture')
+                END;
+            END;
+
             -- ============================================================
             -- Self Model Plane: traits (D3 물리 분리)
             -- ============================================================
@@ -619,6 +628,7 @@ def init_db() -> None:
         required_triggers = {
             'captures_no_update', 'captures_no_delete',
             'trevidence_claim_fk', 'trevidence_claim_fk_update',
+            'claims_capture_fk',
         }
         triggers = {r[0] for r in conn.execute(
             "SELECT name FROM sqlite_master WHERE type='trigger'"
