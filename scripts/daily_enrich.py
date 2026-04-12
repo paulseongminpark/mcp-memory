@@ -818,8 +818,19 @@ def main():
     except Exception as e:
         print(f"  Auto-promote error: {e}")
 
-    # Phase 0b: claim extraction (Ollama, no API cost)
-    print("\n--- Phase 0b: claim extraction ---")
+    # Phase 0b: policy compilation (no API cost)
+    print("\n--- Phase 0b: policy compilation ---")
+    try:
+        from scripts.policy_compiler import compile_traits, update_pack
+        compiled = compile_traits(dry_run=dry_run)
+        if compiled and not dry_run:
+            update_pack(compiled)
+        print(f"  Compiled {len(compiled)} policy rules from verified traits")
+    except Exception as e:
+        print(f"  Policy compilation error: {e}")
+
+    # Phase 0c: claim extraction (Ollama, no API cost)
+    print("\n--- Phase 0c: claim extraction ---")
     try:
         claims_extracted = _phase0b_claim_extraction(conn)
         print(f"  Claims extracted: {claims_extracted}")

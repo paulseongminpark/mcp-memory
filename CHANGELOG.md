@@ -1,5 +1,14 @@
 # mcp-memory CHANGELOG
 
+## v8 Loop 3 완성 — policy compiler + context_pack 자동 주입 (2026-04-12)
+
+- **policy_compiler.py**: 52 verified traits → policy rules JSON 자동 컴파일 + default.json pack 갱신
+- **daily_enrich Phase 0b**: policy compilation 자동 스테이지
+- **session-start.sh**: context_pack 자동 주입 — Paul 선호 5개 + dont/avoid 규칙 5개 매 세션 출력
+- **session-start.sh 버그 수정**: get_becoming maturity→growth_score 키 변경 반영
+
+수정 파일: scripts/policy_compiler.py(신규), scripts/daily_enrich.py, ~/.claude/hooks/session-start.sh
+
 ## v8 Loop 자동화 배선 — 3개 끊긴 체인 연결 (2026-04-12)
 
 - **daily_enrich Phase 0b**: 미처리 captures → claims 자동 추출 (Ollama graceful skip)
