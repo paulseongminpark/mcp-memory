@@ -727,9 +727,49 @@ def _batch_update_growth_scores(conn: sqlite3.Connection, compute_fn) -> int:
     return updated
 
 
-# ─── Phase 0b: claim extraction ───────────────────────────
+# ─── Phase 0b: self-model trait extraction ────────────────
 
-def _phase0b_claim_extraction(conn: sqlite3.Connection, batch_size: int = 20) -> int:
+def _phase0b_self_model_update(conn: sqlite3.Connection) -> int:
+    """미처리 claims → self_model_traits 추출 (Ollama 로컬, Loop 2).
+
+    1. 신규 claims 중 Paul 관련 → trait 후보 extract
+    2. unclassified traits → 8차원 classify
+    Ollama 미기동 시 graceful skip.
+    """
+    try:
+        import requests
+        requests.get('http://localhost:11434/', timeout=3)
+    except Exception:
+        print("  Ollama not running — skipping self-model update")
+        return 0
+
+    total = 0
+
+    # 1. extract: Paul 관련 concepts → 신규 trait 추출 (최대 10건)
+    try:
+        from tools.self_model_builder import cmd_extract
+        import argparse
+        extract_args = argparse.Namespace(limit=10, dry_run=False)
+        cmd_extract(extract_args)
+        total += 1  # extract 실행 자체를 카운트
+    except Exception as e:
+        print(f"  trait extract error: {e}")
+
+    # 2. classify: unclassified traits → dimension 분류 (최대 20건)
+    try:
+        from tools.self_model_builder import cmd_classify
+        classify_args = argparse.Namespace(batch=20, dry_run=False)
+        cmd_classify(classify_args)
+        total += 1
+    except Exception as e:
+        print(f"  trait classify error: {e}")
+
+    return total
+
+
+# ─── Phase 0d: claim extraction ───────────────────────────
+
+def _phase0d_claim_extraction(conn: sqlite3.Connection, batch_size: int = 20) -> int:
     """미처리 captures → claims 자동 추출 (Ollama 로컬).
 
     Ollama 미기동 시 graceful skip.
@@ -818,8 +858,16 @@ def main():
     except Exception as e:
         print(f"  Auto-promote error: {e}")
 
-    # Phase 0b: policy compilation (no API cost)
-    print("\n--- Phase 0b: policy compilation ---")
+    # Phase 0b: self-model trait extraction (Ollama, Loop 2)
+    print("\n--- Phase 0b: self-model update ---")
+    try:
+        trait_count = _phase0b_self_model_update(conn)
+        print(f"  Traits extracted/updated: {trait_count}")
+    except Exception as e:
+        print(f"  Self-model update error: {e}")
+
+    # Phase 0c: policy compilation (no API cost)
+    print("\n--- Phase 0c: policy compilation ---")
     try:
         from scripts.policy_compiler import compile_traits, update_pack
         compiled = compile_traits(dry_run=dry_run)
@@ -829,10 +877,10 @@ def main():
     except Exception as e:
         print(f"  Policy compilation error: {e}")
 
-    # Phase 0c: claim extraction (Ollama, no API cost)
-    print("\n--- Phase 0c: claim extraction ---")
+    # Phase 0d: claim extraction (Ollama, no API cost)
+    print("\n--- Phase 0d: claim extraction ---")
     try:
-        claims_extracted = _phase0b_claim_extraction(conn)
+        claims_extracted = _phase0d_claim_extraction(conn)
         print(f"  Claims extracted: {claims_extracted}")
     except Exception as e:
         print(f"  Claim extraction error: {e}")

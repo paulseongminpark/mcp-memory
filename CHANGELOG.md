@@ -1,5 +1,13 @@
 # mcp-memory CHANGELOG
 
+## v8 Loop 2 자동화 — self-model trait 자동 갱신 (2026-04-12)
+
+- **daily_enrich Phase 0b**: concepts→trait extract (최대 10건) + unclassified→classify (최대 20건)
+- **완전 자동 체인**: captures→claims→traits→policy→context_pack→Claude 전구간 자동화 완성
+- Ollama 미기동 시 graceful skip
+
+수정 파일: scripts/daily_enrich.py
+
 ## v8 Loop 3 완성 — policy compiler + context_pack 자동 주입 (2026-04-12)
 
 - **policy_compiler.py**: 52 verified traits → policy rules JSON 자동 컴파일 + default.json pack 갱신
