@@ -40,6 +40,18 @@ DB_PATH = Path(__file__).parent.parent / 'data' / 'memory.db'
 OLLAMA_URL = 'http://localhost:11434/api/generate'
 MODEL = 'qwen2.5:7b-instruct-q4_K_M'
 
+# D19: self-model dimension → epistemic claim_type 매핑
+DIMENSION_TO_CLAIM_TYPE = {
+    'preference': 'preference',
+    'emotion': 'emotion',
+    'decision_style': 'decision',
+    'thinking_style': 'observation',
+    'language': 'observation',
+    'rhythm': 'observation',
+    'metacognition': 'observation',
+    'connection': 'observation',
+}
+
 SYSTEM_PROMPT = """Paul의 발화에서 claim들을 추출하세요.
 
 규칙:
@@ -134,6 +146,8 @@ def process_capture(
             continue
 
         try:
+            dimension = c.get('dimension', '')
+            claim_type = DIMENSION_TO_CLAIM_TYPE.get(dimension, 'observation')
             conn.execute(
                 """
                 INSERT INTO claims
@@ -145,10 +159,10 @@ def process_capture(
                     uuid_v7(),
                     capture_id,
                     text,
-                    c.get('dimension', ''),
+                    claim_type,
                     float(c.get('confidence', 0.5)),
                     MODEL,
-                    json.dumps({'extractor_v': 1}, ensure_ascii=False),
+                    json.dumps({'extractor_v': 1, 'source_dimension': dimension}, ensure_ascii=False),
                 ),
             )
             inserted += 1

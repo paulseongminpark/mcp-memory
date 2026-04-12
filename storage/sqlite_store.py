@@ -545,6 +545,25 @@ def init_db() -> None:
             CREATE INDEX IF NOT EXISTS idx_trevidence_trait ON self_trait_evidence(trait_id);
             CREATE INDEX IF NOT EXISTS idx_trevidence_claim ON self_trait_evidence(claim_id);
 
+            -- D20 evidence bridge 물리 강제: claim_id는 claims 테이블에 존재해야 함
+            CREATE TRIGGER IF NOT EXISTS trevidence_claim_fk BEFORE INSERT ON self_trait_evidence
+            BEGIN
+                SELECT CASE
+                    WHEN NEW.claim_id NOT IN (SELECT id FROM claims)
+                    THEN RAISE(FAIL, 'D20: claim_id must reference existing claim')
+                END;
+            END;
+            -- D20 UPDATE 경로도 보호 (W2)
+            CREATE TRIGGER IF NOT EXISTS trevidence_claim_fk_update
+            BEFORE UPDATE ON self_trait_evidence
+            WHEN NEW.claim_id != OLD.claim_id
+            BEGIN
+                SELECT CASE
+                    WHEN NEW.claim_id NOT IN (SELECT id FROM claims)
+                    THEN RAISE(FAIL, 'D20: claim_id must reference existing claim')
+                END;
+            END;
+
             -- ============================================================
             -- Self Model Plane: conflicts (Paul 교정 + 모순 기록)
             -- ============================================================
@@ -580,8 +599,33 @@ def init_db() -> None:
             CREATE INDEX IF NOT EXISTS idx_rlogs_context_pack ON retrieval_logs(context_pack_id);
             """)
             conn.commit()
-        except Exception:
-            pass  # idempotent — 부분 존재 시 무시
+        except Exception as e:
+            import traceback
+            print(f"[WARN] v8 schema init: {e}", file=sys.stderr)
+
+    # v8 테이블/트리거 존재 검증 (Finding 5: fail-open 방지)
+    with _db() as conn:
+        required_tables = {
+            'captures', 'claims', 'self_model_traits', 'self_trait_evidence',
+            'self_trait_conflicts', 'feedback_events', 'retrieval_logs',
+        }
+        found = {r[0] for r in conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table'"
+        ).fetchall()}
+        missing = required_tables - found
+        if missing:
+            raise RuntimeError(f"v8 critical tables missing after init: {missing}")
+
+        required_triggers = {
+            'captures_no_update', 'captures_no_delete',
+            'trevidence_claim_fk', 'trevidence_claim_fk_update',
+        }
+        triggers = {r[0] for r in conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='trigger'"
+        ).fetchall()}
+        missing_triggers = required_triggers - triggers
+        if missing_triggers:
+            raise RuntimeError(f"v8 critical triggers missing: {missing_triggers}")
 
 
 def mark_dirty(project: str, node_id: int) -> None:

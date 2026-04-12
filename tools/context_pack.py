@@ -280,11 +280,70 @@ def get_open_conflicts(conn: sqlite3.Connection) -> list[dict]:
     return [{'id': r[0], 'trait_id': r[1], 'description': r[2]} for r in rows]
 
 
-def apply_slot_precedence(pack: dict, active_rejects: set[str]) -> dict:
-    """Phase 0 최소형: rejected trait_id 제외 + 순위 기록."""
+def apply_slot_precedence(pack: dict, active_rejects: set[str], conn: sqlite3.Connection) -> dict:
+    """D18 slot precedence — reject + temporal + conflict escalation + open_questions.
+
+    1순위: protected boundary / explicit latest correction
+    2순위: approved principle / verified preference
+    3순위: current project workflow
+    4순위: relevant episodes
+    """
+    # 1. Reject blacklist
     for slot in ('applicable_principles', 'preferences_and_boundaries'):
         items = pack.get(slot, [])
         pack[slot] = [it for it in items if it.get('trait_id') not in active_rejects]
+
+    # 2. Temporal precedence: latest correction wins (verified_at DESC)
+    for slot in ('applicable_principles', 'preferences_and_boundaries'):
+        items = pack.get(slot, [])
+        trait_items = [it for it in items if it.get('trait_id')]
+        non_trait = [it for it in items if not it.get('trait_id')]
+        if trait_items:
+            trait_ids = [it['trait_id'] for it in trait_items]
+            ph = ','.join('?' * len(trait_ids))
+            rows = conn.execute(
+                f"SELECT id, verified_at FROM self_model_traits WHERE id IN ({ph})",
+                trait_ids,
+            ).fetchall()
+            vmap = {r[0]: r[1] or '' for r in rows}
+            trait_items.sort(key=lambda it: vmap.get(it['trait_id'], ''), reverse=True)
+        pack[slot] = trait_items + non_trait
+
+    # 3. Conflict escalation: unresolved conflicts for pack traits → open_conflicts
+    conflicts = list(pack.get('open_conflicts', []))
+    all_trait_ids = [
+        it['trait_id']
+        for slot in ('applicable_principles', 'preferences_and_boundaries')
+        for it in pack.get(slot, []) if it.get('trait_id')
+    ]
+    if all_trait_ids:
+        ph = ','.join('?' * len(all_trait_ids))
+        unresolved = conn.execute(
+            f"""SELECT id, trait_id, description FROM self_trait_conflicts
+            WHERE resolved=0 AND trait_id IN ({ph})""",
+            all_trait_ids,
+        ).fetchall()
+        existing_ids = {c.get('id') for c in conflicts if c.get('id')}
+        for row in unresolved:
+            if row[0] not in existing_ids:
+                conflicts.append({
+                    'id': row[0], 'trait_id': row[1],
+                    'description': row[2], 'escalated_from': 'slot_precedence',
+                })
+
+    # 4. Open questions → context pack (Governance Plane)
+    open_q = conn.execute(
+        """SELECT id, content FROM nodes
+        WHERE type='Question' AND status='active'
+        ORDER BY created_at DESC LIMIT 3"""
+    ).fetchall()
+    for q in open_q:
+        conflicts.append({
+            'type': 'open_question', 'node_id': q[0],
+            'content': (q[1] or '')[:150],
+        })
+
+    pack['open_conflicts'] = conflicts
     pack['_precedence'] = [
         'preferences_and_boundaries',
         'applicable_principles',
@@ -348,7 +407,7 @@ def build_context_pack(
             'project_workflows': get_policy_pack('default'),
             'open_conflicts': get_open_conflicts(conn),
         }
-        pack = apply_slot_precedence(pack, active_rejects)
+        pack = apply_slot_precedence(pack, active_rejects, conn)
         pack = trim_to_budget(pack, token_budget)
 
         if log_to_db:

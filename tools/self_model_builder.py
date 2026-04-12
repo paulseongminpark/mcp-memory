@@ -42,6 +42,12 @@ VALID_DIMENSIONS = {
     'language', 'rhythm', 'metacognition', 'connection',
 }
 
+# D19: canonical node types (하드코딩 방지, PostgreSQL 이주 대비)
+PAUL_RELATED_TYPES = (
+    'Insight', 'Pattern', 'Principle', 'Observation',
+    'Decision', 'Failure', 'Experiment', 'Goal', 'Framework',
+)
+
 CLASSIFY_SYSTEM = """Paul의 특성을 표현한 문장을 다음 8차원 중 하나로 분류하세요.
 
 차원 정의:
@@ -216,17 +222,18 @@ def cmd_extract(args) -> int:
     cur = conn.cursor()
 
     # Paul 관련 + trait 후보 타입 + 길이 50-800
+    type_ph = ','.join('?' * len(PAUL_RELATED_TYPES))
     rows = cur.execute(
-        """
+        f"""
         SELECT id, type, content FROM nodes
         WHERE status='active'
           AND (content LIKE '%Paul%' OR content LIKE '%저는%' OR content LIKE '%나는%' OR content LIKE '% 내가 %')
-          AND type IN ('Insight', 'Pattern', 'Principle', 'Observation', 'Decision', 'Failure', 'Experiment', 'Goal', 'Framework')
+          AND type IN ({type_ph})
           AND LENGTH(content) BETWEEN 50 AND 800
         ORDER BY COALESCE(quality_score, 0) DESC, COALESCE(maturity, 0) DESC
         LIMIT ?
         """,
-        (args.limit,),
+        (*PAUL_RELATED_TYPES, args.limit),
     ).fetchall()
 
     print(f"Extracting from {len(rows)} concept(s)...\n")
@@ -286,14 +293,25 @@ def cmd_extract(args) -> int:
                     (trait_id, dim, trait_content,
                      json.dumps(metadata, ensure_ascii=False)),
                 )
-                # Evidence bridge (legacy concept placeholder — Phase 1 PG 이주 시 정리)
+                # D20 evidence bridge: concept → capture → claim → evidence (placeholder 금지)
+                cap_id = uuid_v7()
+                clm_id = uuid_v7()
                 cur.execute(
-                    """
-                    INSERT INTO self_trait_evidence
+                    """INSERT INTO captures (id, source_type, actor, content, created_at)
+                    VALUES (?, 'extraction', 'system', ?, datetime('now'))""",
+                    (cap_id, f'trait extracted from concept {node_id}: {trait_content[:200]}'),
+                )
+                cur.execute(
+                    """INSERT INTO claims (id, capture_id, text, claim_type, confidence,
+                    extractor_model, extracted_at, status)
+                    VALUES (?, ?, ?, 'observation', ?, ?, datetime('now'), 'provisional')""",
+                    (clm_id, cap_id, trait_content, conf, MODEL),
+                )
+                cur.execute(
+                    """INSERT INTO self_trait_evidence
                     (id, trait_id, claim_id, strength, created_at)
-                    VALUES (?, ?, ?, ?, datetime('now'))
-                    """,
-                    (uuid_v7(), trait_id, f'legacy:{node_type}:{node_id}', conf),
+                    VALUES (?, ?, ?, ?, datetime('now'))""",
+                    (uuid_v7(), trait_id, clm_id, conf),
                 )
                 extracted += 1
             except sqlite3.Error as e:
@@ -319,8 +337,8 @@ def cmd_extract(args) -> int:
 
 
 def cmd_boost_evidence(args) -> int:
-    """각 active trait에 관련 concept를 evidence로 추가 (LIKE 검색 기반).
-    목표: avg evidence/trait >= 2 달성.
+    """각 active trait에 관련 claims을 evidence로 추가 (D20 준수).
+    D20: claim 경유만 허용, concept 직결 금지. Paul source 필터 적용.
     """
     if not DB_PATH.exists():
         print(f"ERROR: DB 없음: {DB_PATH}", file=sys.stderr)
@@ -352,29 +370,13 @@ def cmd_boost_evidence(args) -> int:
         if needed <= 0:
             continue
 
-        # trait content에서 키워드 2-3개 추출 (3자 이상 단어)
+        # trait content에서 키워드 추출 (3자 이상)
         words = [w for w in (content or '').split() if len(w) >= 3]
         keywords = words[:3]
         if not keywords:
             continue
 
-        candidates = []
-        for kw in keywords:
-            like = f'%{kw}%'
-            rows = cur.execute(
-                """
-                SELECT n.id, n.type FROM nodes n
-                WHERE n.status='active'
-                  AND n.content LIKE ?
-                  AND n.type IN ('Insight','Pattern','Principle','Observation','Decision','Framework','Identity')
-                  AND LENGTH(n.content) >= 30
-                LIMIT ?
-                """,
-                (like, needed * 2),
-            ).fetchall()
-            candidates.extend(rows)
-
-        # 중복 제거 + 이미 evidence 있는 것 제외
+        # 기존 evidence claim_ids
         existing = {
             r[0] for r in cur.execute(
                 "SELECT claim_id FROM self_trait_evidence WHERE trait_id=?",
@@ -382,17 +384,34 @@ def cmd_boost_evidence(args) -> int:
             ).fetchall()
         }
 
-        seen_concept = set()
+        # D20 준수: claims 테이블에서만 검색 (concept 직결 금지)
+        # Paul source 필터: capture.actor='paul'
+        # W1: LIKE 특수문자 이스케이프
+        candidates = []
+        for kw in keywords:
+            kw_esc = kw.replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_')
+            rows = cur.execute(
+                """
+                SELECT c.id, c.text FROM claims c
+                JOIN captures cap ON c.capture_id = cap.id
+                WHERE c.text LIKE ? ESCAPE '\\'
+                  AND c.status != 'rejected'
+                  AND cap.actor = 'paul'
+                  AND LENGTH(c.text) >= 20
+                LIMIT ?
+                """,
+                (f'%{kw_esc}%', needed * 2),
+            ).fetchall()
+            candidates.extend(rows)
+
+        seen = set()
         added_this_trait = 0
-        for concept_id, concept_type in candidates:
+        for claim_id, claim_text in candidates:
             if added_this_trait >= needed:
                 break
-            if concept_id in seen_concept:
+            if claim_id in seen or claim_id in existing:
                 continue
-            seen_concept.add(concept_id)
-            claim_placeholder = f'legacy:{concept_type}:{concept_id}'
-            if claim_placeholder in existing:
-                continue
+            seen.add(claim_id)
 
             if args.dry_run:
                 added_this_trait += 1
@@ -406,7 +425,7 @@ def cmd_boost_evidence(args) -> int:
                     (id, trait_id, claim_id, strength, created_at)
                     VALUES (?, ?, ?, ?, datetime('now'))
                     """,
-                    (uuid_v7(), trait_id, claim_placeholder, 0.6),
+                    (uuid_v7(), trait_id, claim_id, 0.3),
                 )
                 added_this_trait += 1
                 added_total += 1

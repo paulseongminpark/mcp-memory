@@ -1,5 +1,20 @@
 # mcp-memory CHANGELOG
 
+## v8.0 Build R2 — Codex Finding 수정 + Build Merged (2026-04-12)
+
+**Codex CONDITIONAL GO → GO 전환**
+
+- **D20 evidence bridge 물리 강제**: `trevidence_claim_fk` + `trevidence_claim_fk_update` trigger (INSERT+UPDATE)
+- **D20 backfill**: legacy:Type:id 135건 → real captures+claims 생성 + evidence claim_id 갱신
+- **D18 slot precedence 고도화**: reject blacklist → temporal + conflict escalation + open_questions
+- **boost_evidence 재작성**: nodes LIKE 검색 → claims-only + Paul source 필터 + strength 0.3
+- **D19 타입 하드코딩 제거**: `PAUL_RELATED_TYPES`, `DIMENSION_TO_CLAIM_TYPE` 상수
+- **init_db fail-close**: 테이블/트리거 누락 시 `RuntimeError` (fail-open 해소)
+- **LIKE escape**: `%`/`_` 특수문자 이스케이프
+- **Exit 3 복구**: unclassified 41개 archive → active 53, avg_ev 2.34
+
+수정 파일: sqlite_store.py, self_model_builder.py, context_pack.py, claim_extractor.py, v8_migrate.py
+
 ## v8.0 Build R1 Day 1-5 당기기 완료 (2026-04-12)
 
 ### 1 세션 내 Day 1-5 전부 완료

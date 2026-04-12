@@ -144,26 +144,31 @@ def migrate_edges_to_evidence(conn: sqlite3.Connection, dry_run: bool = False) -
             continue
         new_trait_id = trait_row[0]
 
-        # claim_id placeholder: legacy concept id를 문자열로 저장
-        # Phase 1 PG 이주 시점에 실제 claim 매핑으로 전환
-        claim_placeholder = f"legacy:{source_type}:{src_id}"
-
         if dry_run:
             bridged += 1
             continue
 
+        # D20 evidence bridge: concept → capture → claim → evidence (placeholder 금지)
         try:
+            cap_id = uuid_v7()
+            clm_id = uuid_v7()
+            src_row = conn.execute("SELECT content FROM nodes WHERE id=?", (src_id,)).fetchone()
+            src_text = (src_row[0] if src_row else f'{source_type} concept {src_id}')[:500]
+
+            conn.execute("""
+                INSERT INTO captures (id, source_type, actor, content, created_at)
+                VALUES (?, 'migration', 'system', ?, ?)
+            """, (cap_id, src_text, created_at))
+            conn.execute("""
+                INSERT INTO claims (id, capture_id, text, claim_type, confidence,
+                extractor_model, extracted_at, status)
+                VALUES (?, ?, ?, 'observation', ?, 'migration', ?, 'provisional')
+            """, (clm_id, cap_id, src_text, strength or 1.0, created_at))
             conn.execute("""
                 INSERT INTO self_trait_evidence
                 (id, trait_id, claim_id, strength, created_at)
                 VALUES (?, ?, ?, ?, ?)
-            """, (
-                uuid_v7(),
-                new_trait_id,
-                claim_placeholder,
-                strength or 1.0,
-                created_at,
-            ))
+            """, (uuid_v7(), new_trait_id, clm_id, strength or 1.0, created_at))
             bridged += 1
         except sqlite3.IntegrityError as e:
             print(f"  skip evidence: {e}")
@@ -224,6 +229,68 @@ def migrate_correction_to_conflicts(conn: sqlite3.Connection, dry_run: bool = Fa
     return conflicted
 
 
+def backfill_legacy_evidence(conn: sqlite3.Connection, dry_run: bool = False) -> int:
+    """기존 legacy:Type:id placeholder → 실제 claim 변환 (D20 backfill).
+
+    실행 순서 의존성: migrate_edges_to_evidence() 이후 호출.
+    현재 migrate_edges_to_evidence()는 placeholder를 생성하지 않으므로,
+    이 함수는 R1 이전 migration 결과의 잔존 placeholder 정리용.
+    """
+    rows = conn.execute("""
+        SELECT e.id, e.trait_id, e.claim_id, e.strength, e.created_at
+        FROM self_trait_evidence e
+        WHERE e.claim_id LIKE 'legacy:%'
+    """).fetchall()
+    print(f"[D20 backfill] Legacy placeholders: {len(rows)}")
+
+    converted = 0
+    for ev_id, trait_id, old_claim_id, strength, created_at in rows:
+        parts = old_claim_id.split(':')
+        if len(parts) < 3:
+            continue
+        source_type = parts[1]
+        source_id = parts[2]
+
+        # numeric ID → node 조회, non-numeric → placeholder 설명 사용
+        concept_text = f'{source_type}:{source_id}'
+        if source_id.isdigit():
+            concept = conn.execute(
+                "SELECT content FROM nodes WHERE id = ?", (int(source_id),)
+            ).fetchone()
+            if concept:
+                concept_text = concept[0][:500]
+
+        if dry_run:
+            converted += 1
+            continue
+
+        try:
+            cap_id = uuid_v7()
+            clm_id = uuid_v7()
+            conn.execute("""
+                INSERT INTO captures (id, source_type, actor, content, created_at)
+                VALUES (?, 'backfill', 'system', ?, ?)
+            """, (cap_id, concept_text, created_at or '2026-04-12'))
+            conn.execute("""
+                INSERT INTO claims (id, capture_id, text, claim_type, confidence,
+                extractor_model, extracted_at, status)
+                VALUES (?, ?, ?, 'observation', ?, 'backfill', ?, 'provisional')
+            """, (clm_id, cap_id, concept_text, strength or 1.0,
+                  created_at or '2026-04-12'))
+            conn.execute(
+                "UPDATE self_trait_evidence SET claim_id = ? WHERE id = ?",
+                (clm_id, ev_id),
+            )
+            converted += 1
+        except sqlite3.Error as e:
+            print(f"  [ERROR] backfill {ev_id[:8]}: {e}", file=sys.stderr)
+
+    if not dry_run:
+        conn.commit()
+    print(f"[D20 backfill] Converted: {converted}")
+    return converted
+
+
 def archive_unclassified(conn: sqlite3.Connection, dry_run: bool = False) -> int:
     """Unclassified 38개 → status='archived' (R6)."""
     rows = conn.execute("""
@@ -266,6 +333,7 @@ def main():
         evidence = migrate_edges_to_evidence(conn, args.dry_run)
         conflicts = migrate_correction_to_conflicts(conn, args.dry_run)
         archived = archive_unclassified(conn, args.dry_run)
+        backfilled = backfill_legacy_evidence(conn, args.dry_run)
 
         print(f"\n{'=' * 50}")
         print(f"Migration {'preview' if args.dry_run else 'complete'}:")
@@ -273,6 +341,7 @@ def main():
         print(f"  self_trait_evidence: {evidence}")
         print(f"  self_trait_conflicts:{conflicts}")
         print(f"  nodes archived:      {archived}")
+        print(f"  D20 backfilled:      {backfilled}")
         print(f"{'=' * 50}")
     finally:
         conn.close()
