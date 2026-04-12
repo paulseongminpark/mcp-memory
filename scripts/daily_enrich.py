@@ -727,6 +727,45 @@ def _batch_update_growth_scores(conn: sqlite3.Connection, compute_fn) -> int:
     return updated
 
 
+# ─── Phase 0b: claim extraction ───────────────────────────
+
+def _phase0b_claim_extraction(conn: sqlite3.Connection, batch_size: int = 20) -> int:
+    """미처리 captures → claims 자동 추출 (Ollama 로컬).
+
+    Ollama 미기동 시 graceful skip.
+    """
+    try:
+        import requests
+        requests.get('http://localhost:11434/', timeout=3)
+    except Exception:
+        print("  Ollama not running — skipping claim extraction")
+        return 0
+
+    from tools.claim_extractor import process_capture
+
+    rows = conn.execute(
+        """
+        SELECT c.id, c.content FROM captures c
+        LEFT JOIN claims cl ON cl.capture_id = c.id
+        WHERE cl.id IS NULL
+        ORDER BY c.created_at ASC
+        LIMIT ?
+        """,
+        (batch_size,),
+    ).fetchall()
+
+    if not rows:
+        print("  No unprocessed captures")
+        return 0
+
+    total = 0
+    for cap_id, content in rows:
+        n = process_capture(conn, cap_id, content)
+        total += n
+
+    return total
+
+
 # ─── main ─────────────────────────────────────────────────
 
 def main():
@@ -778,6 +817,14 @@ def main():
             print("  No promotion candidates.")
     except Exception as e:
         print(f"  Auto-promote error: {e}")
+
+    # Phase 0b: claim extraction (Ollama, no API cost)
+    print("\n--- Phase 0b: claim extraction ---")
+    try:
+        claims_extracted = _phase0b_claim_extraction(conn)
+        print(f"  Claims extracted: {claims_extracted}")
+    except Exception as e:
+        print(f"  Claim extraction error: {e}")
 
     phase_stats = {}
     phases = [

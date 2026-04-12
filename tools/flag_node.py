@@ -71,6 +71,15 @@ def flag_node(
             generation_method="rule",
         )
 
+    # v8: feedback_events 기록 (Governance Plane)
+    _record_feedback_event(
+        target_type="node",
+        target_id=node_id,
+        feedback_type=action,
+        content=reason,
+        actor="claude",
+    )
+
     return {
         "node_id": node_id,
         "action": action,
@@ -79,3 +88,35 @@ def flag_node(
         "correction_id": corr_id,
         "message": f"Node #{node_id} flagged as {action}. Confidence {old_conf:.2f}→{new_conf:.2f}. Correction #{corr_id} created.",
     }
+
+
+def _record_feedback_event(
+    target_type: str,
+    target_id: int,
+    feedback_type: str,
+    content: str,
+    actor: str = "claude",
+) -> None:
+    """v8 feedback_events 테이블에 피드백 기록."""
+    import json
+    import uuid
+
+    try:
+        with sqlite_store._db() as conn:
+            conn.execute(
+                """INSERT INTO feedback_events
+                   (id, target_type, target_id, feedback_type, content,
+                    actor, created_at, metadata)
+                   VALUES (?, ?, ?, ?, ?, ?, datetime('now'), '{}')""",
+                (
+                    uuid.uuid4().hex,
+                    target_type,
+                    target_id,
+                    feedback_type,
+                    content[:500],
+                    actor,
+                ),
+            )
+            conn.commit()
+    except Exception:
+        pass  # feedback 기록 실패해도 flag_node 동작에 영향 없음

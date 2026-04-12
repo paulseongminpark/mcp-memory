@@ -1,5 +1,13 @@
 # mcp-memory CHANGELOG
 
+## v8 Loop 자동화 배선 — 3개 끊긴 체인 연결 (2026-04-12)
+
+- **daily_enrich Phase 0b**: 미처리 captures → claims 자동 추출 (Ollama graceful skip)
+- **retrieval_logs 실시간**: recall() 매 호출 시 query/returned_ids/type_dist/cross_domain 기록
+- **feedback_events 자동**: flag_node() 시 target_type/feedback_type/content 기록
+
+수정 파일: scripts/daily_enrich.py, tools/recall.py, tools/flag_node.py
+
 ## Growth Semantics Audit — dead field 활성화 + naming 표준화 (2026-04-12)
 
 - **utils/growth.py**: `compute_growth_score()` canonical 공식 (quality 30% + edges 20% + visits 20% + diversity 20% + recency 10%)

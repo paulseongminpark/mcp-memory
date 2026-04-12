@@ -264,6 +264,9 @@ def recall(
         # recall_log 기록 (Gate 1 SWR input)
         _log_recall_results(query, results, intent)
 
+        # v8: retrieval_logs 기록 (Governance Plane)
+        _write_retrieval_log(query, results)
+
     # v3.2: context package — seed별 1홉 이웃을 관계 라벨과 함께 구조화
     formatted = []
     for r in results:
@@ -445,3 +448,45 @@ def _log_recall_results(query: str, results: list[dict], mode: str) -> None:
             conn.commit()
     except Exception:
         pass  # recall_log 미생성 시 graceful skip
+
+
+def _write_retrieval_log(query: str, results: list[dict]) -> None:
+    """v8 retrieval_logs 테이블에 검색 이벤트 기록 (Governance Plane).
+
+    retrieval_logs schema:
+      id, session_id, query, context_pack_id, returned_ids,
+      slot_distribution, cross_domain, feedback_linked, created_at
+    """
+    import json
+    import uuid
+
+    try:
+        returned_ids = [r["id"] for r in results]
+        # cross-domain: 결과에 포함된 고유 프로젝트 수
+        projects = set(r.get("project", "") for r in results if r.get("project"))
+        cross_domain = len(projects) > 1
+
+        # type 분포
+        type_dist = {}
+        for r in results:
+            t = r.get("type", "?")
+            type_dist[t] = type_dist.get(t, 0) + 1
+
+        with sqlite_store._db() as conn:
+            conn.execute(
+                """INSERT INTO retrieval_logs
+                   (id, session_id, query, returned_ids, slot_distribution,
+                    cross_domain, feedback_linked, created_at)
+                   VALUES (?, ?, ?, ?, ?, ?, 0, datetime('now'))""",
+                (
+                    uuid.uuid4().hex,
+                    "",  # session_id는 호출자가 알 수 없으면 빈 문자열
+                    query[:500],
+                    json.dumps(returned_ids),
+                    json.dumps(type_dist),
+                    1 if cross_domain else 0,
+                ),
+            )
+            conn.commit()
+    except Exception:
+        pass  # retrieval_logs 실패해도 검색 결과에 영향 없음
