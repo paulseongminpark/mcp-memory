@@ -92,10 +92,14 @@ def phase1(conn: sqlite3.Connection, ne: NodeEnricher,
         except BudgetExhausted:
             pass
 
+    # Phase 1 cap check 함수 (E13/E14/E17 내부 루프에서 사용)
+    def _phase1_cap_reached():
+        return budget.used.get("small", 0) >= phase1_cap
+
     # 1c. E13 cross-domain relations
     if not budget.budget_exhausted("small"):
         try:
-            re.run_e13(limit=50)
+            re.run_e13(limit=50, budget_check_fn=_phase1_cap_reached)
             stats["edges"] += re.stats.get("e13_new_edges", 0)
         except BudgetExhausted:
             pass
@@ -105,7 +109,7 @@ def phase1(conn: sqlite3.Connection, ne: NodeEnricher,
     # 1d. E14 refine generic edges
     if not budget.budget_exhausted("small"):
         try:
-            re.run_e14(limit=6000)
+            re.run_e14(limit=6000, budget_check_fn=_phase1_cap_reached)
         except BudgetExhausted:
             pass
         except Exception as e:
@@ -114,7 +118,7 @@ def phase1(conn: sqlite3.Connection, ne: NodeEnricher,
     # 1e. E17 merge duplicates
     if not budget.budget_exhausted("small"):
         try:
-            re.run_e17()
+            re.run_e17(budget_check_fn=_phase1_cap_reached)
         except BudgetExhausted:
             pass
         except Exception as e:

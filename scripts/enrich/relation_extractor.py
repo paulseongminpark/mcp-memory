@@ -439,7 +439,7 @@ class RelationExtractor:
             return result
         return []
 
-    def run_e13(self, limit: int = 50) -> int:
+    def run_e13(self, limit: int = 50, budget_check_fn=None) -> int:
         """Run E13 on cross-domain clusters. Returns number of new edges inserted."""
         clusters = self.find_cross_domain_clusters(limit=limit)
         total_new = 0
@@ -447,6 +447,9 @@ class RelationExtractor:
         t0 = time.time()
 
         for i, cluster in enumerate(clusters):
+            if budget_check_fn and budget_check_fn():
+                print(f"\n  E13 stopped by budget cap at {i}/{total}")
+                break
             try:
                 relations = self.e13_cross_domain(cluster)
             except BudgetExhausted:
@@ -589,7 +592,7 @@ class RelationExtractor:
 
         return r
 
-    def run_e14(self, limit: int = 6000, batch_size: int = 30) -> int:
+    def run_e14(self, limit: int = 6000, batch_size: int = 30, budget_check_fn=None) -> int:
         """Run E14 on generic edges — parallel batch API + sequential DB write."""
         from concurrent.futures import ThreadPoolExecutor, as_completed
         import threading
@@ -598,6 +601,10 @@ class RelationExtractor:
         refined = 0
         errors = 0
         t0 = time.time()
+
+        if budget_check_fn and budget_check_fn():
+            print("  E14 skipped — budget cap reached before start")
+            return 0
 
         # Prepare edge+node data
         items = []
@@ -973,14 +980,22 @@ class RelationExtractor:
 
         return groups
 
-    def run_e17(self) -> int:
-        """Run E17: merge duplicate edges. Returns count of edges deleted."""
+    def run_e17(self, budget_check_fn=None) -> int:
+        """Run E17: merge duplicate edges. Returns count of edges deleted.
+
+        Args:
+            budget_check_fn: Optional callable that returns True when budget is exhausted.
+                             Called every iteration to enforce Phase-level caps.
+        """
         groups = self.find_duplicate_edges()
         deleted = 0
         total = len(groups)
         t0 = time.time()
 
         for i, edge_group in enumerate(groups):
+            if budget_check_fn and budget_check_fn():
+                print(f"\n  E17 stopped by budget cap at {i}/{total}")
+                break
             try:
                 result = self.e17_merge_duplicates(edge_group)
             except BudgetExhausted:
