@@ -1,5 +1,27 @@
 # mcp-memory CHANGELOG
 
+## Phase 1 budget cap + E17 사고 대응 + API 조사 (2026-04-13)
+
+### E17 67시간 무한실행 사고
+- 06:00 Task Scheduler 첫 자동 실행 — Phase 0a-0d 정상, Phase 1 E13/E14 완료
+- E17 (merge duplicates) 1344건 루프 진입, 3시간 동안 62건 처리, 중복 0건 발견
+- **OpenAI 일일 한도(소형 풀 2.25M) 전량 소진** — E17이 Phase 1 cap 무시하고 전체 풀 잠식
+- 09:56 수동 kill
+
+### Budget cap 루프 내 체크 추가
+- `run_e13`, `run_e14`, `run_e17`에 `budget_check_fn` 파라미터 추가
+- daily_enrich Phase 1에서 `_phase1_cap_reached` 함수 전달
+- 매 iteration마다 Phase 1 50% cap 체크 → 초과 시 즉시 중단
+
+### API 리소스 조사
+- OpenAI: 데이터 공유 프로그램, 대형 250K/일 + 소형 2.5M/일 (오늘 소진, 내일 리셋)
+- Gemini API 키 환경변수 등록 확인 (`GEMINI_API_KEY`)
+- Gemini 2.5 Flash: 동작 확인, 한도 넉넉, E13 태스크 정상 수행
+- Gemini 2.5 Pro / 3.1 Pro Preview: 429 quota — 무료 API 키로는 한도 부족
+- **결론**: Phase 1-2 bulk → Gemini 2.5 Flash 전환 가능. Phase 3-5 deep → OpenAI 유지.
+
+수정 파일: scripts/daily_enrich.py, scripts/enrich/relation_extractor.py
+
 ## v8 Phase 0 사후 정비 — pruning 버그 수정 + edge 복구 + 자동화 안정화 (2026-04-13)
 
 ### Bug Fix: Phase 6 Edge Pruning 공식 결함 (치명적)

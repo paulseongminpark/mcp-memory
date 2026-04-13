@@ -1,5 +1,5 @@
 # mcp-memory — STATE
-_Updated: 2026-04-12_
+_Updated: 2026-04-13_
 
 ## Current
 - **Version**: v8.0 (Ontology Redesign + Full Automation)
@@ -159,7 +159,9 @@ _Updated: 2026-04-12_
 - [x] context_pack 자동 주입 확인 — 52 rules 정상 주입 (2026-04-13)
 - [x] 미처리 captures 처리 완료 — 113 claims 추출 + 55건 마커 backfill, unprocessed=0 (2026-04-13)
 - [x] Phase 6 pruning 버그 발견·수정·복구 (2026-04-13)
-- [ ] 2026-04-13 06:00 daily_enrich Task Scheduler 자동 실행 로그 확인 (`data/daily-enrich.log`)
+- [x] 2026-04-13 06:00 daily_enrich 자동 실행 확인 — Phase 0 정상, E17 무한실행 사고 → kill + budget cap 수정 (2026-04-13)
+- [ ] OpenAI 일일 한도 리셋 후 daily_enrich 정상 실행 확인 (2026-04-14)
+- [ ] Gemini 2.5 Flash 연동 — Phase 1-2 bulk 전환 검토
 
 ### Phase 1: PostgreSQL 이주 (Trigger: Phase 0 Exit ✅)
 - [ ] PostgreSQL 17 + pgvector 설치
