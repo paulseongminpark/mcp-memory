@@ -1,5 +1,33 @@
 # mcp-memory CHANGELOG
 
+## v8 Phase 0 사후 정비 — pruning 버그 수정 + edge 복구 + 자동화 안정화 (2026-04-13)
+
+### Bug Fix: Phase 6 Edge Pruning 공식 결함 (치명적)
+- **Bug 1**: `_run_edge_pruning()` WHERE status 필터 누락 — deleted/archived edge 재처리. 실제 삭제 ~5,917건이 로그에 10,062로 표시
+- **Bug 2**: pruning 공식 `freq * exp(-0.005 * days)` → stored strength 무시. freq=0 edge(94.4%)를 무조건 삭제 대상으로 만듦
+- **수정**: status='active' 필터 추가 + stored strength 기반 공식으로 교체 (`effective_strength = stored_strength + freq * 0.1`)
+- **Edge 복구**: 양쪽 노드 active인 5,311건 deleted→active 복원 (edges/node: 1.49→3.08, orphan: 262→32)
+
+### Fix: 0-claim captures 무한 재시도
+- `claim_extractor.py`에서 0-claim 결과 시 마커 레코드(status='skip') 삽입
+- captures 테이블 `captures_no_update` 트리거 때문에 `processed_at` 컬럼 방식 불가 → 마커 방식 채택
+- 55건 backfill 완료, unprocessed: 104→0
+
+### Fix: unclassified traits 67/141 (47%)
+- `self_model_builder.py` cmd_classify()에 `AND status != 'archived'` 조건 — 67개 전부 archived라 스킵
+- 조건 제거 후 65/67 분류 완료 (2건 Qwen 실패 잔존)
+- 분포: language 25, rhythm 14, thinking_style 10, connection 9, emotion 3, decision_style 2, preference 2
+
+### Fix: Task Scheduler bat 파일 보강
+- PATH 명시 (Python312), 인자 전달(%*), exit code 보존
+- `daily-enrich.bat` 루트 + scripts/ 두 곳 모두 수정
+
+### 기타
+- `2026-04-12.md` 리포트 복원 (dry-run이 덮어쓴 것 수정)
+- context_pack 출처 확인: DB traits → `~/.claude/policy/rules/auto_*.json` → get_context() 동적 주입 (문제 없음)
+
+수정 파일: scripts/daily_enrich.py, tools/claim_extractor.py, tools/self_model_builder.py, daily-enrich.bat, scripts/daily-enrich.bat, data/reports/2026-04-12.md
+
 ## v8 Loop 2 자동화 — self-model trait 자동 갱신 (2026-04-12)
 
 - **daily_enrich Phase 0b**: concepts→trait extract (최대 10건) + unclassified→classify (최대 20건)

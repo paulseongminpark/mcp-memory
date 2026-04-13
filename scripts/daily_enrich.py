@@ -430,10 +430,11 @@ def _run_edge_pruning(conn: sqlite3.Connection, dry_run: bool) -> dict:
 
     stats = {"keep": 0, "archive": 0, "delete": 0, "guarded": 0}
 
+    # Bug fix: status='active'인 edge만 대상 (이전: 전체 edges 탐색)
     active_edges = conn.execute(
         "SELECT id, source_id, target_id, relation, strength, "
         "       frequency, last_activated, description "
-        "FROM edges"
+        "FROM edges WHERE status = 'active'"
     ).fetchall()
 
     # 노드별 active edge 수 사전 계산 (connectivity guard용)
@@ -446,16 +447,15 @@ def _run_edge_pruning(conn: sqlite3.Connection, dry_run: bool) -> dict:
 
     for edge in active_edges:
         edge_id = edge["id"]
+        stored_strength = edge["strength"] or 0.0
         freq = edge["frequency"] or 0
-        last_act = edge["last_activated"]
-        days = (
-            (now_utc - datetime.fromisoformat(last_act)).days
-            if last_act else 9999
-        )
-        strength = freq * math.exp(-0.005 * days)
+
+        # Bug fix: stored strength 기반 판단 (Phase 6-0에서 이미 time decay 적용됨)
+        # frequency bonus: recall 이력이 있으면 추가 보정
+        effective_strength = stored_strength + (freq * 0.1)
 
         # 강도 기준 통과
-        if strength > PRUNE_STRENGTH_THRESHOLD:
+        if effective_strength > PRUNE_STRENGTH_THRESHOLD:
             stats["keep"] += 1
             continue
 

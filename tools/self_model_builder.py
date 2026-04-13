@@ -114,7 +114,7 @@ def cmd_classify(args) -> int:
     rows = cur.execute(
         """
         SELECT id, content, metadata FROM self_model_traits
-        WHERE dimension='unclassified' AND status != 'archived'
+        WHERE dimension='unclassified'
         ORDER BY created_at
         LIMIT ?
         """,

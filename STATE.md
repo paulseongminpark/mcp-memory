@@ -14,6 +14,13 @@ _Updated: 2026-04-12_
 - **설계 SoT**: `20_architect-r1/03_architecture-spec-v3.md`
 - **구현 가이드**: `39_build-merged/01_final-impl-guide.md`
 
+### Phase 0 사후 정비 (2026-04-13)
+- **Edge pruning 버그 수정**: status 필터 누락 + 공식 결함 (freq 기반→stored strength 기반)
+- **Edge 복구**: 5,311건 (양쪽 active) deleted→active. edges/node: 1.49→3.08, orphan: 262→32
+- **0-claim 마커**: claim_extractor 무한 재시도 해소 (unprocessed 104→0)
+- **Traits 분류**: 67 unclassified→2 (archived 필터 버그 수정)
+- **Scheduler bat 보강**: PATH/인자전달/exit code
+
 ### Build R1 (Phase 0 인프라) + R2 (Codex Finding 수정)
 - **v8 7 테이블 + 4 trigger**: D20 evidence bridge 물리 강제 (INSERT+UPDATE)
 - **Self-Model 53 active**: 52 verified, 8차원 ≥ 3, avg evidence 2.34
@@ -30,15 +37,13 @@ _Updated: 2026-04-12_
 
 <!-- CURRENT:BEGIN -->
 - **Branch**: main
-- **Active Nodes / Edges**: 3,229 / 7,443
-- **Cross-domain / Direction**: 30.6% / 93.4% assigned
-- **Validated / knowledge_core**: 1,107 (34.3%) / 215
-- **Signal / Correction**: 60 / 7 (contradicts 19)
-- **Maturity**: avg 0.497, min 0.000, max 0.985, zero 3
-- **Growth**: observation_count nonzero 653, max 18, direction NULL 492
-- **Health**: orphans 99, stale 30d created_at 696, updated_at 0
-- **FTS Drift**: live 5 cols, missing domains, facets
-- **Enum Drift**: 1,182 active edges (gemini-enrichment 982, vector-similarity 200)
+- **Active Nodes / Edges**: 3,345 / 10,290
+- **Traits**: 141 (52 verified, 65 classified this session)
+- **Claims**: 325 (unprocessed captures: 0)
+- **Orphan active nodes**: 32
+- **Edges/node**: 3.08
+- **Maturity**: 3,343/3,343 set (100%)
+- **Health**: Phase 6 pruning bug fixed, edge recovery 5,311건
 <!-- CURRENT:END -->
 
 ## Performance Optimization (2026-04-10)
@@ -151,9 +156,10 @@ _Updated: 2026-04-12_
 ## Next — v8 Phase 1+ (Phase 0 Exit 달성 후)
 
 ### 즉시 검증 (Phase 0 사후)
+- [x] context_pack 자동 주입 확인 — 52 rules 정상 주입 (2026-04-13)
+- [x] 미처리 captures 처리 완료 — 113 claims 추출 + 55건 마커 backfill, unprocessed=0 (2026-04-13)
+- [x] Phase 6 pruning 버그 발견·수정·복구 (2026-04-13)
 - [ ] 2026-04-13 06:00 daily_enrich Task Scheduler 자동 실행 로그 확인 (`data/daily-enrich.log`)
-- [ ] 다음 세션에서 context_pack 자동 주입 체감 확인 (규칙이 행동을 바꾸는지)
-- [ ] 미처리 captures 84건 claims 추출 결과 확인
 
 ### Phase 1: PostgreSQL 이주 (Trigger: Phase 0 Exit ✅)
 - [ ] PostgreSQL 17 + pgvector 설치

@@ -130,6 +130,23 @@ def process_capture(
         return 0
 
     if not claims:
+        # 0-claim도 "처리 완료" 마킹 — LEFT JOIN 재시도 방지
+        if not dry_run:
+            conn.execute(
+                """
+                INSERT INTO claims
+                (id, capture_id, text, claim_type, confidence, extractor_model,
+                 extracted_at, status, metadata)
+                VALUES (?, ?, '[no extractable claims]', 'skip', 0, ?, datetime('now'), 'skip', ?)
+                """,
+                (
+                    uuid_v7(),
+                    capture_id,
+                    MODEL,
+                    json.dumps({'extractor_v': 1, 'reason': 'empty_extraction'}, ensure_ascii=False),
+                ),
+            )
+            conn.commit()
         return 0
 
     inserted = 0
