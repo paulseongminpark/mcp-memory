@@ -2,17 +2,29 @@
 _Updated: 2026-04-13_
 
 ## Current
-- **Version**: v8.0 (Ontology Redesign + Full Automation)
+- **Version**: v8.1 (E17 3-Layer + Groq Bulk)
 - **Masterplan Basis**: `MASTERPLAN-FINAL-v3.md` → **v8 Architecture Spec v3** (Phase 0 완료)
 - **Phase 0 Exit**: 5/5 PASS (2026-04-12)
 - **전구간 자동화**: captures→claims→traits→policy→context_pack→Claude 완전 자동 루프
 - **Task Scheduler**: `mcp-memory-daily-enrich` 매일 06:00 KST 자동 실행
+- **Bulk API**: Groq llama-3.3-70b-versatile (E13-E17, 14,400 RPD 무료)
 
 ## Ontology Redesign (v8 — Phase 0 DONE)
 - **Pipeline**: `07_ontology-redesign_0410` (status: DONE)
 - **Phase**: DONE (G1-G6 PASS, 2026-04-12)
 - **설계 SoT**: `20_architect-r1/03_architecture-spec-v3.md`
 - **구현 가이드**: `39_build-merged/01_final-impl-guide.md`
+
+### E17 3-Layer + Groq Bulk 전환 (2026-04-13)
+- **E17 3-layer 분류**: auto_merge (동일 relation+빈 desc→규칙 병합) / llm_same_rel / llm_diff_rel
+- **find_duplicate_edges**: `WHERE status='active'` 필터 추가
+- **_classify_group**: description='[]' 빈 값 처리, strength=None 안전 처리 (Codex 지적)
+- **Groq 연동**: bulk tier → llama-3.3-70b-versatile (Groq API, OpenAI 호환)
+- **실측**: E13 JSON 100%, allowlist 100%, 0.7-1.5초/건. E14 정상
+- **효과**: 1,344 duplicate groups → 547 (active 필터) → 106 auto + 441 LLM. OpenAI 예산 소모 0
+- **token_counter**: groq pool 추가 (10M limit)
+- **daily_enrich**: groq_limit 인자 전달
+- **.env**: GROQ_API_KEY 추가
 
 ### Phase 0 사후 정비 (2026-04-13)
 - **Edge pruning 버그 수정**: status 필터 누락 + 공식 결함 (freq 기반→stored strength 기반)
@@ -37,13 +49,14 @@ _Updated: 2026-04-13_
 
 <!-- CURRENT:BEGIN -->
 - **Branch**: main
-- **Active Nodes / Edges**: 3,345 / 10,290
+- **Active Nodes / Edges**: 3,345 / 10,300 (+10 E13 test)
 - **Traits**: 141 (52 verified, 65 classified this session)
 - **Claims**: 325 (unprocessed captures: 0)
 - **Orphan active nodes**: 32
 - **Edges/node**: 3.08
 - **Maturity**: 3,343/3,343 set (100%)
-- **Health**: Phase 6 pruning bug fixed, edge recovery 5,311건
+- **Bulk API**: Groq llama-3.3-70b (OpenAI 예산 0 소모)
+- **Health**: E17 3-layer + Groq bulk 전환 완료
 <!-- CURRENT:END -->
 
 ## Performance Optimization (2026-04-10)
@@ -160,8 +173,9 @@ _Updated: 2026-04-13_
 - [x] 미처리 captures 처리 완료 — 113 claims 추출 + 55건 마커 backfill, unprocessed=0 (2026-04-13)
 - [x] Phase 6 pruning 버그 발견·수정·복구 (2026-04-13)
 - [x] 2026-04-13 06:00 daily_enrich 자동 실행 확인 — Phase 0 정상, E17 무한실행 사고 → kill + budget cap 수정 (2026-04-13)
-- [ ] OpenAI 일일 한도 리셋 후 daily_enrich 정상 실행 확인 (2026-04-14)
-- [ ] Gemini 2.5 Flash 연동 — Phase 1-2 bulk 전환 검토
+- [x] E17 3-layer 리팩토링 — auto_merge/llm_same_rel/llm_diff_rel + Codex 검증 (2026-04-13)
+- [x] Groq bulk 전환 — llama-3.3-70b-versatile, 실측 JSON 100% + allowlist 100% (2026-04-13)
+- [ ] 2026-04-14 06:00 daily_enrich Groq 첫 자동 실행 확인
 
 ### Phase 1: PostgreSQL 이주 (Trigger: Phase 0 Exit ✅)
 - [ ] PostgreSQL 17 + pgvector 설치

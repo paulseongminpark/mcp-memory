@@ -56,6 +56,7 @@ class RelationExtractor:
         self.dry_run = dry_run
         self._client: openai.OpenAI | None = None
         self._anthropic: anthropic.Anthropic | None = None
+        self._groq: openai.OpenAI | None = None
         self.prompts = PromptLoader()
         self.stats = {
             "e13_new_edges": 0,
@@ -80,8 +81,20 @@ class RelationExtractor:
             self._anthropic = anthropic.Anthropic()
         return self._anthropic
 
+    @property
+    def groq_client(self) -> openai.OpenAI:
+        if self._groq is None:
+            self._groq = openai.OpenAI(
+                api_key=config.GROQ_API_KEY,
+                base_url="https://api.groq.com/openai/v1",
+            )
+        return self._groq
+
     def _is_anthropic_model(self, model: str) -> bool:
         return model.startswith("claude-")
+
+    def _is_groq_model(self, model: str) -> bool:
+        return model in config.GROQ_MODELS
 
     # ── API Call ──────────────────────────────────────────
 
@@ -116,7 +129,8 @@ class RelationExtractor:
                     raw = m.group(1) if m else text
                     return json.loads(raw)
                 else:
-                    resp = self.client.chat.completions.create(
+                    api_client = self.groq_client if self._is_groq_model(model) else self.client
+                    resp = api_client.chat.completions.create(
                         model=model,
                         messages=[
                             {"role": "system", "content": system},
@@ -956,10 +970,12 @@ class RelationExtractor:
         }
 
     def find_duplicate_edges(self) -> list[list[dict]]:
-        """Find groups of edges sharing the same (source_id, target_id) pair."""
+        """Find groups of edges sharing the same (source_id, target_id) pair.
+        Only considers active edges."""
         rows = self.conn.execute(
             """SELECT source_id, target_id, COUNT(*) as cnt
                FROM edges
+               WHERE status = 'active'
                GROUP BY source_id, target_id
                HAVING cnt > 1
                ORDER BY cnt DESC"""
@@ -972,7 +988,8 @@ class RelationExtractor:
                 """SELECT id, source_id, target_id, relation,
                           description, strength, direction, reason
                    FROM edges
-                   WHERE source_id = ? AND target_id = ?""",
+                   WHERE source_id = ? AND target_id = ?
+                     AND status = 'active'""",
                 (src_id, tgt_id),
             ).fetchall()
             if len(edge_rows) > 1:
@@ -980,19 +997,76 @@ class RelationExtractor:
 
         return groups
 
+    @staticmethod
+    def _has_meaningful_description(desc) -> bool:
+        """Check if description contains meaningful content (not None/empty/'[]')."""
+        if not desc:
+            return False
+        return desc.strip() not in ("", "[]")
+
+    @staticmethod
+    def _classify_group(edges: list[dict]) -> str:
+        """Classify duplicate group into processing layer.
+
+        Returns:
+            'auto_merge'   — same relation, all descriptions empty → no LLM
+            'llm_same_rel' — same relation, some descriptions → LLM decides
+            'llm_diff_rel' — different relations → LLM decides
+        """
+        relations = {e["relation"] for e in edges}
+        if len(relations) > 1:
+            return "llm_diff_rel"
+        if any(RelationExtractor._has_meaningful_description(e.get("description"))
+               for e in edges):
+            return "llm_same_rel"
+        return "auto_merge"
+
+    def _auto_merge(self, edges: list[dict]) -> int:
+        """Auto-merge same-relation edges with no descriptions.
+        Keeps the edge with highest strength. Returns deletion count."""
+        keep = max(edges, key=lambda e: e.get("strength") or 0.0)
+        deleted = 0
+        for e in edges:
+            if e["id"] != keep["id"]:
+                self._delete_edge(e["id"])
+                deleted += 1
+                self.stats["e17_merged"] += 1
+        return deleted
+
     def run_e17(self, budget_check_fn=None) -> int:
-        """Run E17: merge duplicate edges. Returns count of edges deleted.
+        """Run E17: merge duplicate edges using 3-layer classification.
+
+        Layer 1 (auto_merge): same relation + no descriptions → rule-based merge
+        Layer 2 (llm_same_rel): same relation + descriptions → LLM decides
+        Layer 3 (llm_diff_rel): different relations → LLM decides
 
         Args:
             budget_check_fn: Optional callable that returns True when budget is exhausted.
-                             Called every iteration to enforce Phase-level caps.
         """
         groups = self.find_duplicate_edges()
+
+        # Classify into layers
+        auto_groups: list[list[dict]] = []
+        llm_groups: list[list[dict]] = []
+        for g in groups:
+            layer = self._classify_group(g)
+            if layer == "auto_merge":
+                auto_groups.append(g)
+            else:
+                llm_groups.append(g)
+
         deleted = 0
-        total = len(groups)
+
+        # Layer 1: auto-merge (no LLM cost)
+        for g in auto_groups:
+            deleted += self._auto_merge(g)
+        print(f"  E17 Layer 1 (auto): {len(auto_groups)} groups, {deleted} merged")
+
+        # Layer 2+3: LLM-based merge
+        total = len(llm_groups)
         t0 = time.time()
 
-        for i, edge_group in enumerate(groups):
+        for i, edge_group in enumerate(llm_groups):
             if budget_check_fn and budget_check_fn():
                 print(f"\n  E17 stopped by budget cap at {i}/{total}")
                 break

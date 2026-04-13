@@ -1,5 +1,25 @@
 # mcp-memory CHANGELOG
 
+## v8.1 — E17 3-Layer + Groq Bulk 전환 (2026-04-13)
+
+### E17 3-Layer 리팩토링
+- `find_duplicate_edges()`: `WHERE status='active'` 추가 — deleted/archived edge 제외
+- `_classify_group()`: 3-layer 분류 (auto_merge / llm_same_rel / llm_diff_rel)
+- `_has_meaningful_description()`: None, '', '[]' 모두 빈 값 처리 (Codex 지적)
+- `_auto_merge()`: 동일 relation + 빈 description → 최고 strength 유지, 나머지 삭제 (LLM 불필요)
+- `strength=None` 안전 처리: `e.get("strength") or 0.0` (Codex 지적)
+- **효과**: 1,344 groups → 547 (active 필터) → 106 auto + 441 LLM
+
+### Groq Bulk API 연동
+- bulk tier: gpt-5-mini (OpenAI) → llama-3.3-70b-versatile (Groq)
+- 실측: E13 JSON 100%, allowlist 100%, 0.7-1.5초/건
+- token_counter: groq pool 추가 (GROQ_MODELS set, pool_for 분기)
+- daily_enrich: groq_limit 인자 전달
+- .env: GROQ_API_KEY 추가 (load_dotenv로 자동 로드)
+- **효과**: OpenAI 예산 소모 0, Groq 14,400 RPD 무료
+
+수정 파일: config.py, scripts/enrich/relation_extractor.py, scripts/enrich/token_counter.py, scripts/daily_enrich.py, .env
+
 ## Phase 1 budget cap + E17 사고 대응 + API 조사 (2026-04-13)
 
 ### E17 67시간 무한실행 사고

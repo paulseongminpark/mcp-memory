@@ -828,6 +828,7 @@ def main():
     budget = TokenBudget(
         large_limit=args.budget_large,
         small_limit=args.budget_small,
+        groq_limit=config.TOKEN_BUDGETS.get("groq", 10_000_000),
         log_dir=config.TOKEN_LOG_DIR,
     )
     conn = connect_db()

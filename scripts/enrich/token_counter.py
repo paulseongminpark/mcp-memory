@@ -41,8 +41,15 @@ SMALL_MODELS = {
 REASONING_MODELS = {"o3", "o3-mini", "o1", "o1-mini", "o4-mini"}
 
 
+GROQ_MODELS = {
+    "llama-3.3-70b-versatile", "llama-3.1-8b-instant",
+}
+
+
 def pool_for(model: str) -> str:
     """모델 -> 풀 이름."""
+    if model in GROQ_MODELS:
+        return "groq"
     if model in LARGE_MODELS:
         return "large"
     if model in SMALL_MODELS:
@@ -126,15 +133,15 @@ class TokenBudget:
     """대형/소형 풀 토큰 예산 관리."""
 
     def __init__(self, large_limit: int = 225_000, small_limit: int = 2_250_000,
-                 log_dir: Path | None = None):
-        self.limits = {"large": large_limit, "small": small_limit}
-        self.used = {"large": 0, "small": 0}
+                 groq_limit: int = 10_000_000, log_dir: Path | None = None):
+        self.limits = {"large": large_limit, "small": small_limit, "groq": groq_limit}
+        self.used = {"large": 0, "small": 0, "groq": 0}
         self.log: list[dict] = []
         self.rate_limiter = RateLimiter()
         self._log_dir = log_dir
 
         # o3 계열 reasoning_tokens 별도 추적
-        self.reasoning_tokens = {"large": 0, "small": 0}
+        self.reasoning_tokens = {"large": 0, "small": 0, "groq": 0}
         # o3 동적 조정용: 첫 N회 호출의 평균 토큰
         self._reasoning_samples: list[int] = []
 

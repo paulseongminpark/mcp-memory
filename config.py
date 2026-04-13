@@ -15,6 +15,7 @@ BASE_DIR = Path(__file__).parent
 load_dotenv(BASE_DIR / ".env")
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 EMBEDDING_PROVIDER = os.getenv("EMBEDDING_PROVIDER", "local")  # "local" or "openai"
 EMBEDDING_MODEL = "text-embedding-3-large"  # OpenAI 모델 (EMBEDDING_PROVIDER=openai 시)
 EMBEDDING_DIM = 1024 if EMBEDDING_PROVIDER == "local" else 3072
@@ -32,12 +33,15 @@ CHROMA_PATH = str(DATA_DIR / "chroma")
 API_PROVIDER = os.getenv("API_PROVIDER", "openai")
 
 ENRICHMENT_MODELS_OPENAI = {
-    "bulk":       "gpt-5-mini",   # Phase 1: 대량 enrichment (소형 풀)
+    "bulk":       "llama-3.3-70b-versatile",  # Phase 1: Groq bulk (무료 14,400 RPD)
     "reasoning":  "o3-mini",      # Phase 2: 배치 추론 (소형 풀)
     "verify":     "gpt-4.1",      # Phase 3: 정밀 검증 (대형 풀)
     "deep":       "gpt-5.2",      # Phase 4: 심층 생성 (대형 풀)
     "judge":      "o3",           # Phase 5: 깊은 추론 (대형 풀)
 }
+
+# Groq API 모델 — OpenAI 호환 API, 별도 클라이언트 사용
+GROQ_MODELS = {"llama-3.3-70b-versatile", "llama-3.1-8b-instant"}
 
 ENRICHMENT_MODELS_ANTHROPIC = {
     "bulk":       "claude-haiku-4-5-20251001",   # Phase 1: 구조화 추출
@@ -54,8 +58,9 @@ ENRICHMENT_MODELS = (
 
 # 토큰 예산 (일일 90% 목표)
 TOKEN_BUDGETS = {
-    "large": 225_000,   # 대형 풀: gpt-5.2, o3, gpt-4.1
-    "small": 2_250_000, # 소형 풀: gpt-5-mini, o3-mini
+    "large": 225_000,    # 대형 풀: gpt-5.2, o3, gpt-4.1
+    "small": 2_250_000,  # 소형 풀: gpt-5-mini, o3-mini
+    "groq":  10_000_000, # Groq 무료: RPD 14,400 기준, 토큰은 넉넉
 }
 
 # 배치 처리
