@@ -72,7 +72,7 @@ class RelationExtractor:
     @property
     def client(self) -> openai.OpenAI:
         if self._client is None:
-            self._client = openai.OpenAI(api_key=config.OPENAI_API_KEY)
+            self._client = openai.OpenAI(api_key=config.OPENAI_API_KEY, timeout=config.API_TIMEOUT, max_retries=0)
         return self._client
 
     @property
@@ -87,6 +87,8 @@ class RelationExtractor:
             self._groq = openai.OpenAI(
                 api_key=config.GROQ_API_KEY,
                 base_url="https://api.groq.com/openai/v1",
+                timeout=config.API_TIMEOUT,
+                max_retries=0,
             )
         return self._groq
 

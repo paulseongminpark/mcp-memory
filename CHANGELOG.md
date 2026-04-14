@@ -1,5 +1,39 @@
 # mcp-memory CHANGELOG
 
+## v8.1.1 — Multi-provider Hardening + 04/14 장애 복구 (2026-04-14)
+
+### 04/14 06:00 장애 원인 규명
+- Phase 1 E13/E14/E16/E17 35건 전량 401 Invalid API Key
+- 원인: Windows User 환경변수에 `GROQ_API_KEY=gsk_gsk_...` 이중 프리픽스 오염
+- dotenv 기본 `override=False`라 .env의 올바른 값이 Windows env를 덮지 못함
+- 수정: `config.py`에서 `load_dotenv(override=True)`, User env 삭제
+
+### v8.1 미반영 스코프 발견·수정
+- relation_extractor에만 Groq 라우팅 추가하고 node_enricher/graph_analyzer 누락
+- 세 파일 모두 동일 패턴으로 Groq client + `_is_groq_model` + 라우팅 추가
+
+### openai SDK hang 방지
+- 429 발생 시 SDK 기본 retry가 지수 backoff로 무한 대기 (프로세스 hang)
+- 3개 파일의 `openai.OpenAI(...)` 호출에 `max_retries=0` + `timeout=30s` 추가
+- `config.py`: `API_TIMEOUT=30`, `CONCURRENT_WORKERS=10 → 3` (Groq RPM 30 기준)
+
+### Groq 무료 tier 한도 실측
+- llama-3.3-70b-versatile: **TPD 100,000 토큰/일** (빠르게 소진), RPM 30
+- llama-3.1-8b-instant: TPD 500,000 토큰/일 (여유)
+- 8b 품질: JSON 100%, allowlist **40%** (E13 부적합, `enabled_by` 같은 역방향 변형 생성)
+
+### Bulk 모델 임시 전환
+- 70b TPD 소진(99,951/100,000) + OpenAI 429 복구 안 됨
+- config.py bulk: `llama-3.3-70b` → `llama-3.1-8b-instant` 임시 전환
+- 70b TPD 리셋 후(UTC 00:00) 복귀 필요
+
+### 미완 복구 — 04/14 Phase 1 E13/E14/E16/E17
+- Phase 0a-0d는 정상 완료 (growth_score, traits, policy, claims 갱신됨)
+- E17 Layer 1 auto_merge도 정상 (106 groups, 107 merged — LLM 불필요)
+- E13/E14/E16 + E17 Layer 2/3은 다음 실행으로 미룸
+
+수정 파일: config.py, scripts/enrich/{node_enricher,relation_extractor,graph_analyzer}.py
+
 ## v8.1 — E17 3-Layer + Groq Bulk 전환 (2026-04-13)
 
 ### E17 3-Layer 리팩토링

@@ -1,19 +1,34 @@
 # mcp-memory — STATE
-_Updated: 2026-04-13_
+_Updated: 2026-04-14_
 
 ## Current
-- **Version**: v8.1 (E17 3-Layer + Groq Bulk)
+- **Version**: v8.1.1 (Multi-provider Hardening)
 - **Masterplan Basis**: `MASTERPLAN-FINAL-v3.md` → **v8 Architecture Spec v3** (Phase 0 완료)
 - **Phase 0 Exit**: 5/5 PASS (2026-04-12)
 - **전구간 자동화**: captures→claims→traits→policy→context_pack→Claude 완전 자동 루프
 - **Task Scheduler**: `mcp-memory-daily-enrich` 매일 06:00 KST 자동 실행
-- **Bulk API**: Groq llama-3.3-70b-versatile (E13-E17, 14,400 RPD 무료)
+- **Bulk API**: Groq llama-3.1-8b-instant (TPD 500K, 70b TPD=100K 부족하여 임시 전환)
+- **ACTIVE BLOCKER**: 04/14 Phase 1 E13/E14/E16/E17 미완료 (API 전부 한도 소진)
 
 ## Ontology Redesign (v8 — Phase 0 DONE)
 - **Pipeline**: `07_ontology-redesign_0410` (status: DONE)
 - **Phase**: DONE (G1-G6 PASS, 2026-04-12)
 - **설계 SoT**: `20_architect-r1/03_architecture-spec-v3.md`
 - **구현 가이드**: `39_build-merged/01_final-impl-guide.md`
+
+### Multi-provider Hardening + 04/14 장애 복구 (2026-04-14)
+- **04/14 06:00 장애**: Phase 1 E13/E14/E16/E17 35건 전량 401 인증 실패
+  - 원인: Windows User env에 `GROQ_API_KEY=gsk_gsk_...` 이중 프리픽스 오염
+  - dotenv 기본 `override=False`라 .env의 올바른 값이 덮이지 못함
+- **Node/Graph Groq 라우팅 누락 발견**: v8.1에서 relation_extractor만 Groq 라우팅 추가, node_enricher/graph_analyzer는 누락 → 동일 패턴으로 수정
+- **openai SDK 무한 backoff hang**: 429 발생 시 SDK 기본 retry가 지수 backoff로 hang 유발 → `max_retries=0` + `timeout=30s` 필수
+- **Groq 무료 tier 실측 한도**:
+  - llama-3.3-70b-versatile: **TPD 100K (금방 소진)**, RPM 30
+  - llama-3.1-8b-instant: TPD 500K (여유), allowlist 준수율 40% (E13 부적합)
+- **CONCURRENT_WORKERS**: 10 → 3 (Groq RPM 30 기준)
+- **User env 삭제**: `[Environment]::SetEnvironmentVariable('GROQ_API_KEY', null, 'User')`
+- **config.py 수정**: `load_dotenv(override=True)`, `API_TIMEOUT=30`, bulk 8b 임시 전환
+- **수정 파일**: config.py, scripts/enrich/{node_enricher,relation_extractor,graph_analyzer}.py
 
 ### E17 3-Layer + Groq Bulk 전환 (2026-04-13)
 - **E17 3-layer 분류**: auto_merge (동일 relation+빈 desc→규칙 병합) / llm_same_rel / llm_diff_rel
@@ -49,14 +64,11 @@ _Updated: 2026-04-13_
 
 <!-- CURRENT:BEGIN -->
 - **Branch**: main
-- **Active Nodes / Edges**: 3,345 / 10,300 (+10 E13 test)
-- **Traits**: 141 (52 verified, 65 classified this session)
-- **Claims**: 325 (unprocessed captures: 0)
-- **Orphan active nodes**: 32
-- **Edges/node**: 3.08
-- **Maturity**: 3,343/3,343 set (100%)
-- **Bulk API**: Groq llama-3.3-70b (OpenAI 예산 0 소모)
-- **Health**: E17 3-layer + Groq bulk 전환 완료
+- **Active Nodes / Edges**: ~3,394 / ~10,407 (04/14 06:00 Phase 0만 성공, Phase 1 미완)
+- **Traits**: 152+ (11 new on 04/14 06:00)
+- **Bulk API**: Groq 8b 임시, 70b TPD 리셋 후 복귀 예정
+- **Blocker**: OpenAI 429 (quota exceeded, 미복구), Groq 70b TPD 소진 (99,951/100,000)
+- **Next auto run**: 04/15 06:00 (70b TPD 리셋 후)
 <!-- CURRENT:END -->
 
 ## Performance Optimization (2026-04-10)
@@ -175,7 +187,22 @@ _Updated: 2026-04-13_
 - [x] 2026-04-13 06:00 daily_enrich 자동 실행 확인 — Phase 0 정상, E17 무한실행 사고 → kill + budget cap 수정 (2026-04-13)
 - [x] E17 3-layer 리팩토링 — auto_merge/llm_same_rel/llm_diff_rel + Codex 검증 (2026-04-13)
 - [x] Groq bulk 전환 — llama-3.3-70b-versatile, 실측 JSON 100% + allowlist 100% (2026-04-13)
-- [ ] 2026-04-14 06:00 daily_enrich Groq 첫 자동 실행 확인
+- [x] 04/14 06:00 daily_enrich 자동 실행 — Phase 0 성공, Phase 1 전량 실패 (.env override 버그)
+- [x] Node/Graph Groq 라우팅 누락 발견·수정 (2026-04-14)
+- [x] openai SDK max_retries=0 + timeout=30s 추가 — hang 방지 (2026-04-14)
+- [x] User env GROQ_API_KEY 이중 프리픽스 오염 제거 (2026-04-14)
+
+### 내일 (2026-04-15) 우선순위
+- [ ] **Groq 70b TPD 리셋 확인** (UTC 00:00 = KST 09:00)
+  - `python -c "import openai, config; openai.OpenAI(api_key=config.GROQ_API_KEY, base_url='https://api.groq.com/openai/v1').chat.completions.create(model='llama-3.3-70b-versatile', messages=[{'role':'user','content':'hi'}], max_tokens=5)"`
+  - 성공 시 `config.py`에서 bulk `llama-3.1-8b-instant` → `llama-3.3-70b-versatile` 복귀
+- [ ] 04/14 Phase 1 미완 복구 — 70b 복귀 후 수동 `daily_enrich.py` 재실행
+- [ ] 04/15 06:00 자동 실행 정상 여부 확인 (70b 복귀 후)
+- [ ] OpenAI 429 복구 확인 (여전히 quota exceeded)
+
+### 중기
+- [ ] **Fallback 구조 설계** — Groq TPD 초과 시 자동으로 OpenAI/다른 provider로 폴백
+- [ ] Phase 1 PostgreSQL 이주 (Trigger: Phase 0 Exit 충족, 아직 미착수)
 
 ### Phase 1: PostgreSQL 이주 (Trigger: Phase 0 Exit ✅)
 - [ ] PostgreSQL 17 + pgvector 설치

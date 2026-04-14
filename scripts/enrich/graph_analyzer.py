@@ -47,6 +47,7 @@ class GraphAnalyzer:
         self.dry_run = dry_run
         self._client: openai.OpenAI | None = None
         self._anthropic: anthropic.Anthropic | None = None
+        self._groq: openai.OpenAI | None = None
         self.prompts = PromptLoader()
         self.stats: dict[str, int] = {
             "edges_inserted": 0,
@@ -64,7 +65,7 @@ class GraphAnalyzer:
     @property
     def client(self) -> openai.OpenAI:
         if self._client is None:
-            self._client = openai.OpenAI(api_key=config.OPENAI_API_KEY)
+            self._client = openai.OpenAI(api_key=config.OPENAI_API_KEY, timeout=config.API_TIMEOUT, max_retries=0)
         return self._client
 
     @property
@@ -73,8 +74,22 @@ class GraphAnalyzer:
             self._anthropic = anthropic.Anthropic()
         return self._anthropic
 
+    @property
+    def groq_client(self) -> openai.OpenAI:
+        if self._groq is None:
+            self._groq = openai.OpenAI(
+                api_key=config.GROQ_API_KEY,
+                base_url="https://api.groq.com/openai/v1",
+                timeout=config.API_TIMEOUT,
+                max_retries=0,
+            )
+        return self._groq
+
     def _is_anthropic_model(self, model: str) -> bool:
         return model.startswith("claude-")
+
+    def _is_groq_model(self, model: str) -> bool:
+        return model in config.GROQ_MODELS
 
     # ── API call ──────────────────────────────────────────
 
@@ -109,7 +124,8 @@ class GraphAnalyzer:
                     raw = m.group(1) if m else text
                     return json.loads(raw)
                 else:
-                    resp = self.client.chat.completions.create(
+                    api_client = self.groq_client if self._is_groq_model(model) else self.client
+                    resp = api_client.chat.completions.create(
                         model=model,
                         messages=[
                             {"role": "system", "content": system},

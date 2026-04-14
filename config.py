@@ -33,7 +33,7 @@ CHROMA_PATH = str(DATA_DIR / "chroma")
 API_PROVIDER = os.getenv("API_PROVIDER", "openai")
 
 ENRICHMENT_MODELS_OPENAI = {
-    "bulk":       "llama-3.3-70b-versatile",  # Phase 1: Groq bulk (무료 14,400 RPD)
+    "bulk":       "llama-3.1-8b-instant",  # Phase 1: Groq 8b (TPD 500K 무료, 70b TPD 100K는 부족)
     "reasoning":  "o3-mini",      # Phase 2: 배치 추론 (소형 풀)
     "verify":     "gpt-4.1",      # Phase 3: 정밀 검증 (대형 풀)
     "deep":       "gpt-5.2",      # Phase 4: 심층 생성 (대형 풀)
@@ -41,6 +41,7 @@ ENRICHMENT_MODELS_OPENAI = {
 }
 
 # Groq API 모델 — OpenAI 호환 API, 별도 클라이언트 사용
+# TPD: llama-3.3-70b=100K/일, llama-3.1-8b=500K/일
 GROQ_MODELS = {"llama-3.3-70b-versatile", "llama-3.1-8b-instant"}
 
 ENRICHMENT_MODELS_ANTHROPIC = {
@@ -66,9 +67,10 @@ TOKEN_BUDGETS = {
 # 배치 처리
 BATCH_SIZE = 10
 BATCH_SLEEP = 0.05      # 배치 간 대기 (초) — 유료 API용
-CONCURRENT_WORKERS = 10  # 병렬 API 호출 수
+CONCURRENT_WORKERS = 3  # 병렬 API 호출 수 (Groq 무료 RPM 30 기준)
 MAX_RETRIES = 3         # API 실패 시 재시도
 RETRY_BACKOFF = 2.0     # 재시도 백오프 배수
+API_TIMEOUT = 30        # API 호출 timeout (초) — 무한 backoff 방지
 
 # 실행 모드
 DRY_RUN = False         # True: DB 반영 없이 결과만 출력
