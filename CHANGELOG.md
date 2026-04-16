@@ -1,5 +1,41 @@
 # mcp-memory CHANGELOG
 
+## v8.2.0 — Dual-provider + OpenAI Free Tier (2026-04-16)
+
+### OpenAI Free Tier 복구
+- 원인: $0 크레딧 잔액이 Data Sharing free tier까지 차단 (커뮤니티 동일 사례 다수)
+- 해결: 소액 크레딧 충전 → 즉시 복구. gpt-4.1/gpt-4.1-mini/gpt-4.1-nano 전부 OK
+- config.py bulk: `llama-3.3-70b-versatile` → **`gpt-4.1`** (대형풀 250K/일, 최고 지능)
+
+### Gemini Fallback 구조 추가
+- gemini-3-flash-preview 퀄리티 테스트: **JSON 100%, allowlist 100%**, avg 8.2s
+- config.py: `GEMINI_API_KEY`, `GEMINI_BASE_URL`, `GEMINI_FALLBACK_MODEL`, `GEMINI_MODELS` 추가
+- token_counter.py: `pool_for()` Gemini 라우팅 + "gemini" 풀 (10M limit)
+- 3개 enricher (_call_json): Groq 429 → 3회 재시도 → 마지막에 Gemini fallback
+- gemini-3-flash-preview RPD=20 (preview 제한) — 대량 처리에는 부적합, 긴급 fallback용
+
+### E13-E17 완료 (gpt-4.1)
+- E13: 63 new cross-domain edges (Groq 39 + OpenAI 24)
+- E14: 476 edges refined (3114건 처리, errors=0)
+- E17: 1 duplicate merged
+- E16: 0 strength changes
+- Budget: large 231K/250K (92%) — 무료 일일 한도 내 소화
+
+### Task Scheduler 변경
+- `mcp-memory-daily-enrich` Disabled (OpenAI 429 동안 불필요한 실행 방지)
+- 수동 실행 전환 — provider 안정화 후 재활성화
+
+### Build R1 Phase 1 완료
+- `~/.claude/rules/workflow.md`: Wiki-First 세션 시작 체크리스트 4항목 추가
+- 위치: 세션 복구 → Wiki-First → 작업 흐름 (기존 구조 유지)
+
+### 로컬 모델 퀄리티 평가
+- qwen2.5:7b Q4_K_M: allowlist 50%, latency 59s — E-task 부적합
+- paul-llm (Gemma3 1.3B): 너무 작음 — E-task 불가
+- 결론: 로컬 모델은 Phase 0b/0d (claim/trait) 전용, E-task는 API만 가능
+
+수정 파일: config.py, scripts/enrich/{token_counter,node_enricher,relation_extractor,graph_analyzer}.py, ~/.claude/rules/workflow.md
+
 ## v8.1.1 — Multi-provider Hardening + 04/14 장애 복구 (2026-04-14)
 
 ### 04/14 06:00 장애 원인 규명

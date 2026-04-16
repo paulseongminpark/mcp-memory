@@ -2,13 +2,13 @@
 _Updated: 2026-04-14_
 
 ## Current
-- **Version**: v8.1.1 (Multi-provider Hardening)
+- **Version**: v8.2.0 (Dual-provider + OpenAI Free Tier)
 - **Masterplan Basis**: `MASTERPLAN-FINAL-v3.md` → **v8 Architecture Spec v3** (Phase 0 완료)
 - **Phase 0 Exit**: 5/5 PASS (2026-04-12)
 - **전구간 자동화**: captures→claims→traits→policy→context_pack→Claude 완전 자동 루프
-- **Task Scheduler**: `mcp-memory-daily-enrich` 매일 06:00 KST 자동 실행
-- **Bulk API**: Groq llama-3.1-8b-instant (TPD 500K, 70b TPD=100K 부족하여 임시 전환)
-- **ACTIVE BLOCKER**: 04/14 Phase 1 E13/E14/E16/E17 미완료 (API 전부 한도 소진)
+- **Task Scheduler**: `mcp-memory-daily-enrich` Disabled (수동 실행 전환, 04/16)
+- **Bulk API**: gpt-4.1 (OpenAI 대형풀 250K/일 free tier, 최고 지능)
+- **Fallback**: Groq 70b → Gemini 3 Flash (자동 전환, 3회 재시도 후 fallback)
 
 ## Ontology Redesign (v8 — Phase 0 DONE)
 - **Pipeline**: `07_ontology-redesign_0410` (status: DONE)
@@ -64,11 +64,12 @@ _Updated: 2026-04-14_
 
 <!-- CURRENT:BEGIN -->
 - **Branch**: main
-- **Active Nodes / Edges**: ~3,394 / ~10,407 (04/14 06:00 Phase 0만 성공, Phase 1 미완)
-- **Traits**: 152+ (11 new on 04/14 06:00)
-- **Bulk API**: Groq 8b 임시, 70b TPD 리셋 후 복귀 예정
-- **Blocker**: OpenAI 429 (quota exceeded, 미복구), Groq 70b TPD 소진 (99,951/100,000)
-- **Next auto run**: 04/15 06:00 (70b TPD 리셋 후)
+- **Active Nodes / Edges**: ~3,400+ / ~10,900+ (04/16 E13 +63, E14 refined 476, E17 merged 1)
+- **Traits**: 152+
+- **Bulk API**: gpt-4.1 (OpenAI free tier 250K/일)
+- **Fallback chain**: gpt-4.1 → Groq 70b → Gemini 3 Flash
+- **OpenAI**: 크레딧 충전 후 free tier 복구 완료 (04/16)
+- **Build R1**: Phase 1 완료 (workflow.md wiki-first), Phase 2~6 대기
 <!-- CURRENT:END -->
 
 ## Performance Optimization (2026-04-10)
@@ -192,16 +193,17 @@ _Updated: 2026-04-14_
 - [x] openai SDK max_retries=0 + timeout=30s 추가 — hang 방지 (2026-04-14)
 - [x] User env GROQ_API_KEY 이중 프리픽스 오염 제거 (2026-04-14)
 
-### 내일 (2026-04-15) 우선순위
-- [ ] **Groq 70b TPD 리셋 확인** (UTC 00:00 = KST 09:00)
-  - `python -c "import openai, config; openai.OpenAI(api_key=config.GROQ_API_KEY, base_url='https://api.groq.com/openai/v1').chat.completions.create(model='llama-3.3-70b-versatile', messages=[{'role':'user','content':'hi'}], max_tokens=5)"`
-  - 성공 시 `config.py`에서 bulk `llama-3.1-8b-instant` → `llama-3.3-70b-versatile` 복귀
-- [ ] 04/14 Phase 1 미완 복구 — 70b 복귀 후 수동 `daily_enrich.py` 재실행
-- [ ] 04/15 06:00 자동 실행 정상 여부 확인 (70b 복귀 후)
-- [ ] OpenAI 429 복구 확인 (여전히 quota exceeded)
+### 즉시 (2026-04-16)
+- [x] Groq 70b TPD 리셋 확인 → OK (04/16 11:00)
+- [x] OpenAI 429 해결 — 원인: $0 잔액 차단. 크레딧 충전으로 free tier 복구
+- [x] E13/E14/E16/E17 완료 — gpt-4.1로 전량 처리 (E13 +63, E14 476 refined, E17 1 merged)
+- [x] Gemini fallback 코드 추가 — 5파일 수정, 3회 재시도 후 fallback
+- [x] config.py bulk → gpt-4.1 (OpenAI free tier 대형풀 250K/일)
+- [x] Task Scheduler daily-enrich Disabled (수동 전환)
+- [x] Build R1 Phase 1: workflow.md wiki-first 체크리스트 추가
+- [ ] Build R1 Phase 2~6 (post_user_prompt_capture.py, session-start.sh, E2E 검증)
 
 ### 중기
-- [ ] **Fallback 구조 설계** — Groq TPD 초과 시 자동으로 OpenAI/다른 provider로 폴백
 - [ ] Phase 1 PostgreSQL 이주 (Trigger: Phase 0 Exit 충족, 아직 미착수)
 
 ### Phase 1: PostgreSQL 이주 (Trigger: Phase 0 Exit ✅)

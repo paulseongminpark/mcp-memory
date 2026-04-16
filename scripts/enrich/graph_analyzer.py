@@ -48,6 +48,7 @@ class GraphAnalyzer:
         self._client: openai.OpenAI | None = None
         self._anthropic: anthropic.Anthropic | None = None
         self._groq: openai.OpenAI | None = None
+        self._gemini: openai.OpenAI | None = None
         self.prompts = PromptLoader()
         self.stats: dict[str, int] = {
             "edges_inserted": 0,
@@ -91,6 +92,19 @@ class GraphAnalyzer:
     def _is_groq_model(self, model: str) -> bool:
         return model in config.GROQ_MODELS
 
+    @property
+    def gemini_client(self) -> openai.OpenAI:
+        if self._gemini is None:
+            self._gemini = openai.OpenAI(
+                api_key=config.GEMINI_API_KEY,
+                base_url=config.GEMINI_BASE_URL,
+                timeout=60, max_retries=0,
+            )
+        return self._gemini
+
+    def _is_gemini_model(self, model: str) -> bool:
+        return model in config.GEMINI_MODELS
+
     # ── API call ──────────────────────────────────────────
 
     def _call_json(self, model: str, system: str, user: str) -> dict:
@@ -124,17 +138,26 @@ class GraphAnalyzer:
                     raw = m.group(1) if m else text
                     return json.loads(raw)
                 else:
-                    api_client = self.groq_client if self._is_groq_model(model) else self.client
-                    resp = api_client.chat.completions.create(
-                        model=model,
-                        messages=[
+                    is_gemini = self._is_gemini_model(model)
+                    api_client = (self.gemini_client if is_gemini
+                                  else self.groq_client if self._is_groq_model(model)
+                                  else self.client)
+                    kwargs = {
+                        "model": model,
+                        "messages": [
                             {"role": "system", "content": system},
                             {"role": "user", "content": user},
                         ],
-                        response_format={"type": "json_object"},
-                    )
-                    self.budget.record(model, resp.usage.model_dump())
-                    return json.loads(resp.choices[0].message.content)
+                    }
+                    if not is_gemini:
+                        kwargs["response_format"] = {"type": "json_object"}
+                    resp = api_client.chat.completions.create(**kwargs)
+                    self.budget.record(model, resp.usage.model_dump() if resp.usage else {})
+                    text = resp.choices[0].message.content
+                    if is_gemini:
+                        m = re.search(r'```json\s*(.*?)\s*```', text, re.DOTALL)
+                        text = m.group(1) if m else text
+                    return json.loads(text)
 
             except anthropic.RateLimitError as e:
                 retry_after = float(e.response.headers.get("retry-after", 5)) if e.response else 5
@@ -147,7 +170,13 @@ class GraphAnalyzer:
                 ra = parse_retry_after(headers)
                 self.budget.rate_limiter.record_429(model, ra)
                 if attempt == config.MAX_RETRIES - 1:
+                    if self._is_groq_model(model) and config.GEMINI_FALLBACK_MODEL:
+                        try:
+                            return self._call_json(config.GEMINI_FALLBACK_MODEL, system, user)
+                        except Exception:
+                            raise e
                     raise
+                time.sleep(ra or config.RETRY_BACKOFF ** attempt)
 
             except (openai.APIError, anthropic.APIError, json.JSONDecodeError) as e:
                 if attempt == config.MAX_RETRIES - 1:

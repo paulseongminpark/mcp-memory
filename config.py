@@ -33,7 +33,7 @@ CHROMA_PATH = str(DATA_DIR / "chroma")
 API_PROVIDER = os.getenv("API_PROVIDER", "openai")
 
 ENRICHMENT_MODELS_OPENAI = {
-    "bulk":       "llama-3.1-8b-instant",  # Phase 1: Groq 8b (TPD 500K 무료, 70b TPD 100K는 부족)
+    "bulk":       "gpt-4.1",  # Phase 1: OpenAI 대형풀 (250K/일 free tier, 최고 지능)
     "reasoning":  "o3-mini",      # Phase 2: 배치 추론 (소형 풀)
     "verify":     "gpt-4.1",      # Phase 3: 정밀 검증 (대형 풀)
     "deep":       "gpt-5.2",      # Phase 4: 심층 생성 (대형 풀)
@@ -43,6 +43,12 @@ ENRICHMENT_MODELS_OPENAI = {
 # Groq API 모델 — OpenAI 호환 API, 별도 클라이언트 사용
 # TPD: llama-3.3-70b=100K/일, llama-3.1-8b=500K/일
 GROQ_MODELS = {"llama-3.3-70b-versatile", "llama-3.1-8b-instant"}
+
+# Gemini API — OpenAI 호환, Groq TPD 소진 시 fallback
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai/"
+GEMINI_FALLBACK_MODEL = "gemini-3-flash-preview"  # allowlist 100%, JSON 100%, ~8s
+GEMINI_MODELS = {"gemini-3-flash-preview", "gemini-2.5-flash"}
 
 ENRICHMENT_MODELS_ANTHROPIC = {
     "bulk":       "claude-haiku-4-5-20251001",   # Phase 1: 구조화 추출
