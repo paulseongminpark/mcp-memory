@@ -1,5 +1,24 @@
 # mcp-memory CHANGELOG
 
+## v8.2.1 — Build R1 merged (2026-04-20)
+
+### Phase 4.5: budget 2000 → 3000
+- 실측: 2000에서 `applicable_principles(15)`, `relevant_episodes(8)`, `project_workflows(1)` 3슬롯 trimmed
+- 3000 실측: _estimated_tokens=2468, principles·preferences·conflicts 전부 노출 (episodes·workflows만 잔여 trim)
+- 파일: `~/.claude/hooks/session-start.sh:264` `--budget 3000`
+
+### Phase 5: V-Check 통과
+- B.1 session-start.sh: 5/5 (인라인 Python 제거, CLI 파라미터 일치, JSON/fallback 확인)
+- B.2 post_user_prompt_capture.py: 4/4 (Spec 이탈 1건 문서화: FTS5-only `issue-20260416-fts5-only.md`)
+- B.3 workflow.md: 2/2 (Wiki-First 섹션 + 4 체크박스)
+- 상세 로그: `08_ontology-completion_0415/30_build-r1/04_verify-log.md`
+
+### Phase 6: Build merged
+- 신규: `08_ontology-completion_0415/39_build-merged/00_index.md`
+- T1 필수: `01_final-impl-guide.md` (변경 diff + 검증 + Harden 진입 조건 + 이월 이슈)
+- 파이프라인 루트 `00_index.md` phase=build-merged 갱신
+- 다음: Harden R1 진입
+
 ## v8.2.0 — Dual-provider + OpenAI Free Tier (2026-04-16)
 
 ### OpenAI Free Tier 복구
@@ -25,9 +44,18 @@
 - `mcp-memory-daily-enrich` Disabled (OpenAI 429 동안 불필요한 실행 방지)
 - 수동 실행 전환 — provider 안정화 후 재활성화
 
-### Build R1 Phase 1 완료
-- `~/.claude/rules/workflow.md`: Wiki-First 세션 시작 체크리스트 4항목 추가
-- 위치: 세션 복구 → Wiki-First → 작업 흐름 (기존 구조 유지)
+### Build R1 Phase 1~3 완료
+- **Phase 1** `~/.claude/rules/workflow.md`: Wiki-First 세션 시작 체크리스트 4항목 추가
+- **Phase 2** `~/.claude/hooks/post_user_prompt_capture.py`: recall pre-flight 추가
+  - Architect spec: full hybrid recall → 실제: FTS5-only (embedding 로딩 16초→0.15초)
+  - 필터 4조건 (빈/slash/JSON/system-reminder), top_k=3, try/except 래핑
+  - 7건 단위 테스트 전체 통과
+- **Phase 3** `~/.claude/hooks/session-start.sh`: 섹션 8 교체
+  - 인라인 Python 42줄 (2슬롯) → context_pack.py 호출 (6슬롯)
+  - SESSION_ID fallback, JSON 포매터, pipe fallback 수정
+  - bash -n + 수동 실행 + fallback 검증 통과
+- **미결**: budget 2000에서 3슬롯 trimmed — Phase 4 E2E에서 상향 여부 결정
+- Phase 4 (실세션 E2E), Phase 5 (V-Check), Phase 6 (merged) 미완료
 
 ### 로컬 모델 퀄리티 평가
 - qwen2.5:7b Q4_K_M: allowlist 50%, latency 59s — E-task 부적합

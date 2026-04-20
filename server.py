@@ -45,6 +45,9 @@ _flag_node = None
 
 def _init_worker():
     """백그라운드 초기화: import, DB init, schema sync, verification."""
+    def _log(msg):
+        print(f"[init] {msg}", file=sys.stderr, flush=True)
+    _log("start")
     global PROMOTE_LAYER, validate_node_type, suggest_closest_type
     global check_access, LAYER_PERMISSIONS
     global _remember, _recall, _get_context, _save_session
@@ -55,9 +58,11 @@ def _init_worker():
     global _export_ontology, _flag_node
 
     from config import OPENAI_API_KEY, PROMOTE_LAYER as _PL
+    _log("config imported")
     PROMOTE_LAYER = _PL
 
     from ontology.validators import validate_node_type as _vnt, suggest_closest_type as _sct
+    _log("validators imported")
     validate_node_type = _vnt
     suggest_closest_type = _sct
 
@@ -66,11 +71,13 @@ def _init_worker():
         insert_session_event as _ise,
         resolve_session_event as _rse, export_ontology as _eo,
     )
+    _log("sqlite_store imported")
     insert_session_event = _ise
     resolve_session_event = _rse
     _export_ontology = _eo
 
     from utils.access_control import check_access as _ca, LAYER_PERMISSIONS as _lp
+    _log("access_control imported")
     check_access = _ca
     LAYER_PERMISSIONS = _lp
 
@@ -79,8 +86,11 @@ def _init_worker():
         warnings.warn("OPENAI_API_KEY not set — embedding features will fail")
 
     from tools.remember import remember as r
+    _log("tools.remember imported")
     from tools.recall import recall as rc
+    _log("tools.recall imported")
     from tools.get_context import get_context as gc
+    _log("tools.get_context imported")
     from tools.save_session import save_session as ss
     from tools.visualize import visualize as vz
     from tools.analyze_signals import analyze_signals as az
@@ -89,6 +99,7 @@ def _init_worker():
     from scripts.ontology_review import run_review as orv
     from scripts.dashboard import generate_dashboard as gd
     from tools.flag_node import flag_node as fn
+    _log("all tool imports done")
 
     _remember = r
     _recall = rc
@@ -102,14 +113,20 @@ def _init_worker():
     _generate_dashboard = gd
     _flag_node = fn
 
+    _log("imports done")
     # DB 초기화 + 스키마 동기화
     init_db()
+    _log("init_db done")
     sync_schema()
+    _log("sync_schema done")
 
     # quick verify (실패해도 서버 정상 작동)
+    # stdout은 MCP 프로토콜 채널 — verify.print()가 오염시키므로 stderr로 리다이렉트
     try:
+        import contextlib
         from scripts.eval.verify import run_all
-        run_all(quick=True)
+        with contextlib.redirect_stdout(sys.stderr):
+            run_all(quick=True)
     except Exception:
         pass
 
@@ -130,10 +147,16 @@ def _init_worker():
     except Exception:
         pass
 
+    _log("_ready.set()")
     _ready.set()
 
 
-threading.Thread(target=_init_worker, daemon=True).start()
+# 이전: 백그라운드 daemon thread로 init.
+# 문제: Windows subprocess + torch/sentence_transformers + FastMCP stdio 조합에서
+# daemon thread가 heavy import에서 영구 hang → tool call이 _ready.wait()에서 timeout.
+# 해결: 동기 실행으로 전환. mcp.run() 이전에 init 완료 보장. stdio handshake는
+# Claude Code 쪽 timeout(30-60s) 내에 완료되면 안전 (실측 ~13s).
+_init_worker()
 
 
 @mcp.tool()

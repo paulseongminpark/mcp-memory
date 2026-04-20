@@ -1,5 +1,5 @@
 # mcp-memory — STATE
-_Updated: 2026-04-14_
+_Updated: 2026-04-20_
 
 ## Current
 - **Version**: v8.2.0 (Dual-provider + OpenAI Free Tier)
@@ -9,6 +9,19 @@ _Updated: 2026-04-14_
 - **Task Scheduler**: `mcp-memory-daily-enrich` Disabled (수동 실행 전환, 04/16)
 - **Bulk API**: gpt-4.1 (OpenAI 대형풀 250K/일 free tier, 최고 지능)
 - **Fallback**: Groq 70b → Gemini 3 Flash (자동 전환, 3회 재시도 후 fallback)
+
+## Build R1: Claude 행동 레이어 연결 (merged 완료, 2026-04-20)
+- **Pipeline**: `08_ontology-completion_0415` (phase: build-merged, 다음: Harden R1)
+- **merged 산출물**: `39_build-merged/` — `00_index.md` + `01_final-impl-guide.md` (T1)
+- **변경 파일 3개 (+ budget 보정)**:
+  - `~/.claude/rules/workflow.md` — Wiki-First 세션 시작 체크리스트 ✅
+  - `~/.claude/hooks/post_user_prompt_capture.py` — recall pre-flight (FTS5-only, 0.15초) ✅
+  - `~/.claude/hooks/session-start.sh` — 섹션 8 교체 (6슬롯 context_pack.py), budget 2000→3000 ✅
+  - `~/.claude/settings.json` — UserPromptSubmit hook `async:true` 제거 (stdout 캡처 보장) ✅
+- **Spec 이탈 1건 문서화**: recall pre-flight full hybrid(16초) → FTS5-only(0.15초). `issue-20260416-fts5-only.md`
+- **Phase 5 V-Check**: B.1 5/5, B.2 4/4 (1건 이탈 문서화), B.3 2/2
+- **Phase 4.5 budget**: 2000 실측 3슬롯 trimmed → 3000으로 상향, _estimated_tokens=2468. Harden에서 재평가
+- **Harden 이월 이슈**: (1) budget 추가 상향 여부 (2) FTS5-only 품질 정성 평가 (3) Loop 4 Governance는 범위 밖
 
 ## Ontology Redesign (v8 — Phase 0 DONE)
 - **Pipeline**: `07_ontology-redesign_0410` (status: DONE)
@@ -69,7 +82,7 @@ _Updated: 2026-04-14_
 - **Bulk API**: gpt-4.1 (OpenAI free tier 250K/일)
 - **Fallback chain**: gpt-4.1 → Groq 70b → Gemini 3 Flash
 - **OpenAI**: 크레딧 충전 후 free tier 복구 완료 (04/16)
-- **Build R1**: Phase 1 완료 (workflow.md wiki-first), Phase 2~6 대기
+- **Build R1**: merged 완료 (2026-04-20), Harden R1 진입 대기
 <!-- CURRENT:END -->
 
 ## Performance Optimization (2026-04-10)
