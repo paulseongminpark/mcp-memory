@@ -23,6 +23,7 @@ import sys
 import time
 import uuid
 import secrets
+from datetime import datetime, timezone
 from pathlib import Path
 
 DB_PATH = Path(__file__).resolve().parent.parent / 'data' / 'memory.db'
@@ -58,14 +59,13 @@ def uuid_v7() -> str:
 
 
 def _rule_name(trait_id: str, content: str) -> str:
-    """trait content에서 rule 파일명 생성."""
-    # 한글/영문에서 키워드 추출 → snake_case
+    """trait content + trait_id suffix로 rule 파일명 생성. (Harden R1: 이름 충돌 방지)"""
     clean = re.sub(r'[^a-zA-Z가-힣0-9\s]', '', content[:60])
     words = clean.split()[:5]
-    name = '_'.join(w.lower() for w in words if w)
-    if not name:
-        name = f'trait_{trait_id[:8]}'
-    return f'auto_{name}'
+    base = '_'.join(w.lower() for w in words if w)
+    if not base:
+        base = 'trait'
+    return f'auto_{base}_{trait_id[:8]}'
 
 
 def _infer_rule_type(dimension: str, content: str) -> str:
@@ -82,11 +82,22 @@ def compile_traits(dry_run: bool = False) -> list[dict]:
     conn = sqlite3.connect(str(DB_PATH))
     conn.row_factory = sqlite3.Row
 
+    # F7 Runtime 반영 (Harden R1, 2026-04-20):
+    # - reject feedback 받은 trait 제외
+    # - unresolved self_trait_conflicts 가진 trait 제외
     traits = conn.execute(
         """
         SELECT id, dimension, content, verified_at, metadata
         FROM self_model_traits
         WHERE status='verified' AND approval='approved'
+          AND id NOT IN (
+              SELECT DISTINCT target_id FROM feedback_events
+              WHERE feedback_type='reject' AND target_type='trait'
+          )
+          AND id NOT IN (
+              SELECT DISTINCT trait_id FROM self_trait_conflicts
+              WHERE resolved=0
+          )
         ORDER BY dimension, verified_at DESC
         """
     ).fetchall()
@@ -121,7 +132,7 @@ def compile_traits(dry_run: bool = False) -> list[dict]:
             'content': trait['content'],
             'priority': 'standard',
             'trigger': ['session_start'],
-            'compiled_at': time.strftime('%Y-%m-%dT%H:%M:%S'),
+            'compiled_at': datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S+00:00'),
             'metadata': {
                 'source_trait_id': trait['id'],
                 'source_dimension': trait['dimension'],
@@ -156,7 +167,7 @@ def update_pack(compiled_rules: list[dict]) -> None:
         existing_rules.add(rule['name'])
 
     pack['rules'] = sorted(existing_rules)
-    pack['compiled_at'] = time.strftime('%Y-%m-%dT%H:%M:%S')
+    pack['compiled_at'] = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S+00:00')
     pack['version'] = pack.get('version', 0) + 1
     pack['metadata'] = pack.get('metadata', {})
     pack['metadata']['auto_compiled_count'] = len(compiled_rules)

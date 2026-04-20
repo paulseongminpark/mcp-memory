@@ -257,16 +257,28 @@ def get_preferences_and_boundaries(conn: sqlite3.Connection) -> list[dict]:
 
 
 def get_policy_pack(pack_name: str = 'default') -> dict:
+    # Harden R1 (L): 깨진 JSON 한 개가 전체 pack을 무음 실패시키지 않도록 rule 단위 격리.
     pack_path = POLICY_DIR / 'packs' / f'{pack_name}.json'
     if not pack_path.exists():
-        return {'pack': pack_name, 'rules': []}
-    pack = json.loads(pack_path.read_text(encoding='utf-8'))
-    rules = []
+        return {'pack': pack_name, 'rules': [], '_errors': []}
+    try:
+        pack = json.loads(pack_path.read_text(encoding='utf-8'))
+    except (ValueError, OSError) as e:
+        return {'pack': pack_name, 'rules': [], '_errors': [f'pack_parse: {e}']}
+    rules: list[dict] = []
+    errors: list[str] = []
     for rule_name in pack.get('rules', []):
         rule_path = POLICY_DIR / 'rules' / f'{rule_name}.json'
-        if rule_path.exists():
+        if not rule_path.exists():
+            continue
+        try:
             rules.append(json.loads(rule_path.read_text(encoding='utf-8')))
-    return {'pack': pack.get('name', pack_name), 'rules': rules}
+        except (ValueError, OSError) as e:
+            errors.append(f'{rule_name}: {e}')
+    out = {'pack': pack.get('name', pack_name), 'rules': rules}
+    if errors:
+        out['_errors'] = errors
+    return out
 
 
 def get_open_conflicts(conn: sqlite3.Connection) -> list[dict]:
@@ -354,23 +366,31 @@ def apply_slot_precedence(pack: dict, active_rejects: set[str], conn: sqlite3.Co
 
 
 def trim_to_budget(pack: dict, budget: int) -> dict:
-    order = [
+    # Harden R1 (P): D18 Slot Precedence — 우선순위 높은 것 먼저 예산 할당, 초과 시 낮은 것 trim.
+    # 1순위=boundary, 2순위=principle, 3순위=workflow, 4순위=episode, 5순위=conflict, task_frame=최우선 맥락
+    priority_order = [
         'task_frame',
         'preferences_and_boundaries',
         'applicable_principles',
-        'project_workflows',
         'open_conflicts',
+        'project_workflows',
         'relevant_episodes',
     ]
-    total = 0
-    for key in order:
-        if key not in pack:
-            continue
-        size = _tokens(json.dumps(pack[key], ensure_ascii=False))
-        if total + size > budget:
+    # 예산 할당은 우선순위대로, trim은 역순(낮은 것 먼저)
+    sizes = {k: _tokens(json.dumps(pack[k], ensure_ascii=False)) for k in priority_order if k in pack}
+    total = sum(sizes.values())
+    if total <= budget:
+        pass  # 전체 수용
+    else:
+        # 낮은 우선순위부터 trim 하며 예산 내로 축소
+        for key in reversed(priority_order):
+            if key not in pack:
+                continue
+            if total <= budget:
+                break
             pack[key] = {'_trimmed': True, '_count': len(pack[key]) if isinstance(pack[key], list) else 1}
-        else:
-            total += size
+            total -= sizes[key]
+            total += _tokens(json.dumps(pack[key], ensure_ascii=False))
     pack['_estimated_tokens'] = total
     return pack
 
@@ -416,6 +436,17 @@ def build_context_pack(
                 k: (len(v) if isinstance(v, list) else 1)
                 for k, v in pack.items() if not k.startswith('_')
             }
+            # Harden R1 (B): 실제 pack에 들어간 id 수집
+            returned: list[str] = []
+            for slot_key, slot_val in pack.items():
+                if slot_key.startswith('_') or not isinstance(slot_val, list):
+                    continue
+                for item in slot_val:
+                    if not isinstance(item, dict):
+                        continue
+                    nid = item.get('node_id') or item.get('trait_id') or item.get('id')
+                    if nid:
+                        returned.append(str(nid))
             conn.execute(
                 """
                 INSERT INTO retrieval_logs
@@ -427,7 +458,7 @@ def build_context_pack(
                     session_id,
                     task_hint,
                     pack_id,
-                    json.dumps([]),
+                    json.dumps(returned, ensure_ascii=False),
                     json.dumps(slot_dist, ensure_ascii=False),
                 ),
             )

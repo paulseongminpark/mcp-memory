@@ -2,7 +2,7 @@
 _Updated: 2026-04-20_
 
 ## Current
-- **Version**: v8.2.0 (Dual-provider + OpenAI Free Tier)
+- **Version**: v8.2.2 (ontology-completion DONE, Phase 1 PG 이주 진입 대기)
 - **Masterplan Basis**: `MASTERPLAN-FINAL-v3.md` → **v8 Architecture Spec v3** (Phase 0 완료)
 - **Phase 0 Exit**: 5/5 PASS (2026-04-12)
 - **전구간 자동화**: captures→claims→traits→policy→context_pack→Claude 완전 자동 루프
@@ -10,18 +10,20 @@ _Updated: 2026-04-20_
 - **Bulk API**: gpt-4.1 (OpenAI 대형풀 250K/일 free tier, 최고 지능)
 - **Fallback**: Groq 70b → Gemini 3 Flash (자동 전환, 3회 재시도 후 fallback)
 
-## Build R1: Claude 행동 레이어 연결 (merged 완료, 2026-04-20)
-- **Pipeline**: `08_ontology-completion_0415` (phase: build-merged, 다음: Harden R1)
-- **merged 산출물**: `39_build-merged/` — `00_index.md` + `01_final-impl-guide.md` (T1)
-- **변경 파일 3개 (+ budget 보정)**:
-  - `~/.claude/rules/workflow.md` — Wiki-First 세션 시작 체크리스트 ✅
-  - `~/.claude/hooks/post_user_prompt_capture.py` — recall pre-flight (FTS5-only, 0.15초) ✅
-  - `~/.claude/hooks/session-start.sh` — 섹션 8 교체 (6슬롯 context_pack.py), budget 2000→3000 ✅
-  - `~/.claude/settings.json` — UserPromptSubmit hook `async:true` 제거 (stdout 캡처 보장) ✅
-- **Spec 이탈 1건 문서화**: recall pre-flight full hybrid(16초) → FTS5-only(0.15초). `issue-20260416-fts5-only.md`
-- **Phase 5 V-Check**: B.1 5/5, B.2 4/4 (1건 이탈 문서화), B.3 2/2
-- **Phase 4.5 budget**: 2000 실측 3슬롯 trimmed → 3000으로 상향, _estimated_tokens=2468. Harden에서 재평가
-- **Harden 이월 이슈**: (1) budget 추가 상향 여부 (2) FTS5-only 품질 정성 평가 (3) Loop 4 Governance는 범위 밖
+## ontology-completion DONE (2026-04-20)
+- **Pipeline**: `08_ontology-completion_0415` **status: DONE** (G1-G6)
+- **Build R1** Claude 행동 레이어: workflow.md + recall pre-flight + session-start 6슬롯 (budget 3000) + `--no-log` 제거
+- **Build R2** v8.1 선행 완료 (Correction 기록)
+- **Build R3** Loop 4 기초: `scripts/governance_audit.py` + `.sh` (5축 측정 + HHMMSS suffix + conn contextmanager)
+- **Build R4** wiki 상태: session-start 섹션 7.5 (dirty_topics + last compiled + STALE 태그)
+- **Harden R1** 3-way 점검: Codex(BLOCK→PROCEED) + Sonnet(CONDITIONAL→PROCEED). Gemini 무효(plan 샌드박스 차단)
+  - 12건 수정 (P0 2, P1 3, P2 7) / 8건 이월 (Phase 1~3 carry-forward)
+- **핵심 수정**:
+  - `policy_compiler.py`: F7 Runtime 반영 (reject/conflict 제외 쿼리) + timezone UTC + rule name 충돌 방지
+  - `context_pack.py`: retrieval_logs returned_ids 실제 수집 + policy JSON 격리 + trim 우선순위 역순
+  - `post_user_prompt_capture.py`: git-root project + FTS5 예약어 필터
+  - `governance_audit.py`: conn contextmanager + HHMMSS suffix
+- **실측 (budget 3000)**: `_estimated_tokens=2499`, 슬롯 6개 중 4개 전체 노출 / 2개 trim. retrieval 15건/3세션
 
 ## Ontology Redesign (v8 — Phase 0 DONE)
 - **Pipeline**: `07_ontology-redesign_0410` (status: DONE)
@@ -77,12 +79,12 @@ _Updated: 2026-04-20_
 
 <!-- CURRENT:BEGIN -->
 - **Branch**: main
-- **Active Nodes / Edges**: ~3,400+ / ~10,900+ (04/16 E13 +63, E14 refined 476, E17 merged 1)
+- **Active Nodes / Edges**: ~3,400+ / ~10,900+
 - **Traits**: 152+
 - **Bulk API**: gpt-4.1 (OpenAI free tier 250K/일)
 - **Fallback chain**: gpt-4.1 → Groq 70b → Gemini 3 Flash
-- **OpenAI**: 크레딧 충전 후 free tier 복구 완료 (04/16)
-- **Build R1**: merged 완료 (2026-04-20), Harden R1 진입 대기
+- **ontology-completion**: DONE (2026-04-20) — Build R1~R4 merged + Harden R1 PROCEED
+- **다음**: Phase 1 PostgreSQL 이주 (별도 파이프라인, 이월 이슈 4건 흡수: C/E/J/O)
 <!-- CURRENT:END -->
 
 ## Performance Optimization (2026-04-10)

@@ -1,5 +1,50 @@
 # mcp-memory CHANGELOG
 
+## v8.2.2 — ontology-completion DONE (2026-04-20)
+
+### Build R2 Correction (Skip)
+- Groq fallback은 v8.1 Multi-provider Hardening (2026-04-14)에서 이미 구현됨 — 별도 라운드 미진행
+- 차이점: 스펙 `BULK_MODEL_PRIORITY[groq,groq,claude-haiku]` vs 실제 `gpt-4.1 → Groq → Gemini-3-flash-preview fallback`
+- Correction: `29_architect-merged/02_correction-r2-skip.md`
+
+### Build R3 — Loop 4 Governance 기초
+- `scripts/governance_audit.py` 신규 (5축: feedback-rate / retrieval-stats / stale-policy / trait-conflicts / summary)
+- `scripts/governance_audit.sh` 래퍼 (Task Scheduler 주 1회 권장)
+- HHMMSS suffix + `governance-audit-latest.md` alias + conn contextmanager
+
+### Build R4 — Wiki 상태 표시
+- `~/.claude/hooks/session-start.sh` 섹션 7.5 신규
+- `dirty_topics` 테이블 읽기 + `wiki/index.md` `_Compiled:` 추출 + 3일 초과 시 STALE 태그
+
+### Harden R1 — 3-way 점검 + 12건 수정
+**3-way**: Codex(BLOCK) + Sonnet(CONDITIONAL) + Gemini(무효) → 수정 후 둘 다 PROCEED
+
+**P0 2건 수정**:
+- `policy_compiler.py` F7 Runtime 반영: `WHERE id NOT IN (reject) AND id NOT IN (unresolved_conflict)` 추가
+- `context_pack.py` returned_ids 실제 수집 + session-start `--no-log` 제거 (task-hint='session_start' 태그)
+
+**P0 1건 이월** (Phase 1):
+- recall pre-flight FTS5-only D20 bypass → full-hybrid 복원 설계
+
+**P1/P2 수정 10건**:
+- policy_compiler timezone UTC (`%Y-%m-%dT%H:%M:%S+00:00`)
+- policy_compiler rule name 충돌 방지 (`trait_id[:8]` suffix)
+- post_user_prompt_capture FTS5 예약어 필터 (OR/AND/NOT/NEAR + 단글자 제거)
+- post_user_prompt_capture git-root project 탐색 (fallback Path.name)
+- context_pack get_policy_pack rule 단위 JSON 격리 (`_errors` 키)
+- context_pack trim_to_budget 우선순위 역순 (낮은 것부터 trim)
+- governance_audit conn contextmanager + HHMMSS suffix + latest alias
+- governance_audit.sh python3 통일
+
+**이월 8건** (Phase 1~3 carry-forward):
+- Phase 1: C(D20 bypass), E(D19 하드코딩), J(Loop 1→2), O(DB_PATH env)
+- Phase 2: G(policy_synced), Q(task_frame ACTIVE 역추적)
+- Phase 3: D(D18 slot precedence 본격), M(relevant_episodes 유사도)
+
+### Output
+- `90_output/00_final-output.md` + `01_handoff.md` + `02_pdr-report.md`
+- 파이프라인 status: **DONE** (G1-G6)
+
 ## v8.2.1 — Build R1 merged (2026-04-20)
 
 ### Phase 4.5: budget 2000 → 3000
